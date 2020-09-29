@@ -118,6 +118,7 @@ if __name__ == "__main__":
     bert_encoder = None
 
     if model_args.with_bert:
+        model_args.bert_path = "bert-base-cased"
         bert_tokenizer = BertEncoderTokenizer.from_pretrained(model_args.bert_path, do_lower_case=False)
         bert_encoder = BertEncoder.from_pretrained(model_args.bert_path)
         vocabs['bert_tokenizer'] = bert_tokenizer

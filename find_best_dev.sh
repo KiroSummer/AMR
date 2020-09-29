@@ -7,7 +7,7 @@ for dev_file in ./ckpt/*.pred; do
 done
 
 # fast compute smatch
-for dev_post_file in ./ckpt/*.post; do
-  echo "Eval fast smatch ${dev_post_file}"
-  bash ./tools/fast_smatch/compute_smatch.sh ${dev_post_file} ./data/AMR/amr_2.0/dev.txt
-done
+#for dev_post_file in ./ckpt/*.post; do
+#  echo "Eval fast smatch ${dev_post_file}"
+#  bash ./tools/fast_smatch/compute_smatch.sh ${dev_post_file} ./data/AMR/amr_2.0/dev.txt
+#done

@@ -233,7 +233,7 @@ def init_processes(local_rank, args, backend='nccl'):
 
 if __name__ == "__main__":
     args = parse_config()
-    if not os.path.exists(args.ckpt):
+    if not os.path.exists(args.ckpt):  # create the ckpt dir @kiro
         os.mkdir(args.ckpt)
     assert len(args.cnn_filters) % 2 == 0
     args.cnn_filters = list(zip(args.cnn_filters[:-1:2], args.cnn_filters[1::2]))

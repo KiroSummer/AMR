@@ -22,7 +22,6 @@ def match(output_file, input_file):
         blocks1.append(block1)
     assert len(blocks) == len(blocks1), (len(blocks), len(blocks1))
 
-
     with open(output_file+'.pred', 'w', encoding='utf8') as fo:
         for block, block1 in zip(blocks, blocks1):
             for line in block:

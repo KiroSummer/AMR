@@ -204,7 +204,7 @@ class DecodeLayer(nn.Module):
         self.inference_layers = inference_layers
         self.arc_generator = ArcGenerator(vocabs, embed_dim, ff_embed_dim, num_heads, dropout)
         self.concept_generator = ConceptGenerator(vocabs, embed_dim, ff_embed_dim, conc_size, dropout)
-        self.relation_generator = RelationGenerator(vocabs, embed_dim, rel_size, dropout)
+        self.relation_generator = RelationGenerator(vocabs, embed_dim, rel_size, dropout)  # biaffine @kiro
         self.dropout = dropout
         self.vocabs = vocabs
 

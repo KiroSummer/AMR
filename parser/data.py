@@ -12,7 +12,7 @@ GPU_SIZE = 12000  # okay for 8G memory
 class Vocab(object):
     def __init__(self, filename, min_occur_cnt, specials=None):
         idx2token = [PAD, UNK] + (specials if specials is not None else [])
-        self._priority = dict()  # for what ?@kiro
+        self._priority = dict()  # for what token -> count mapping ? @kiro
         num_tot_tokens = 0
         num_vocab_tokens = 0
         for line in open(filename).readlines():
@@ -111,7 +111,7 @@ def ArraysToTensor(xs):
     return data
 
 
-def batchify(data, vocabs, unk_rate=0.):
+def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
     _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
     _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)

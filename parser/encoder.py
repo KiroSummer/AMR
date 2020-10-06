@@ -76,9 +76,9 @@ class WordEncoder(nn.Module):
     def __init__(self, vocabs, char_dim, word_dim, pos_dim, ner_dim,
                  embed_dim, filters, char2word_dim, dropout, pretrained_file=None):
         super(WordEncoder, self).__init__()
-        self.char_embed = AMREmbedding(vocabs['word_char'], char_dim)
+        self.char_embed = AMREmbedding(vocabs['word_char'], char_dim)  # initialize a random embedding @kiro
         self.char2word = CNNEncoder(filters, char_dim, char2word_dim)  # [(3, 256)], 32, 128 @kiro
-        self.lem_embed = AMREmbedding(vocabs['lem'], word_dim, pretrained_file)
+        self.lem_embed = AMREmbedding(vocabs['lem'], word_dim, pretrained_file)  # initialize a random embedding @kiro
 
         if pos_dim > 0:
             self.pos_embed = AMREmbedding(vocabs['pos'], pos_dim)

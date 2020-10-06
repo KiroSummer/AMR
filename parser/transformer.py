@@ -122,7 +122,7 @@ class MultiheadAttention(nn.Module):
             key_padding_mask: Time x batch
             attn_mask:  tgt_len x src_len
         """
-        qkv_same = query.data_ptr() == key.data_ptr() == value.data_ptr()
+        qkv_same = query.data_ptr() == key.data_ptr() == value.data_ptr()  # returns the address of tensor.
         kv_same = key.data_ptr() == value.data_ptr()
 
         tgt_len, bsz, embed_dim = query.size()

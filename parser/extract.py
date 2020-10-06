@@ -33,14 +33,13 @@ class AMRIO:
                     ner_tags = json.loads(line[len('# ::ner_tags '):])
                 elif line.startswith('# ::abstract_map '):
                     abstract_map = json.loads(line[len('# ::abstract_map '):])
-                    graph_line = AMR.get_amr_line(f)
+                    graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
                     yield tokens, lemmas, pos_tags, ner_tags, myamr
 
 
 class LexicalMap(object):
-
     # build our lexical mapping (from token/lemma to concept), useful for copy mechanism.
     def __init__(self):
         pass

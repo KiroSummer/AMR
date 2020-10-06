@@ -2,10 +2,12 @@
 import torch
 from torch.optim import Optimizer
 
+
 class AdamWeightDecayOptimizer(Optimizer):
     """A basic Adam optimizer that includes "correct" L2 weight decay.
     https://github.com/google-research/bert/blob/master/optimization.py
     https://raw.githubusercontent.com/pytorch/pytorch/v1.0.0/torch/optim/adam.py"""
+
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
                  weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
@@ -83,6 +85,6 @@ class AdamWeightDecayOptimizer(Optimizer):
                 # Instead we want ot decay the weights in a manner that doesn't interact
                 # with the m/v parameters. This is equivalent to adding the square
                 # of the weights to the loss with plain (non-momentum) SGD.
-                update = (exp_avg/denom).add_(group['weight_decay'], p.data)
+                update = (exp_avg / denom).add_(group['weight_decay'], p.data)
                 p.data.add_(-group['lr'], update)
         return loss

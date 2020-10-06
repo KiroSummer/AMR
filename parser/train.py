@@ -97,7 +97,7 @@ def data_proc(data, queue):
 
 def load_vocabs(args):
     vocabs = dict()
-    vocabs['tok'] = Vocab(args.tok_vocab, 5, [CLS])
+    vocabs['tok'] = Vocab(args.tok_vocab, 5, [CLS])  # remove the token frequence < 5 @kiro
     vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
@@ -130,7 +130,7 @@ def main(local_rank, args):
     torch.cuda.manual_seed_all(19940117)
     random.seed(19940117)
     torch.cuda.set_device(local_rank)
-    device = torch.device('cuda', local_rank)
+    device = torch.device('cuda', local_rank)  # totally read @kiro
 
     model = Parser(vocabs,
                    args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
@@ -159,7 +159,7 @@ def main(local_rank, args):
             weight_decay_params.append(param)
     grouped_params = [{'params': weight_decay_params, 'weight_decay': 1e-4},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
-    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)
+    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
 
     used_batches = 0
     batches_acm = 0
@@ -178,15 +178,15 @@ def main(local_rank, args):
     train_data_generator.start()
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
-    while True:
+    while True:  # no stop! @kiro
         batch = queue.get()
         if isinstance(batch, str):
             epoch += 1
             print('epoch', epoch, 'done', 'batches', batches_acm)
         else:
-            batch = move_to_device(batch, model.device)
-            concept_loss, arc_loss, rel_loss, graph_arc_loss = model(batch)
-            loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update
+            batch = move_to_device(batch, model.device)  # data moved to device
+            concept_loss, arc_loss, rel_loss, graph_arc_loss = model(batch)  # model forward
+            loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
             loss_value = loss.item()
             concept_loss_value = concept_loss.item()
             arc_loss_value = arc_loss.item()
@@ -195,7 +195,7 @@ def main(local_rank, args):
             concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
             arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
             rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
-            loss.backward()
+            loss.backward()  # loss backward
             used_batches += 1
             if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
                 continue
@@ -205,7 +205,7 @@ def main(local_rank, args):
                 average_gradients(model)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
-            optimizer.step()
+            optimizer.step()  # update the model parameters according to the losses @kiro
             optimizer.zero_grad()
             if args.world_size == 1 or (dist.get_rank() == 0):
                 if batches_acm % args.print_every == -1 % args.print_every:

@@ -1,6 +1,7 @@
 import torch
 from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
+
 """
  Beam search by batch
  need model has two functions:
@@ -8,6 +9,8 @@ from parser.AMRGraph import is_attr_or_abs_form
     (2) prepare_incremental_input
  when adapted to other use, modify those parts that are labeled by ##rewrite## accordingly. 
 """
+
+
 ###########
 ##rewrite##
 ###########
@@ -34,15 +37,17 @@ class Hypothesis(object):
     def __len__(self):
         return len(self.seq)
 
+
 class Beam(object):
     """each beam for a test instance"""
+
     def __init__(self, beam_size, min_time_step, max_time_step, hypotheses):
         self.beam_size = beam_size
         self.min_time_step = min_time_step
         self.max_time_step = max_time_step
         self.completed_hypotheses = []
         self.steps = 0
-        self.hypotheses = hypotheses # hypotheses are the collection of *alive* hypotheses only
+        self.hypotheses = hypotheses  # hypotheses are the collection of *alive* hypotheses only
 
     def merge_score(self, prev_hyp, step):
         # step has two attributes: token and score
@@ -68,24 +73,24 @@ class Beam(object):
         next_steps: list (#num_hypotheses) of list (#beam_size) of (token, score)
         '''
         # collect the top (#beam_size-len(self.completed_hypotheses)) new candidates
-        candidates = [] # list of triples (prev_hyp_idx, token, score)
+        candidates = []  # list of triples (prev_hyp_idx, token, score)
         for prev_hyp_idx, steps in enumerate(next_steps):
             for step in steps:
                 token = step[0]
                 score = self.merge_score(self.hypotheses[prev_hyp_idx], step)
                 candidates.append((prev_hyp_idx, token, score))
-        
-        candidates.sort(key=lambda x:x[-1], reverse=True)
+
+        candidates.sort(key=lambda x: x[-1], reverse=True)
         live_nyp_num = self.beam_size - len(self.completed_hypotheses)
         candidates = candidates[:live_nyp_num]
-        
+
         # collect new states for selected top candidates  
-        _split_state = dict() # key => list of length live_nyp_num (number of selected top candidates)
-        _prev_hyp_idx = torch.tensor([ x[0] for x in candidates]).cuda()
+        _split_state = dict()  # key => list of length live_nyp_num (number of selected top candidates)
+        _prev_hyp_idx = torch.tensor([x[0] for x in candidates]).cuda()
         for k, v in new_states.items():
             split_dim = 1 if len(v.size()) >= 3 else 0
             _split_state[k] = v.index_select(split_dim, _prev_hyp_idx).split(1, dim=split_dim)
-        
+
         # pack new hypotheses
         new_hyps = []
         for idx, (prev_hyp_idx, token, score) in enumerate(candidates):
@@ -94,7 +99,7 @@ class Beam(object):
                 state[k] = _split_state[k][idx]
             seq = self.hypotheses[prev_hyp_idx].seq + [token]
             new_hyps.append(Hypothesis(state, seq, score))
-        
+
         # send new hypotheses to self.completed_hypotheses or self.hypotheses accordingly
         self.hypotheses = []
         for hyp in new_hyps:
@@ -104,26 +109,27 @@ class Beam(object):
             else:
                 self.hypotheses.append(hyp)
         self.steps += 1
-        #self.print_everything()
+        # self.print_everything()
 
     def completed(self):
         if len(self.completed_hypotheses) < self.beam_size and self.steps < self.max_time_step:
             return False
         return True
-    
+
     def get_k_best(self, k, alpha):
         if len(self.completed_hypotheses) == 0:
             self.completed_hypotheses = self.hypotheses
-        self.completed_hypotheses.sort(key=lambda x:x.score/((1+len(x.seq))**alpha), reverse=True)
+        self.completed_hypotheses.sort(key=lambda x: x.score / ((1 + len(x.seq)) ** alpha), reverse=True)
         return self.completed_hypotheses[:k]
 
     def print_everything(self):
-        print ('alive:')
+        print('alive:')
         for x in self.hypotheses:
-            print (x.seq)
-        print ('completed:')
+            print(x.seq)
+        print('completed:')
         for x in self.completed_hypotheses:
-            print (x.seq)
+            print(x.seq)
+
 
 def search_by_batch(model, beams, mem_dict):
     '''
@@ -138,7 +144,7 @@ def search_by_batch(model, beams, mem_dict):
         output them as one batch
         '''
         inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])
-        concat_hyps= dict()
+        concat_hyps = dict()
         for hyp in hypotheses:
             for k, v in hyp.state_dict.items():
                 concat_hyps[k] = concat_hyps.get(k, []) + [v]
@@ -152,7 +158,7 @@ def search_by_batch(model, beams, mem_dict):
     while True:
         # collect incomplete beams and put all hypotheses together
         hypotheses = []
-        indices = [] #
+        indices = []  #
         offset = -1  # the position of last token
         for idx, beam in enumerate(beams):
             if not beam.completed():
@@ -164,12 +170,12 @@ def search_by_batch(model, beams, mem_dict):
             break
 
         state_dict, inp = ready_to_submit(hypotheses)
-        
+
         # collect mem_dict
         cur_mem_dict = dict()
         indices = torch.tensor(indices).cuda()
         for k, v in mem_dict.items():
-            if isinstance(v, list): 
+            if isinstance(v, list):
                 cur_mem_dict[k] = [v[i] for i in indices]
             else:
                 cur_mem_dict[k] = v.index_select(1, indices)
@@ -178,7 +184,7 @@ def search_by_batch(model, beams, mem_dict):
         # state_dict: for each item in state_dict, it must have the shape of (seq_len x bsz x *) or (bsz x dim)
         # next_steps: list (bsz) of list (#beam_size) of (token, score)
         state_dict, results = model.decode_step(inp, state_dict, cur_mem_dict, offset, beams[0].beam_size)
-        
+
         # dispatch the outcome to each beam
         _len_each_beam = [len(beam.hypotheses) for beam in beams if not beam.completed()]
         _state_dict_each_beam = [dict() for _ in _len_each_beam]
@@ -193,6 +199,6 @@ def search_by_batch(model, beams, mem_dict):
         for beam in beams:
             if not beam.completed():
                 _len = len(beam.hypotheses)
-                beam.update(_state_dict_each_beam[_idx], results[_pos:_pos+_len])
+                beam.update(_state_dict_each_beam[_idx], results[_pos:_pos + _len])
                 _pos += _len
                 _idx += 1

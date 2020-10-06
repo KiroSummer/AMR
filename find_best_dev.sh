@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # postprecessing
-for dev_file in ./ckpt/*.pred; do
+for dev_file in ./ckpt-2.0/*.pred; do
   echo "Postprocessing ${dev_file}"
   bash postprocess_2.0.sh ${dev_file}
 done

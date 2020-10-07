@@ -127,3 +127,8 @@ class AMRGraph(object):
                     edge.append((name2pos[x], name2pos[y], r))  # x -> y: r
             visited.add(x)
         return [self.name2concept[x] for x in queue], edge, not_connected
+
+
+if __name__ == "__main__":
+    string1 = "100000"
+    print(abstract_regexp1.match(string1))

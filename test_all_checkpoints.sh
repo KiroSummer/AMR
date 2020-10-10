@@ -3,7 +3,7 @@
 # postprecessing
 for dev_file in ./kiro-ckpt/epoch*_batch*9; do
   echo "Test on checkpoint ${dev_file}"
-  bash test.sh ${dev_file} $2
+  bash test.sh ${dev_file} $1
 done
 
 # fast compute smatch

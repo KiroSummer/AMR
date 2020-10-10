@@ -31,7 +31,7 @@ class AMRGraph(object):
     def __init__(self, smatch_amr):
         # transform amr from original smatch format into our own data structure
         instance_triple, attribute_triple, relation_triple = smatch_amr.get_triples()
-        self.root = smatch_amr.root
+        self.root = smatch_amr.root  # self.root = root node name @kiro
         self.nodes = set()
         self.edges = dict()
         self.reversed_edges = dict()
@@ -88,7 +88,7 @@ class AMRGraph(object):
         self.undirected_edges[src] = self.undirected_edges.get(src, []) + [(rel, des)]
         self.undirected_edges[des] = self.undirected_edges.get(des, []) + [(rel + '_reverse_', src)]
 
-    def root_centered_sort(self, rel_order=None):
+    def root_centered_sort(self, rel_order=None):  # sort the graph from root @kiro
         queue = [self.root]
         visited = set(queue)
         step = 0
@@ -114,11 +114,11 @@ class AMRGraph(object):
                     visited.add(des)
         not_connected = len(queue) != len(self.nodes)
         assert (not not_connected)
-        name2pos = dict(zip(queue, range(len(queue))))
+        name2pos = dict(zip(queue, range(len(queue))))  # concept name to concept position @kiro
 
         visited = set()
         edge = []
-        for x in queue:
+        for x in queue:  # queue, concept names follows the root centered order @kiro
             if x not in self.undirected_edges:
                 continue
             for r, y in self.undirected_edges[x]:
@@ -130,5 +130,9 @@ class AMRGraph(object):
 
 
 if __name__ == "__main__":
-    string1 = "100000"
+    string0 = "HIGHWAY_01"
+    print(abstract_regexp0.match(string0))
+    string1 = "200000"
     print(abstract_regexp1.match(string1))
+    discard_string = "n10"
+    print(discard_regexp.match(discard_string))

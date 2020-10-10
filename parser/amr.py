@@ -97,7 +97,7 @@ class AMR(object):
         instance_triple = []
         relation_triple = []
         attribute_triple = []
-        for i in range(len(self.nodes)):
+        for i in range(len(self.nodes)):  # self.nodes = node_name_list @kiro
             instance_triple.append(("instance", self.nodes[i], self.node_values[i]))
             # l[0] is relation name
             # l[1] is the other node this node has relation with
@@ -391,7 +391,7 @@ class AMR(object):
             else:
                 # not significant symbols, so we just shift.
                 cur_charseq.append(c)
-        # create data structures to initialize an AMR
+        # create data structures to initialize an AMR, from the two dicts @kiro
         node_value_list = []
         relation_list = []
         attribute_list = []

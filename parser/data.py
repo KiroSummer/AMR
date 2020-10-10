@@ -130,7 +130,7 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
         concept.append(concept_i)
         edge.append(edge_i)
 
-    augmented_concept = [[DUM] + x + [END] for x in concept]
+    augmented_concept = [[DUM] + x + [END] for x in concept]  # for the start and end of the generation process @kiro
 
     _concept_in = ListsToTensor(augmented_concept, vocabs['concept'], unk_rate=unk_rate)[:-1]
     _concept_char_in = ListsofStringToTensor(augmented_concept, vocabs['concept_char'])[:-1]
@@ -195,12 +195,12 @@ class DataLoader(object):
 
         if self.train:
             random.shuffle(idx)
-            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))
+            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))  # fixed idx? @kiro check TODO
 
         batches = []
         num_tokens, data = 0, []
         for i in idx:
-            num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])
+            num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])  # tokens_num = len(toks) + len(concepts)
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
                 sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
@@ -218,7 +218,7 @@ class DataLoader(object):
                 data = data[len(data) // 2:]
             batches.append(data)
 
-        if self.train:
+        if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)
 
         for batch in batches:

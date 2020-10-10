@@ -178,7 +178,7 @@ def main(local_rank, args):
     train_data_generator.start()
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
-    while True:  # no stop! @kiro
+    while True:  # there is no stop! @kiro
         batch = queue.get()
         if isinstance(batch, str):
             epoch += 1

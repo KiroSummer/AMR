@@ -9,7 +9,7 @@
 # postprocessing_2.0
 for test_file in ./kiro-ckpt/epoch*_test*.pred; do
   echo "Postprocessing2.0 ${test_file}"
-  bash postprocessing_2.0.sh ${test_file}
+  bash postprocess_2.0.sh ${test_file}
 done
 
 # fast compute smatch

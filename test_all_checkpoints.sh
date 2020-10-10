@@ -1,9 +1,15 @@
 #!/bin/bash
 
-# postprecessing
-for dev_file in ./kiro-ckpt/epoch*_batch*9; do
-  echo "Test on checkpoint ${dev_file}"
-  bash test.sh ${dev_file} $1
+# Test
+#for dev_file in ./kiro-ckpt/epoch*_batch*9; do
+#  echo "Test on checkpoint ${dev_file}"
+#  bash test.sh ${dev_file} $1
+#done
+
+# postprocessing_2.0
+for test_file in ./kiro-ckpt/epoch*_test*.pred; do
+  echo "Postprocessing2.0 ${test_file}"
+  bash postprocessing_2.0.sh ${test_file}
 done
 
 # fast compute smatch

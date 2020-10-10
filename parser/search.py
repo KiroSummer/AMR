@@ -143,7 +143,7 @@ def search_by_batch(model, beams, mem_dict):
         prepare state_dict and next token,
         output them as one batch
         '''
-        inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])
+        inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])  # input to Tensor
         concat_hyps = dict()
         for hyp in hypotheses:
             for k, v in hyp.state_dict.items():
@@ -160,8 +160,8 @@ def search_by_batch(model, beams, mem_dict):
         hypotheses = []
         indices = []  #
         offset = -1  # the position of last token
-        for idx, beam in enumerate(beams):
-            if not beam.completed():
+        for idx, beam in enumerate(beams):  # a beam corresponding to a sample
+            if not beam.completed():  # if the beam is not complete [EOG]
                 for hyp in beam.hypotheses:
                     hypotheses.append(hyp)
                     indices.append(idx)

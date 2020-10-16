@@ -30,7 +30,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --inference_layers 4\
                 --dropout 0.2\
                 --unk_rate 0.33\
-                --epochs 100000\
+                --epochs 2020\
                 --train_batch_size 4444\
                 --dev_batch_size 4444 \
                 --lr_scale 1. \

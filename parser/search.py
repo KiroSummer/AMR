@@ -143,7 +143,7 @@ def search_by_batch(model, beams, mem_dict):
         prepare state_dict and next token,
         output them as one batch
         '''
-        inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])  # input to Tensor
+        inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])  # input to Tensor, DUM for START
         concat_hyps = dict()
         for hyp in hypotheses:
             for k, v in hyp.state_dict.items():
@@ -159,17 +159,17 @@ def search_by_batch(model, beams, mem_dict):
         # collect incomplete beams and put all hypotheses together
         hypotheses = []
         indices = []  #
-        offset = -1  # the position of last token
-        for idx, beam in enumerate(beams):  # a beam corresponding to a sample
-            if not beam.completed():  # if the beam is not complete [EOG]
+        offset = -1  # the position of last token | @kiro right? offset += , offset = here?
+        for idx, beam in enumerate(beams):  # a beam corresponding to a sample @kiro
+            if not beam.completed():  # if the beam is not complete [EOG] @kiro
                 for hyp in beam.hypotheses:
-                    hypotheses.append(hyp)
+                    hypotheses.append(hyp)  # all the hypotheses in different beams into the same hypotheses? @kiro
                     indices.append(idx)
-                    offset = len(hyp.seq) - 1
+                    offset = len(hyp.seq) - 1  # offset is the last len(hypothesis.seq) - 1?
         if not hypotheses:
             break
 
-        state_dict, inp = ready_to_submit(hypotheses)
+        state_dict, inp = ready_to_submit(hypotheses)  # combine separate hypotheses into a batch for computing @kiro
 
         # collect mem_dict
         cur_mem_dict = dict()

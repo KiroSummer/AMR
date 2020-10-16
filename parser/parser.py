@@ -80,7 +80,7 @@ class Parser(nn.Module):
         word_mask = word_mask[1:]
         return word_repr, word_mask, probe
 
-    def work(self, data, beam_size, max_time_step, min_time_step=1):
+    def work(self, data, beam_size, max_time_step, min_time_step=1):  # beam size == 8
         with torch.no_grad():
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(data['tok'], data['lem'], data['pos'],
@@ -99,7 +99,7 @@ class Parser(nn.Module):
             init_state_dict = {}
             init_hyp = Hypothesis(init_state_dict, [DUM], 0.)
             bsz = word_repr.size(1)
-            beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp]) for i in range(bsz)]
+            beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp]) for i in range(bsz)]  # init beams
             search_by_batch(self, beams, mem_dict)
         return beams
 
@@ -128,10 +128,11 @@ class Parser(nn.Module):
             if name_i in state_dict:
                 prev_concept_repr = state_dict[name_i]
                 new_concept_repr = torch.cat([prev_concept_repr, concept_repr], 0)
-            else:
+            else:  # for start position DUM
                 new_concept_repr = concept_repr
 
             new_state_dict[name_i] = new_concept_repr
+            # concept_repr is current token, new_concept_repr is previous tokens + current token
             concept_repr, _, _ = layer(concept_repr, kv=new_concept_repr, external_memories=word_repr,
                                        external_padding_mask=word_mask)
         name = 'graph_state'
@@ -141,6 +142,7 @@ class Parser(nn.Module):
         else:
             new_graph_state = concept_repr
         new_state_dict[name] = new_graph_state
+        # Transformer decoder, [set_state, graph_state]
         conc_ll, arc_ll, rel_ll = self.decoder(probe, snt_state, new_graph_state, snt_padding_mask, None, None,
                                                copy_seq, work=True)
         for i in range(offset):
@@ -152,6 +154,7 @@ class Parser(nn.Module):
         new_state_dict[name] = arc_ll
         name = 'rel_ll%d' % offset
         new_state_dict[name] = rel_ll
+
         pred_arc_prob = torch.exp(arc_ll)
         arc_confidence = torch.log(torch.max(pred_arc_prob, 1 - pred_arc_prob))
         arc_confidence[:, :, 0] = 0.

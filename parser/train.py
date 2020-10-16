@@ -178,7 +178,8 @@ def main(local_rank, args):
     train_data_generator.start()
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
-    while True:  # there is no stop! @kiro
+    max_training_epochs = int(args.epochs)  # @kiro
+    while epoch < max_training_epochs:  # there is no stop! @kiro
         batch = queue.get()
         if isinstance(batch, str):
             epoch += 1

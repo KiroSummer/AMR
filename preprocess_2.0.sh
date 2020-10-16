@@ -36,7 +36,7 @@ python -u -m stog.data.dataset_readers.amr_parsing.preprocess.sense_remover \
     ${test_data}.input_clean.recategorize
 printf "Done.`date`\n\n"
 
-printf "Dependency parsing...`data`\n"
+printf "Dependency parsing...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.dependency_parsing \
     --util_dir ${util_dir} \
     --amr_files ${train_data}.input_clean.recategorize.nosense \

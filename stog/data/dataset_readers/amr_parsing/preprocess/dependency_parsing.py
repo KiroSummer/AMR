@@ -23,7 +23,7 @@ class DependencyParser:
 
     def parser_sentence(self, amr):
         tokens = amr.tokens
-        result = self.parser.predict([tokens], verbose=False, tree=True)
+        result = self.parser.predict([tokens], verbose=False, tree=True, proj=True)
         amr.dependency_edges = result.arcs[0]
 
 

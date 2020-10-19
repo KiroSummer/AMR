@@ -53,8 +53,7 @@ class Parser(nn.Module):
         nn.init.normal_(self.probe_generator.weight, std=0.02)
         nn.init.constant_(self.probe_generator.bias, 0.)
 
-    @staticmethod
-    def generate_adj(edges):  # add by kiro
+    def generate_adj(self, edges):  # add by kiro
         """
         edges: [batch_size, max_word_num]
         """
@@ -62,11 +61,11 @@ class Parser(nn.Module):
         edge_shape = edges.size()
         print("0", edge_shape)
         mask = ((edges > -1) == False).unsqueeze(-1)
-        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(Parser.device)  # init adj
+        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(self.device)  # init adj
         edges[edges == -1] = 0
         print("1")
         print(edges.type(), adj.type())
-        edges = edges.unsqueeze(-1).type(torch.LongTensor).to(Parser.device)
+        edges = edges.unsqueeze(-1).type(torch.LongTensor).to(self.device)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
         adj.transpose_(1, 2)
@@ -86,7 +85,7 @@ class Parser(nn.Module):
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = Parser.generate_adj(edge)
+            adj, self_adj, undir_adj = self.generate_adj(edge)
             assert undir_adj.size() == word_mask.size()
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj)
         else:
@@ -109,7 +108,7 @@ class Parser(nn.Module):
         print(use_adj, word_mask.size())
         if use_adj is True:
             print("adj processing")
-            adj, self_adj, undir_adj = Parser.generate_adj(edge)
+            adj, self_adj, undir_adj = self.generate_adj(edge)
             print(undir_adj.size(), word_mask.size())
             assert undir_adj.size() == word_mask.size()
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj)

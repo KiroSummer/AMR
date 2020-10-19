@@ -66,7 +66,7 @@ class Parser(nn.Module):
         edges = edges.unsqueeze(-1).type(torch.LongTensor).to(self.device)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
-        adj.transpose_(1, 2)
+        # adj.transpose_(1, 2)
         # adj = adj.flip(1)  # flip according to dim 1
         # add diagonal
         dia = torch.ones(edge_shape, dtype=torch.int).to(self.device)
@@ -274,7 +274,7 @@ if __name__ == "__main__":
         edges = edges.unsqueeze(-1).type(torch.LongTensor)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
-        adj.transpose_(1, 2)
+        # adj.transpose_(1, 2)
         # adj = adj.flip(1)  # flip according to dim 1
         # add diagonal
         dia = torch.ones(edge_shape, dtype=torch.int)

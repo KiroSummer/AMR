@@ -103,6 +103,7 @@ class Parser(nn.Module):
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
             adj, self_adj, undir_adj = Parser.generate_adj(edge)
+            print(undir_adj.size(), word_mask.size())
             assert undir_adj.size() == word_mask.size()
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj)
         else:
@@ -118,11 +119,11 @@ class Parser(nn.Module):
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
                     data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['word_char'],
-                    data['bert_token'], data['token_subword_index'])
+                    data['bert_token'], data['token_subword_index'], use_adj=True)
             else:
                 word_repr, word_mask, probe = self.encode_step(
                     data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                    data['word_char']
+                    data['word_char'], use_adj=True
                 )
 
             mem_dict = {'snt_state': word_repr,
@@ -218,12 +219,12 @@ class Parser(nn.Module):
             word_repr, word_mask, probe = self.encode_step_with_bert(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
                 data['word_char'], data['bert_token'],
-                data['token_subword_index']
+                data['token_subword_index'], use_adj=True
             )
         else:
             word_repr, word_mask, probe = self.encode_step(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                data['word_char']
+                data['word_char'], use_adj=True
             )
         concept_repr = self.embed_scale * self.concept_encoder(data['concept_char_in'],
                                                                data['concept_in']) + self.embed_positions(

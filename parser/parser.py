@@ -101,10 +101,7 @@ class Parser(nn.Module):
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         print(use_adj, word_mask.size())
         if use_adj is True:
-            print("adj processing")
             adj, self_adj, undir_adj = self.generate_adj(edge)
-            print(undir_adj.size(), word_mask.size())
-            assert undir_adj.size() == word_mask.size()
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, self_attn_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)

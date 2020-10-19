@@ -62,10 +62,11 @@ class Parser(nn.Module):
         edge_shape = edges.size()
         print("0", edge_shape)
         mask = ((edges > -1) == False).unsqueeze(-1)
-        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int)  # init adj
+        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(Parser.device)  # init adj
         edges[edges == -1] = 0
         print("1")
-        edges = edges.unsqueeze(-1).type(torch.LongTensor)
+        print(edges.type(), adj.type())
+        edges = edges.unsqueeze(-1).type(torch.LongTensor).to(Parser.device)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
         adj.transpose_(1, 2)

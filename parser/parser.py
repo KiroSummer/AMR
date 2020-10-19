@@ -74,6 +74,7 @@ class Parser(nn.Module):
         self_adj = adj | dia
         # undirectional adj
         undir_adj = adj.transpose(1, 2).flip(2).flip(1) | self_adj
+        undir_adj = undir_adj.type(torch.bool).to(self.device)
         return adj, self_adj, undir_adj
 
     def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):

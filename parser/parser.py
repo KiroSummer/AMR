@@ -99,7 +99,7 @@ class Parser(nn.Module):
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
-        print(use_adj, word_mask.size())
+        print(word_mask.size(), word_repr.size())
         if use_adj is True:
             adj, self_adj, undir_adj = self.generate_adj(edge)
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, self_attn_mask=undir_adj)

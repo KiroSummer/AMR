@@ -38,7 +38,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --print_every 100 \
                 --eval_every 1000 \
                 --batches_per_update 4 \
-                --ckpt ckpt\
+                --ckpt graph-ckpt\
                 --world_size 2\
                 --gpus 2\
                 --MASTER_ADDR localhost\

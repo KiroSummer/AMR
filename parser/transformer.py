@@ -68,10 +68,10 @@ class TransformerLayer(nn.Module):
         residual = x
         if kv is None:
             x, self_attn = self.self_attn(query=x, key=x, value=x, key_padding_mask=self_padding_mask,
-                                          attn_mask=self_attn_mask, adj_mask=None, need_weights=need_weights)
+                                          attn_mask=self_attn_mask, adj_mask=adj_mask, need_weights=need_weights)
         else:
             x, self_attn = self.self_attn(query=x, key=kv, value=kv, key_padding_mask=self_padding_mask,
-                                          attn_mask=self_attn_mask, adj_mask=None, need_weights=need_weights)
+                                          attn_mask=self_attn_mask, adj_mask=adj_mask, need_weights=need_weights)
 
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.attn_layer_norm(residual + x)

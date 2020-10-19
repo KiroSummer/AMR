@@ -31,12 +31,14 @@ class AMRIO:
                     pos_tags = json.loads(line[len('# ::pos_tags '):])
                 elif line.startswith('# ::ner_tags '):
                     ner_tags = json.loads(line[len('# ::ner_tags '):])
+                elif line.startswith('# ::dependency_edges '):
+                    dependency_edges = json.loads(line[len('# ::dependency_edges '):])
                 elif line.startswith('# ::abstract_map '):
                     abstract_map = json.loads(line[len('# ::abstract_map '):])
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
-                    yield tokens, lemmas, pos_tags, ner_tags, myamr
+                    yield tokens, lemmas, pos_tags, ner_tags, dependency_edges, myamr
 
 
 class LexicalMap(object):
@@ -71,15 +73,16 @@ class LexicalMap(object):
 
 def read_file(filename):
     # read preprocessed amr file
-    token, lemma, pos, ner, amrs = [], [], [], [], []
-    for _tok, _lem, _pos, _ner, _myamr in AMRIO.read(filename):
+    token, lemma, pos, ner, edges, amrs = [], [], [], [], [], []
+    for _tok, _lem, _pos, _ner, _edges, _myamr in AMRIO.read(filename):
         token.append(_tok)
         lemma.append(_lem)
         pos.append(_pos)
         ner.append(_ner)
+        edges.append(_edges)
         amrs.append(_myamr)
     print('read from %s, %d amrs' % (filename, len(token)))
-    return amrs, token, lemma, pos, ner
+    return amrs, token, lemma, pos, ner, edges
 
 
 def make_vocab(batch_seq, char_level=False):

@@ -156,7 +156,7 @@ class MultiheadAttention(nn.Module):
 
         if adj_mask is not None:
             attn_weights.masked_fill_(
-                adj_mask,
+                adj_mask == False,
                 float('-inf')
             )
 

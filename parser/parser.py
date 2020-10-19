@@ -39,6 +39,7 @@ class Parser(nn.Module):
         self.word_embed_layer_norm = nn.LayerNorm(embed_dim)
         self.concept_embed_layer_norm = nn.LayerNorm(embed_dim)
         self.self_attn_mask = SelfAttentionMask(device=device)
+        self.num_heads = num_heads
         self.decoder = DecodeLayer(vocabs, inference_layers, embed_dim, ff_embed_dim, num_heads, concept_dim, rel_dim,
                                    dropout)
         self.dropout = dropout
@@ -99,9 +100,9 @@ class Parser(nn.Module):
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
-        print(word_mask.size(), word_repr.size())
         if use_adj is True:
             adj, self_adj, undir_adj = self.generate_adj(edge)
+            undir_adj = undir_adj.repeat_interleave(self.num_heads, dim=0)
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, self_attn_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)

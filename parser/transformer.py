@@ -140,12 +140,11 @@ class MultiheadAttention(nn.Module):
             k = self.in_proj_k(key)
             v = self.in_proj_v(value)
         q *= self.scaling
-        print("query size", query.size(), q.size())
 
+        # q: [tgt_len, bsz, self.num_heads * self.head_dim] -> [tgt_len, bsz * self.num_heads, self.head_dim]
         q = q.contiguous().view(tgt_len, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         k = k.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         v = v.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
-        print("query size", query.size(), q.size())
 
         src_len = k.size(1)
         # k,v: bsz*heads x src_len x dim

@@ -155,12 +155,10 @@ class MultiheadAttention(nn.Module):
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
         if adj_mask is not None:
-            print(attn_weights.size(), adj_mask.size())
             attn_weights.masked_fill_(
                 adj_mask,
                 float('-inf')
             )
-            exit()
 
         if attn_mask is not None:
             attn_weights.masked_fill_(

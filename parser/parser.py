@@ -67,13 +67,13 @@ class Parser(nn.Module):
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
         adj.transpose_(1, 2)
-        adj = adj.flip(1)  # flip according to dim 1
+        # adj = adj.flip(1)  # flip according to dim 1
         # add diagonal
         dia = torch.ones(edge_shape, dtype=torch.int).to(self.device)
-        dia = torch.diag_embed(dia).flip(1)
+        dia = torch.diag_embed(dia)  # .flip(1)
         self_adj = adj | dia
-        # undirectional adj
-        undir_adj = adj.transpose(1, 2).flip(2).flip(1) | self_adj
+        # un-directional adj
+        undir_adj = adj.transpose(1, 2).flip(2) | self_adj
         undir_adj = undir_adj.type(torch.bool).to(self.device)
         return adj, self_adj, undir_adj
 

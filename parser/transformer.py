@@ -126,7 +126,6 @@ class MultiheadAttention(nn.Module):
         kv_same = key.data_ptr() == value.data_ptr()
 
         tgt_len, bsz, embed_dim = query.size()
-        print("query size", query.size())
         assert key.size() == value.size()
 
         if qkv_same:
@@ -141,10 +140,12 @@ class MultiheadAttention(nn.Module):
             k = self.in_proj_k(key)
             v = self.in_proj_v(value)
         q *= self.scaling
+        print("query size", query.size(), q.size())
 
         q = q.contiguous().view(tgt_len, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         k = k.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
         v = v.contiguous().view(-1, bsz * self.num_heads, self.head_dim).transpose(0, 1)
+        print("query size", query.size(), q.size())
 
         src_len = k.size(1)
         # k,v: bsz*heads x src_len x dim
@@ -154,7 +155,7 @@ class MultiheadAttention(nn.Module):
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
         if attn_mask is not None:
-            print(q.size(), attn_weights.size(), attn_mask.size())
+            print(attn_weights.size(), attn_mask.size())
             attn_weights.masked_fill_(
                 attn_mask.unsqueeze(0),
                 float('-inf')

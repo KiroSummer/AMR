@@ -60,10 +60,12 @@ class Parser(nn.Module):
         """
         edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
         edge_shape = edges.size()
+        print("0", edge_shape)
         mask = ((edges > -1) == False).unsqueeze(-1)
         adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int)  # init adj
         edges[edges == -1] = 0
-        edges = edges.unsqueeze(-1).type(torch.cuda.LongTensor)
+        print("1")
+        edges = edges.unsqueeze(-1).type(torch.LongTensor)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
         adj.transpose_(1, 2)

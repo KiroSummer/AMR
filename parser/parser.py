@@ -80,9 +80,8 @@ class Parser(nn.Module):
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = self.generate_adj(edge)
-            assert undir_adj.size() == word_mask.size()
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj)
+            adj, self_adj, undir_adj = self.generate_adj(edge)  # adj is [batch_size, max_word_num, max_word_num]
+            word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj, self_attn_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
 
@@ -106,7 +105,7 @@ class Parser(nn.Module):
             adj, self_adj, undir_adj = self.generate_adj(edge)
             print(undir_adj.size(), word_mask.size())
             assert undir_adj.size() == word_mask.size()
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj)
+            word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, self_attn_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
 

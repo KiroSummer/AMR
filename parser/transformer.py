@@ -153,10 +153,12 @@ class MultiheadAttention(nn.Module):
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
         if attn_mask is not None:
+            print(q.size(), attn_weights.size(), attn_mask.size())
             attn_weights.masked_fill_(
                 attn_mask.unsqueeze(0),
                 float('-inf')
             )
+            exit()
 
         if key_padding_mask is not None:
             # don't attend to padding symbols

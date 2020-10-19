@@ -11,7 +11,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --train_data ${dataset}/train.txt.features.preproc \
                 --dev_data ${dataset}/dev.txt.features.preproc  \
                 --with_bert \
-                --bert_path ../bert-base-cased \
+                --bert_path bert-base-cased \
                 --word_char_dim 32\
                 --word_dim 300\
                 --pos_dim 32\

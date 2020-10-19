@@ -73,7 +73,7 @@ class Parser(nn.Module):
         dia = torch.diag_embed(dia)  # .flip(1)
         self_adj = adj | dia
         # un-directional adj
-        undir_adj = adj.transpose(1, 2).flip(2) | self_adj
+        undir_adj = adj.transpose(1, 2) | self_adj
         undir_adj = undir_adj.type(torch.bool).to(self.device)
         return adj, self_adj, undir_adj
 
@@ -262,9 +262,31 @@ class Parser(nn.Module):
 
 
 if __name__ == "__main__":
+    def generate_adj(edges):  # add by kiro
+        """
+        edges: [batch_size, max_word_num]
+        """
+        edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
+        edge_shape = edges.size()
+        mask = ((edges > -1) == False).unsqueeze(-1)
+        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int)  # init adj
+        edges[edges == -1] = 0
+        edges = edges.unsqueeze(-1).type(torch.LongTensor)
+        adj.scatter_(2, edges, 1)
+        adj.masked_fill_(mask, 0)
+        adj.transpose_(1, 2)
+        # adj = adj.flip(1)  # flip according to dim 1
+        # add diagonal
+        dia = torch.ones(edge_shape, dtype=torch.int)
+        dia = torch.diag_embed(dia)  # .flip(1)
+        self_adj = adj | dia
+        # un-directional adj
+        undir_adj = adj.transpose(1, 2) | self_adj
+        return adj, self_adj, undir_adj
+
     edges = [[2, 0, 4, 2, 4], [2, 3, 0, 3, -1]]
     edges = torch.IntTensor(edges)
-    adj, self_adj, undir_adj = Parser.generate_adj(edges)
+    adj, self_adj, undir_adj = generate_adj(edges)
     print(adj)
     print(self_adj)
     print(undir_adj)

@@ -161,10 +161,12 @@ class MultiheadAttention(nn.Module):
             )
 
         if attn_mask is not None:
+            print(attn_mask)
             attn_weights.masked_fill_(
                 attn_mask.unsqueeze(0),
                 float('-inf')
             )
+            exit()
 
         if key_padding_mask is not None:
             # don't attend to padding symbols

@@ -93,6 +93,7 @@ class ConceptGenerator(nn.Module):
 
         probs = gen_gate * F.softmax(self.generator(outs_concept), -1)
 
+        print(copy_seq)
         tot_ext = 1 + copy_seq.max().item()
         vocab_size = probs.size(-1)
 

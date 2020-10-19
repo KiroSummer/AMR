@@ -30,10 +30,11 @@ class Transformer(nn.Module):
                 TransformerLayer(embed_dim, ff_embed_dim, num_heads, dropout, with_external, weights_dropout))
 
     def forward(self, x, kv=None,
-                self_padding_mask=None, self_attn_mask=None,
+                self_padding_mask=None, self_attn_mask=None, adj_mask=None,
                 external_memories=None, external_padding_mask=None):
         for idx, layer in enumerate(self.layers):
-            x, _, _ = layer(x, kv, self_padding_mask, self_attn_mask, external_memories, external_padding_mask)
+            x, _, _ = layer(x, kv, self_padding_mask, self_attn_mask, adj_mask,
+                            external_memories, external_padding_mask)
         return x
 
 
@@ -60,17 +61,17 @@ class TransformerLayer(nn.Module):
         nn.init.constant_(self.fc2.bias, 0.)
 
     def forward(self, x, kv=None,
-                self_padding_mask=None, self_attn_mask=None,
+                self_padding_mask=None, self_attn_mask=None, adj_mask=None,
                 external_memories=None, external_padding_mask=None,
                 need_weights=None):
         # x: seq_len x bsz x embed_dim
         residual = x
         if kv is None:
             x, self_attn = self.self_attn(query=x, key=x, value=x, key_padding_mask=self_padding_mask,
-                                          attn_mask=self_attn_mask, need_weights=need_weights)
+                                          attn_mask=self_attn_mask, adj_mask=None, need_weights=need_weights)
         else:
             x, self_attn = self.self_attn(query=x, key=kv, value=kv, key_padding_mask=self_padding_mask,
-                                          attn_mask=self_attn_mask, need_weights=need_weights)
+                                          attn_mask=self_attn_mask, adj_mask=None, need_weights=need_weights)
 
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.attn_layer_norm(residual + x)
@@ -117,7 +118,7 @@ class MultiheadAttention(nn.Module):
         nn.init.constant_(self.in_proj_bias, 0.)
         nn.init.constant_(self.out_proj.bias, 0.)
 
-    def forward(self, query, key, value, key_padding_mask=None, attn_mask=None, need_weights=None):
+    def forward(self, query, key, value, key_padding_mask=None, adj_mask=None, attn_mask=None, need_weights=None):
         """ Input shape: Time x Batch x Channel
             key_padding_mask: Time x batch
             attn_mask:  tgt_len x src_len
@@ -153,13 +154,19 @@ class MultiheadAttention(nn.Module):
         attn_weights = torch.bmm(q, k.transpose(1, 2))
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
-        if attn_mask is not None:
+        if adj_mask is not None:
             print(attn_weights.size(), attn_mask.size())
+            attn_weights.masked_fill_(
+                adj_mask,
+                float('-inf')
+            )
+            exit()
+
+        if attn_mask is not None:
             attn_weights.masked_fill_(
                 attn_mask.unsqueeze(0),
                 float('-inf')
             )
-            exit()
 
         if key_padding_mask is not None:
             # don't attend to padding symbols

@@ -58,6 +58,7 @@ class Parser(nn.Module):
         """
         edges: [batch_size, max_word_num]
         """
+        print(edges.size(), edges)
         edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
         edge_shape = edges.size()
         mask = ((edges > -1) == False).unsqueeze(-1)
@@ -103,6 +104,7 @@ class Parser(nn.Module):
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         print(use_adj, word_mask.size())
         if use_adj is True:
+            print("adj processing")
             adj, self_adj, undir_adj = Parser.generate_adj(edge)
             print(undir_adj.size(), word_mask.size())
             assert undir_adj.size() == word_mask.size()

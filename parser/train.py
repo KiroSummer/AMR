@@ -179,6 +179,7 @@ def main(local_rank, args):
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
+    print("Start training...")
     while epoch < max_training_epochs:  # there is no stop! @kiro
         batch = queue.get()
         if isinstance(batch, str):
@@ -223,6 +224,7 @@ def main(local_rank, args):
                                 'optimizer': optimizer.state_dict()},
                                '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm))
                     model.train()
+    print("Training process is done.")  # @kiro
 
 
 def init_processes(local_rank, args, backend='nccl'):

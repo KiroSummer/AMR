@@ -59,25 +59,20 @@ class Parser(nn.Module):
         """
         edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
         edge_shape = edges.size()
-        print("0", edge_shape)
         mask = ((edges > -1) == False).unsqueeze(-1)
         adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(self.device)  # init adj
         edges[edges == -1] = 0
-        print("1")
-        print(edges.type(), adj.type())
         edges = edges.unsqueeze(-1).type(torch.LongTensor).to(self.device)
         adj.scatter_(2, edges, 1)
         adj.masked_fill_(mask, 0)
         adj.transpose_(1, 2)
         adj = adj.flip(1)  # flip according to dim 1
-        print("adj", adj)
         # add diagonal
-        dia = torch.ones(edge_shape, dtype=torch.int)
+        dia = torch.ones(edge_shape, dtype=torch.int).to(self.device)
         dia = torch.diag_embed(dia).flip(1)
         self_adj = adj | dia
         # undirectional adj
         undir_adj = adj.transpose(1, 2).flip(2).flip(1) | self_adj
-        print("undir_adj", undir_adj)
         return adj, self_adj, undir_adj
 
     def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):

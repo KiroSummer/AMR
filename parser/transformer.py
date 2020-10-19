@@ -126,6 +126,7 @@ class MultiheadAttention(nn.Module):
         kv_same = key.data_ptr() == value.data_ptr()
 
         tgt_len, bsz, embed_dim = query.size()
+        print("query size", query.size())
         assert key.size() == value.size()
 
         if qkv_same:

@@ -154,11 +154,11 @@ class MultiheadAttention(nn.Module):
         attn_weights = torch.bmm(q, k.transpose(1, 2))
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
-        if adj_mask is not None:
-            attn_weights.masked_fill_(
-                adj_mask == False,
-                float('-inf')
-            )
+        # if adj_mask is not None:
+        #     attn_weights.masked_fill_(
+        #         adj_mask == False,
+        #         float('-inf')
+        #     )
 
         if attn_mask is not None:
             attn_weights.masked_fill_(

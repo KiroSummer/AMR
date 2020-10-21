@@ -15,7 +15,7 @@ from parser.AMRGraph import is_attr_or_abs_form
 ##rewrite##
 ###########
 class Hypothesis(object):
-    def __init__(self, state_dict, seq, score):
+    def __init__(self, state_dict, seq, score, device=None):
         '''
         state_dict: hidden states of the last step (has not yet consider seq[-1])
             for each item in state_dict, it must have shape of (seq_len x bsz x *) or (bsz x dim)
@@ -25,6 +25,9 @@ class Hypothesis(object):
         self.state_dict = state_dict
         self.seq = seq
         self.score = score
+        self.graph_adj = torch.ones([1, 1], dtype=torch.bool)
+        if device is not None:
+            self.graph_adj = self.graph_adj.to(device)
 
     def is_completed(self):
         ###########
@@ -144,6 +147,7 @@ def search_by_batch(model, beams, mem_dict):
         output them as one batch
         '''
         inp = model.prepare_incremental_input([hyp.seq[-1:] for hyp in hypotheses])  # input to Tensor, DUM for START
+        adj = model.prepare_incremental_graph_adj([hyp.graph_adj for hyp in hypotheses])
         concat_hyps = dict()
         for hyp in hypotheses:
             for k, v in hyp.state_dict.items():

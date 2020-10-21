@@ -226,9 +226,11 @@ class DecodeLayer(nn.Module):
 
         arc_losses, concept_losses, rel_losses = [], [], []
         for i in range(self.inference_layers):
-            arc_loss, outs = self.arc_generator(outs, graph_state, graph_padding_mask, attn_mask, target_rel=target_rel,
+            arc_loss, outs = self.arc_generator(outs, graph_state, graph_padding_mask, attn_mask,
+                                                target_rel=target_rel,
                                                 work=False)
-            concept_loss, outs = self.concept_generator(outs, snt_state, snt_padding_mask, copy_seq, target=target,
+            concept_loss, outs = self.concept_generator(outs, snt_state, snt_padding_mask, copy_seq,
+                                                        target=target,
                                                         work=False)
             arc_losses.append(arc_loss)
             concept_losses.append(concept_loss)

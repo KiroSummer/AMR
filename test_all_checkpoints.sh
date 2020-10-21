@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Test
-#for dev_file in ./kiro-ckpt/epoch*_batch*9; do
-#  echo "Test on checkpoint ${dev_file}"
-#  bash test.sh ${dev_file} $1
-#done
+for test_file in ./graph-ckpt/epoch*_batch*9; do
+  echo "Test on checkpoint ${test_file}"
+  bash test.sh ${test_file} $1
+done
 
 # postprocessing_2.0
 for test_file in ./kiro-ckpt/epoch*_test*.pred; do

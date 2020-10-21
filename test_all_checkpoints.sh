@@ -7,7 +7,7 @@ for test_file in ./graph-ckpt/epoch*_batch*9; do
 done
 
 # postprocessing_2.0
-for test_file in ./kiro-ckpt/epoch*_test*.pred; do
+for test_file in ./graph-ckpt/epoch*_test*.pred; do
   echo "Postprocessing2.0 ${test_file}"
   bash postprocess_2.0.sh ${test_file}
 done

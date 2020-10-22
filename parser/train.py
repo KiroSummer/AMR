@@ -129,6 +129,7 @@ def main(local_rank, args):
     torch.manual_seed(19940117)
     torch.cuda.manual_seed_all(19940117)
     random.seed(19940117)
+    torch.set_num_threads(4)
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
 

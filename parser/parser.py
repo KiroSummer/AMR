@@ -9,7 +9,7 @@ from parser.decoder import DecodeLayer
 from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfAttentionMask
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
-from parser.utils import move_to_device
+from parser.utils import move_to_device, generate_adj
 
 
 class Parser(nn.Module):
@@ -54,46 +54,12 @@ class Parser(nn.Module):
         nn.init.normal_(self.probe_generator.weight, std=0.02)
         nn.init.constant_(self.probe_generator.bias, 0.)
 
-    def generate_self_adj(self, adj):  # add by kiro
-        bsz, node_num = adj.size(0), adj.size(1)
-        dia = torch.ones((bsz, node_num), dtype=torch.int).to(self.device)
-        dia = torch.diag_embed(dia)  # .flip(1)
-        self_adj = adj | dia
-        return self_adj
-
-    def generate_undirectional_adj(self, adj, self_adj=None):
-        if self_adj is None:
-            self_adj = self.generate_self_adj(adj)
-        undir_adj = adj.transpose(1, 2) | self_adj
-        undir_adj = undir_adj.type(torch.bool).to(self.device)
-        return undir_adj
-
-    def generate_adj(self, edges):  # add by kiro
-        """
-        edges: [batch_size, max_word_num]
-        """
-        edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
-        edge_shape = edges.size()
-        mask = ((edges > -1) == False).unsqueeze(-1)
-        adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(self.device)  # init adj
-        edges[edges == -1] = 0
-        edges = edges.unsqueeze(-1).type(torch.LongTensor).to(self.device)
-        adj.scatter_(2, edges, 1)
-        adj.masked_fill_(mask, 0)
-        # adj.transpose_(1, 2)
-        # adj = adj.flip(1)  # flip according to dim 1
-        # add diagonal
-        self_adj = self.generate_self_adj(adj)
-        # un-directional adj
-        undir_adj = self.generate_undirectional_adj(adj, self_adj)
-        return adj, self_adj, undir_adj
-
     def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):
         word_repr = self.embed_scale * self.word_encoder(word_char, tok, lem, pos, ner) + self.embed_positions(tok)
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = self.generate_adj(edge)  # adj is [batch_size, max_word_num, max_word_num]
+            adj, self_adj, undir_adj = generate_adj(edge, self.device)  # adj is [batch_size, max_word_num, max_word_num]
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj, adj_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
@@ -113,7 +79,7 @@ class Parser(nn.Module):
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = self.generate_adj(edge)
+            adj, self_adj, undir_adj = generate_adj(edge, self.device)
             undir_adj = undir_adj.repeat_interleave(self.num_heads, dim=0)
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
@@ -145,7 +111,7 @@ class Parser(nn.Module):
             init_state_dict = {}
             init_hyp = Hypothesis(init_state_dict, [DUM], 0., device=self.device)
             bsz = word_repr.size(1)
-            beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp])for i in range(bsz)]  # init beams
+            beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp]) for i in range(bsz)]  # init beams
             search_by_batch(self, beams, mem_dict)
         return beams
 
@@ -173,7 +139,7 @@ class Parser(nn.Module):
         concept_repr = self.embed_scale * self.concept_encoder(step_concept_char, step_concept) + self.embed_positions(
             step_concept, offset)
         concept_repr = self.concept_embed_layer_norm(concept_repr)
-        for idx, layer in enumerate(self.graph_encoder.layers):
+        for idx, layer in enumerate(self.graph_encoder.layers):  # only for encoding concepts @kiro
             name_i = 'concept_repr_%d' % idx
             if name_i in state_dict:
                 prev_concept_repr = state_dict[name_i]
@@ -207,7 +173,7 @@ class Parser(nn.Module):
         new_state_dict[name] = rel_ll
 
         pred_arc_prob = torch.exp(arc_ll)
-        arc_confidence = torch.log(torch.max(pred_arc_prob, 1 - pred_arc_prob))
+        arc_confidence = torch.log(torch.max(pred_arc_prob, 1 - pred_arc_prob))  # what is this? @kiro
         arc_confidence[:, :, 0] = 0.
         # pred_arc = torch.lt(pred_arc_prob, 0.5)
         # pred_arc[:,:,0] = 1
@@ -221,7 +187,7 @@ class Parser(nn.Module):
 
         topk_scores, topk_token = torch.topk(LL.squeeze(0), topk, 1)  # bsz x k  # return values, indices @kiro
 
-        results = []
+        results = []  # results only contains the concepts, no edges. @kiro
         for s, t, local_vocab in zip(topk_scores.tolist(), topk_token.tolist(), local_vocabs):
             res = []
             for score, token in zip(s, t):
@@ -253,15 +219,14 @@ class Parser(nn.Module):
         graph_target_rel = data['rel'][:-1]
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
-        graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
-        graph_arc = self.generate_undirectional_adj(graph_arc)
+        # graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
+        # graph_arc = self.generate_undirectional_adj(graph_arc)
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)
         for idx, layer in enumerate(self.graph_encoder.layers):
             concept_repr, arc_weight, _ = layer(concept_repr,
                                                 self_padding_mask=concept_mask, self_attn_mask=attn_mask,
-                                                adj_mask=graph_arc,
                                                 external_memories=word_repr, external_padding_mask=word_mask,
                                                 need_weights='max')
         graph_arc_loss = F.binary_cross_entropy(arc_weight, graph_target_arc.float(), reduction='none')
@@ -269,7 +234,7 @@ class Parser(nn.Module):
 
         probe = probe.expand_as(concept_repr)  # tgt_len x bsz x embed_dim
         concept_loss, arc_loss, rel_loss = self.decoder(probe, word_repr, concept_repr, word_mask, concept_mask,
-                                                        attn_mask, graph_arc,
+                                                        attn_mask,
                                                         data['copy_seq'], target=data['concept_out'],
                                                         target_rel=data['rel'][1:])
 

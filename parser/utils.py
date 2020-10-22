@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch import nn
 import numpy as np
 import math
@@ -48,6 +49,43 @@ def compute_f_by_tensor(input, target, mask):
     R = tp / (tp + fn)
     F = 2 * P * R / (P + R)
     return P, R, F
+
+
+def generate_self_adj(adj, device=None):  # add by kiro
+    bsz, node_num = adj.size(0), adj.size(1)
+    dia = torch.ones((bsz, node_num), dtype=torch.int).to(device)
+    dia = torch.diag_embed(dia)  # .flip(1)
+    self_adj = adj | dia
+    return self_adj
+
+
+def generate_undirectional_adj(adj, self_adj=None, device=None):
+    if self_adj is None:
+        self_adj = generate_self_adj(adj, device)
+    undir_adj = adj.transpose(1, 2) | self_adj
+    undir_adj = undir_adj.type(torch.bool).to(device)
+    return undir_adj
+
+
+def generate_adj(edges, device=None):  # add by kiro
+    """
+    edges: [batch_size, max_word_num]
+    """
+    edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
+    edge_shape = edges.size()
+    mask = ((edges > -1) == False).unsqueeze(-1)
+    adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.int).to(device)  # init adj
+    edges[edges == -1] = 0
+    edges = edges.unsqueeze(-1).type(torch.LongTensor).to(device)
+    adj.scatter_(2, edges, 1)
+    adj.masked_fill_(mask, 0)
+    # adj.transpose_(1, 2)
+    # adj = adj.flip(1)  # flip according to dim 1
+    # add diagonal
+    self_adj = generate_self_adj(adj, device)
+    # un-directional adj
+    undir_adj = generate_undirectional_adj(adj, self_adj, device)
+    return adj, self_adj, undir_adj
 
 
 def gelu_fast(x):

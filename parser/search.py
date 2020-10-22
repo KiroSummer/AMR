@@ -1,6 +1,7 @@
 import torch
 from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
+from parser.utils import generate_undirectional_adj
 
 """
  Beam search by batch
@@ -26,8 +27,19 @@ class Hypothesis(object):
         self.seq = seq
         self.score = score
         self.graph_adj = torch.ones([1, 1], dtype=torch.bool)
+        self.device = device
         if device is not None:
-            self.graph_adj = self.graph_adj.to(device)
+            self.graph_adj = self.graph_adj.to(self.device)
+
+    def update_adj(self, atten_mask=None):  # add by kiro
+        offset = len(self.seq) - 1
+        name = 'arc_ll%d' % offset
+        arc_ll = self.state_dict[name]
+        pred_arc_prob = torch.exp(arc_ll)
+        pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
+        undir_adj = generate_undirectional_adj(pred, device=self.device)
+        if atten_mask is not None:
+            self.graph_adj = atten_mask * undir_adj
 
     def is_completed(self):
         ###########
@@ -169,8 +181,8 @@ def search_by_batch(model, beams, mem_dict):
                 for hyp in beam.hypotheses:
                     hypotheses.append(hyp)  # all the hypotheses in different beams into the same hypotheses? @kiro
                     indices.append(idx)
-                    offset = len(hyp.seq) - 1  # offset is the last len(hypothesis.seq) - 1?
-        if not hypotheses:
+                    offset = len(hyp.seq) - 1  # offset is the last/0/1 len(hypothesis.seq) - 1? (same) @kiro
+        if not hypotheses:  # if there is no hypotheses in the beams, break
             break
 
         state_dict, inp = ready_to_submit(hypotheses)  # combine separate hypotheses into a batch for computing @kiro

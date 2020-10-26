@@ -59,14 +59,19 @@ def generate_self_adj(adj, device=None):  # add by kiro
     return self_adj
 
 
+def repreat_matrix(adj, num_heads=8):
+    # repeat
+    max_word_num = adj.size(-1)
+    adj = adj.repeat_interleave(int(num_heads / 2), dim=0)
+    adj = torch.stack((adj, torch.ones_like(adj)), dim=1).view(-1, max_word_num, max_word_num)
+    return adj
+
+
 def generate_undirectional_adj(adj, num_heads=8, self_adj=None, device=None):
     if self_adj is None:
         self_adj = generate_self_adj(adj, device)
     undir_adj = adj.transpose(1, 2) | self_adj
-    # repeat
-    max_word_num = undir_adj.size(-1)
-    undir_adj = undir_adj.repeat_interleave(int(num_heads / 2), dim=0)
-    undir_adj = torch.stack((undir_adj, torch.ones_like(undir_adj)), dim=1).view(-1, max_word_num, max_word_num)
+    undir_adj = repreat_matrix(undir_adj, num_heads=num_heads)
     return undir_adj
 
 

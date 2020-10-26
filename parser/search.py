@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
-from parser.utils import generate_undirectional_adj
+from parser.utils import repreat_matrix
 
 """
  Beam search by batch
@@ -41,9 +41,9 @@ class Hypothesis(object):
         arc_ll = self.state_dict[name]
         pred_arc_prob = torch.exp(arc_ll)
         pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
-
         self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
         self.graph_adj[-1, -1] = 1  # self-loop @kiro
+        print(pred.size(), pred)
         self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
 
     def is_completed(self):
@@ -175,7 +175,8 @@ def search_by_batch(model, beams, mem_dict):
                 concat_hyps[k] = torch.cat(v, 1)
             else:
                 concat_hyps[k] = torch.cat(v, 0)
-        concat_hyps["adj"] = adj
+        # repreat adj
+        concat_hyps["adj"] = repreat_matrix(adj, num_heads=model.num_heads)
         return concat_hyps, inp
 
     while True:

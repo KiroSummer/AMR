@@ -41,10 +41,12 @@ class Hypothesis(object):
         arc_ll = self.state_dict[name]
         pred_arc_prob = torch.exp(arc_ll)
         pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
-        self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
+        # self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
+        # self.graph_adj[-1, -1] = 1  # self-loop @kiro
+        # print(pred.size(), pred)
+        # self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
+        self.graph_adj = F.pad(pred, [0, 1], 'constant', 0)
         self.graph_adj[-1, -1] = 1  # self-loop @kiro
-        print(pred.size(), pred)
-        self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
 
     def is_completed(self):
         ###########

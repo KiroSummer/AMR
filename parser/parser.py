@@ -9,7 +9,7 @@ from parser.decoder import DecodeLayer
 from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfAttentionMask
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
-from parser.utils import move_to_device, generate_adj
+from parser.utils import move_to_device, generate_adj, generate_undirectional_adj
 
 
 class Parser(nn.Module):
@@ -229,7 +229,7 @@ class Parser(nn.Module):
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
         graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
-        graph_arc = self.generate_undirectional_adj(graph_arc)
+        graph_arc = generate_undirectional_adj(graph_arc)  # @kiro, no problem, because of the attn_mask
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)

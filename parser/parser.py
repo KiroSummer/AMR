@@ -59,7 +59,7 @@ class Parser(nn.Module):
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = generate_adj(edge, self.device)  # adj is [batch_size, max_word_num, max_word_num]
+            adj, self_adj, undir_adj = generate_adj(edge, num_heads=self.num_heads, device=self.device)  # adj is [batch_size, max_word_num, max_word_num]
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj, adj_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
@@ -79,7 +79,7 @@ class Parser(nn.Module):
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
-            adj, self_adj, undir_adj = generate_adj(edge, self.device) # adj is [batch_size, max_word_num, max_word_num]
+            adj, self_adj, undir_adj = generate_adj(edge, num_heads=self.num_heads, device=self.device) # adj is [batch_size, max_word_num, max_word_num]
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)

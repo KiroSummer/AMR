@@ -228,7 +228,7 @@ class Parser(nn.Module):
         graph_target_rel = data['rel'][:-1]
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
-        print("concept_repr size")
+        print("concept_repr size", concept_repr.size())
         print("1")
         graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
         print("2")

@@ -58,6 +58,7 @@ def generate_self_adj(adj, device=None):  # add by kiro
     print("dia.size", dia.size())
     dia = torch.diag_embed(dia)  # .flip(1)
     print("dia.size()", dia.size())
+    print(adj.type(), dia.type())
     self_adj = adj | dia
     return self_adj
 

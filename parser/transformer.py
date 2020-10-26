@@ -152,6 +152,8 @@ class MultiheadAttention(nn.Module):
         # q: bsz*heads x tgt_len x dim 
 
         attn_weights = torch.bmm(q, k.transpose(1, 2))
+        print("q.size(), attn_weights.size(), [bsz * self.num_heads, tgt_len, src_len])",
+              q.size(), attn_weights.size(), [bsz * self.num_heads, tgt_len, src_len])
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
         if adj_mask is not None:  # add by kiro

@@ -209,6 +209,7 @@ def search_by_batch(model, beams, mem_dict):
         # run one decode step
         # state_dict: for each item in state_dict, it must have the shape of (seq_len x bsz x *) or (bsz x dim)
         # next_steps: list (bsz) of list (#beam_size) of (token, score)
+        print("step", offset)
         state_dict, results = model.decode_step(inp, state_dict, cur_mem_dict, offset, beams[0].beam_size)
 
         # dispatch the outcome to each beam

@@ -210,6 +210,11 @@ def main(local_rank, args):
             lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
             optimizer.step()  # update the model parameters according to the losses @kiro
             optimizer.zero_grad()
+
+            model.eval()
+            parse_data(model, pp, dev_data, args.dev_data,
+                       '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm))
+            exit()
             if args.world_size == 1 or (dist.get_rank() == 0):
                 if batches_acm % args.print_every == -1 % args.print_every:
                     print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f' % (

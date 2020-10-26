@@ -52,26 +52,25 @@ def compute_f_by_tensor(input, target, mask):
 
 
 def generate_self_adj(adj, device=None):  # add by kiro
-    print("adj size", adj.size())
     bsz, node_num = adj.size(0), adj.size(1)
     dia = torch.ones((bsz, node_num), dtype=torch.bool).to(device)
-    print("dia.size", dia.size())
     dia = torch.diag_embed(dia)  # .flip(1)
-    print("dia.size()", dia.size())
-    print(adj.type(), dia.type())
     self_adj = adj | dia
     return self_adj
 
 
-def generate_undirectional_adj(adj, self_adj=None, device=None):
+def generate_undirectional_adj(adj, num_heads=8, self_adj=None, device=None):
     if self_adj is None:
         self_adj = generate_self_adj(adj, device)
     undir_adj = adj.transpose(1, 2) | self_adj
-    undir_adj = undir_adj
+    # repeat
+    max_word_num = undir_adj.size(-1)
+    undir_adj = undir_adj.repeat_interleave(int(num_heads / 2), dim=0)
+    undir_adj = torch.stack((undir_adj, torch.ones_like(undir_adj)), dim=1).view(-1, max_word_num, max_word_num)
     return undir_adj
 
 
-def generate_adj(edges, device=None):  # add by kiro
+def generate_adj(edges, num_heads=8, device=None):  # add by kiro
     """
     edges: [batch_size, max_word_num]
     """
@@ -88,7 +87,7 @@ def generate_adj(edges, device=None):  # add by kiro
     # add diagonal
     self_adj = generate_self_adj(adj, device)
     # un-directional adj
-    undir_adj = generate_undirectional_adj(adj, self_adj, device)
+    undir_adj = generate_undirectional_adj(adj, num_heads=num_heads, self_adj=self_adj, device=device)
     return adj, self_adj, undir_adj
 
 

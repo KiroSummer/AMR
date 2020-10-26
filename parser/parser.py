@@ -60,9 +60,6 @@ class Parser(nn.Module):
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
             adj, self_adj, undir_adj = generate_adj(edge, self.device)  # adj is [batch_size, max_word_num, max_word_num]
-            max_word_num = undir_adj.size(-1)
-            undir_adj = undir_adj.repeat_interleave(int(self.num_heads / 2), dim=0)
-            undir_adj = torch.stack((undir_adj, torch.ones_like(undir_adj)), dim=1).view(-1, max_word_num, max_word_num)
             word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj, adj_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
@@ -83,9 +80,6 @@ class Parser(nn.Module):
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
         if use_adj is True:
             adj, self_adj, undir_adj = generate_adj(edge, self.device) # adj is [batch_size, max_word_num, max_word_num]
-            max_word_num = undir_adj.size(-1)
-            undir_adj = undir_adj.repeat_interleave(int(self.num_heads / 2), dim=0)
-            undir_adj = torch.stack((undir_adj, torch.ones_like(undir_adj)), dim=1).view(-1, max_word_num, max_word_num)
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
             word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)

@@ -108,7 +108,7 @@ class Parser(nn.Module):
                         'local_idx2token': data['local_idx2token'],
                         'copy_seq': data['copy_seq']}
             init_state_dict = {}
-            init_hyp = Hypothesis(init_state_dict, [DUM], 0., device=self.device)
+            init_hyp = Hypothesis(init_state_dict, [DUM], 0.)
             bsz = word_repr.size(1)
             beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp]) for i in range(bsz)]  # init beams
             search_by_batch(self, beams, mem_dict)

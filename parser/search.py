@@ -118,8 +118,8 @@ class Beam(object):
             for k, v in _split_state.items():
                 state[k] = _split_state[k][idx]
             seq = self.hypotheses[prev_hyp_idx].seq + [token]
-            new_hyps.append(Hypothesis(state, seq, score))
-            new_hyps[-1].update_adj(self.hypotheses[prev_hyp_idx].graph_adj)  # update the adj @kiro
+            new_hyps.append(Hypothesis(state, seq, score, previous_hypo_adj=self.hypotheses[prev_hyp_idx].graph_adj))
+            # new_hyps[-1].update_adj(self.hypotheses[prev_hyp_idx].graph_adj)  # update the adj @kiro
 
         # send new hypotheses to self.completed_hypotheses or self.hypotheses accordingly
         self.hypotheses = []

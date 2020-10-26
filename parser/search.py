@@ -36,7 +36,7 @@ class Hypothesis(object):
         self.graph_adj = torch.ones([1, 1], dtype=torch.bool).cuda()
 
     def update_adj(self, previous_hypo_adj):  # add by kiro
-        offset = len(self.seq) - 1
+        offset = len(self.seq) - 2  # include the new added token @kiro
         name = 'arc_ll%d' % offset
         arc_ll = self.state_dict[name]
         pred_arc_prob = torch.exp(arc_ll)

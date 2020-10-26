@@ -181,7 +181,8 @@ class MultiheadAttention(nn.Module):
         attn = torch.bmm(attn_weights, v)
         if not self.weights_dropout:
             attn = F.dropout(attn, p=self.dropout, training=self.training)
-
+            
+        print(adj_mask.size(), attn_weights.size(), v.size())
         print("q.size(), attn.size(), [bsz * self.num_heads, tgt_len, self.head_dim])",
               q.size(), list(attn.size()), [bsz * self.num_heads, tgt_len, self.head_dim],
               list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim])

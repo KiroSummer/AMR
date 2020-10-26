@@ -54,7 +54,7 @@ def compute_f_by_tensor(input, target, mask):
 def generate_self_adj(adj, device=None):  # add by kiro
     print("adj size", adj.size())
     bsz, node_num = adj.size(0), adj.size(1)
-    dia = torch.ones((bsz, node_num), dtype=torch.int).to(device)
+    dia = torch.ones((bsz, node_num), dtype=torch.bool).to(device)
     print("dia.size", dia.size())
     dia = torch.diag_embed(dia)  # .flip(1)
     print("dia.size()", dia.size())
@@ -66,7 +66,7 @@ def generate_undirectional_adj(adj, self_adj=None, device=None):
     if self_adj is None:
         self_adj = generate_self_adj(adj, device)
     undir_adj = adj.transpose(1, 2) | self_adj
-    undir_adj = undir_adj.type(torch.bool).to(device)
+    undir_adj = undir_adj
     return undir_adj
 
 

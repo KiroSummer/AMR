@@ -156,6 +156,7 @@ class MultiheadAttention(nn.Module):
 
         if adj_mask is not None:  # add by kiro
             zero_vec = -9e15 * torch.ones_like(attn_weights)
+            print("adj_mask.size(), attn_weights.size()", adj_mask.size(), attn_weights.size())
             attn_weights = torch.where(adj_mask > 0, attn_weights, zero_vec)
 
         if attn_mask is not None:
@@ -181,8 +182,8 @@ class MultiheadAttention(nn.Module):
         attn = torch.bmm(attn_weights, v)
         if not self.weights_dropout:
             attn = F.dropout(attn, p=self.dropout, training=self.training)
-            
-        print(adj_mask.size(), attn_weights.size(), v.size())
+
+        print("attn_weights.size(), v.size()", attn_weights.size(), v.size())
         print("q.size(), attn.size(), [bsz * self.num_heads, tgt_len, self.head_dim])",
               q.size(), list(attn.size()), [bsz * self.num_heads, tgt_len, self.head_dim],
               list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim])

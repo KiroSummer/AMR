@@ -228,10 +228,11 @@ class Parser(nn.Module):
         graph_target_rel = data['rel'][:-1]
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
+        print("concept_repr size")
         print("1")
         graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
         print("2")
-        graph_arc = generate_undirectional_adj(graph_arc)  # @kiro, no problem, because of the attn_mask
+        graph_arc = generate_undirectional_adj(graph_arc, device=self.device)  # @kiro, no problem, because of the attn_mask
         print("3")
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,

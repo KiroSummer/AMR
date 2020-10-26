@@ -127,7 +127,10 @@ class Parser(nn.Module):
         return conc, conc_char
 
     def prepare_incremental_graph_adj(self, adjs):
-        batch_adj = adjs
+        """
+        adjs: a list of adj matrix
+        """
+        batch_adj = torch.stack(adjs)
         return batch_adj
 
     def decode_step(self, inp, state_dict, mem_dict, offset, topk):
@@ -144,6 +147,7 @@ class Parser(nn.Module):
         concept_repr = self.embed_scale * self.concept_encoder(step_concept_char, step_concept) + self.embed_positions(
             step_concept, offset)
         concept_repr = self.concept_embed_layer_norm(concept_repr)
+        adj = state_dict['adj']
         for idx, layer in enumerate(self.graph_encoder.layers):  # only for encoding concepts @kiro
             name_i = 'concept_repr_%d' % idx
             if name_i in state_dict:
@@ -154,7 +158,7 @@ class Parser(nn.Module):
 
             new_state_dict[name_i] = new_concept_repr
             # concept_repr is current token, new_concept_repr is previous tokens + current token
-            concept_repr, _, _ = layer(concept_repr, kv=new_concept_repr, adj_mask=None,
+            concept_repr, _, _ = layer(concept_repr, kv=new_concept_repr, adj_mask=adj,
                                        external_memories=word_repr, external_padding_mask=word_mask
                                        )
         name = 'graph_state'
@@ -224,14 +228,15 @@ class Parser(nn.Module):
         graph_target_rel = data['rel'][:-1]
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
-        # graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
-        # graph_arc = self.generate_undirectional_adj(graph_arc)
+        graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
+        graph_arc = self.generate_undirectional_adj(graph_arc)
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)
         for idx, layer in enumerate(self.graph_encoder.layers):
             concept_repr, arc_weight, _ = layer(concept_repr,
                                                 self_padding_mask=concept_mask, self_attn_mask=attn_mask,
+                                                adj_mask=graph_arc,
                                                 external_memories=word_repr, external_padding_mask=word_mask,
                                                 need_weights='max')
         graph_arc_loss = F.binary_cross_entropy(arc_weight, graph_target_arc.float(), reduction='none')

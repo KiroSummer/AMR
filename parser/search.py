@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
 from parser.utils import generate_undirectional_adj
@@ -16,7 +17,7 @@ from parser.utils import generate_undirectional_adj
 ##rewrite##
 ###########
 class Hypothesis(object):
-    def __init__(self, state_dict, seq, score, device=None):
+    def __init__(self, state_dict, seq, score, previous_hypo_adj=None):
         '''
         state_dict: hidden states of the last step (has not yet consider seq[-1])
             for each item in state_dict, it must have shape of (seq_len x bsz x *) or (bsz x dim)
@@ -26,20 +27,24 @@ class Hypothesis(object):
         self.state_dict = state_dict
         self.seq = seq
         self.score = score
-        self.graph_adj = torch.ones([1, 1], dtype=torch.bool)
-        self.device = device
-        if device is not None:
-            self.graph_adj = self.graph_adj.to(self.device)
+        if previous_hypo_adj is None:  # only step 0 need to init adj @kiro
+            self.init_adj()
+        else:  # generate new adj according to previous hypo adj @kiro
+            self.update_adj(previous_hypo_adj)
 
-    def update_adj(self, atten_mask=None):  # add by kiro
+    def init_adj(self):
+        self.graph_adj = torch.ones([1, 1], dtype=torch.bool).cuda()
+
+    def update_adj(self, previous_hypo_adj):  # add by kiro
         offset = len(self.seq) - 1
         name = 'arc_ll%d' % offset
         arc_ll = self.state_dict[name]
         pred_arc_prob = torch.exp(arc_ll)
         pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
-        undir_adj = generate_undirectional_adj(pred, device=self.device)
-        if atten_mask is not None:
-            self.graph_adj = atten_mask * undir_adj
+
+        self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
+        self.graph_adj[-1, -1] = 1  # self-loop @kiro
+        self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
 
     def is_completed(self):
         ###########
@@ -114,6 +119,7 @@ class Beam(object):
                 state[k] = _split_state[k][idx]
             seq = self.hypotheses[prev_hyp_idx].seq + [token]
             new_hyps.append(Hypothesis(state, seq, score))
+            new_hyps[-1].update_adj(self.hypotheses[prev_hyp_idx].graph_adj)  # update the adj @kiro
 
         # send new hypotheses to self.completed_hypotheses or self.hypotheses accordingly
         self.hypotheses = []
@@ -169,6 +175,7 @@ def search_by_batch(model, beams, mem_dict):
                 concat_hyps[k] = torch.cat(v, 1)
             else:
                 concat_hyps[k] = torch.cat(v, 0)
+        concat_hyps["adj"] = adj
         return concat_hyps, inp
 
     while True:
@@ -189,8 +196,8 @@ def search_by_batch(model, beams, mem_dict):
 
         # collect mem_dict
         cur_mem_dict = dict()
-        indices = torch.tensor(indices).cuda()
-        for k, v in mem_dict.items():
+        indices = torch.tensor(indices).cuda()  # indices is the sentence id
+        for k, v in mem_dict.items():  # for exclude some samples @kiro
             if isinstance(v, list):
                 cur_mem_dict[k] = [v[i] for i in indices]
             else:
@@ -205,6 +212,7 @@ def search_by_batch(model, beams, mem_dict):
         _len_each_beam = [len(beam.hypotheses) for beam in beams if not beam.completed()]
         _state_dict_each_beam = [dict() for _ in _len_each_beam]
 
+        # collect state dict (concept_rep, graph_state, arc_ll, rel_ll) for each beam @kiro
         for k, v in state_dict.items():
             split_dim = 1 if len(v.size()) >= 3 else 0
             for i, x in enumerate(v.split(_len_each_beam, dim=split_dim)):

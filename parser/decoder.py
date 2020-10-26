@@ -221,6 +221,7 @@ class DecodeLayer(nn.Module):
             for i in range(self.inference_layers):
                 arc_ll, outs = self.arc_generator(outs, graph_state, graph_padding_mask, attn_mask, work=True)
                 concept_ll, outs = self.concept_generator(outs, snt_state, snt_padding_mask, copy_seq, work=True)
+            # all_ll [1, hypotheses_size, steps] @kiro steps == nodes num
             rel_ll = self.relation_generator(outs, graph_state, work=True)
             return concept_ll, arc_ll, rel_ll
 

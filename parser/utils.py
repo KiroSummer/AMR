@@ -76,7 +76,7 @@ def generate_adj(edges, num_heads=8, device=None):  # add by kiro
     """
     edges = F.pad(edges, [1, 0], "constant", -1)  # dummy node $root
     edge_shape = edges.size()
-    mask = ((edges > -1) == False).unsqueeze(-1)
+    mask = ((edges > -1) == False).unsqueeze(-1).cuda()
     adj = torch.zeros([edge_shape[0], edge_shape[1], edge_shape[1]], dtype=torch.bool).to(device)  # init adj
     edges[edges == -1] = 0
     edges = edges.unsqueeze(-1).type(torch.LongTensor).to(device)

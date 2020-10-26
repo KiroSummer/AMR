@@ -152,9 +152,6 @@ class MultiheadAttention(nn.Module):
         # q: bsz*heads x tgt_len x dim 
 
         attn_weights = torch.bmm(q, k.transpose(1, 2))
-        print("q.size(), attn_weights.size(), [bsz * self.num_heads, tgt_len, src_len])",
-              q.size(), list(attn_weights.size()), [bsz * self.num_heads, tgt_len, src_len],
-              list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len])
         assert list(attn_weights.size()) == [bsz * self.num_heads, tgt_len, src_len]
 
         if adj_mask is not None:  # add by kiro
@@ -185,6 +182,9 @@ class MultiheadAttention(nn.Module):
         if not self.weights_dropout:
             attn = F.dropout(attn, p=self.dropout, training=self.training)
 
+        print("q.size(), attn.size(), [bsz * self.num_heads, tgt_len, self.head_dim])",
+              q.size(), list(attn.size()), [bsz * self.num_heads, tgt_len, self.head_dim],
+              list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim])
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
 
         attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)

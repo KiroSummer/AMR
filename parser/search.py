@@ -40,7 +40,7 @@ class Hypothesis(object):
         name = 'arc_ll%d' % offset
         arc_ll = self.state_dict[name]
         pred_arc_prob = torch.exp(arc_ll)
-        pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
+        pred = torch.ge(pred_arc_prob, 0.5).squeeze(0)  # check the pred TODO @kiro
         # self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
         # self.graph_adj[-1, -1] = 1  # self-loop @kiro
         print("pred.size(), pred", pred.size(), pred)

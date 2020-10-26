@@ -43,7 +43,7 @@ class Hypothesis(object):
         pred = torch.ge(pred_arc_prob, 0.5)  # check the pred TODO @kiro
         # self.graph_adj = F.pad(previous_hypo_adj, [0, 1, 0, 1], "constant", 0)
         # self.graph_adj[-1, -1] = 1  # self-loop @kiro
-        # print(pred.size(), pred)
+        print("pred.size(), pred", pred.size(), pred)
         # self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
         self.graph_adj = F.pad(pred, [0, 1], 'constant', 0)
         self.graph_adj[-1, -1] = 1  # self-loop @kiro

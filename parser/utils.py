@@ -61,9 +61,9 @@ def generate_self_adj(adj, device=None):  # add by kiro
 
 def repreat_matrix(adj, num_heads=8):
     # repeat
-    max_word_num = adj.size(-1)
+    bsz, len1, max_word_num = adj.size(0), adj.size(1), adj.size(-1)  # len1 is 1 for decoding graph @kiro
     adj = adj.repeat_interleave(int(num_heads / 2), dim=0)
-    adj = torch.stack((adj, torch.ones_like(adj)), dim=1).view(-1, max_word_num, max_word_num)
+    adj = torch.stack((adj, torch.ones_like(adj)), dim=1).view(bsz, len1, max_word_num)
     return adj
 
 

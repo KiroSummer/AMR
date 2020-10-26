@@ -232,7 +232,8 @@ class Parser(nn.Module):
         print("1")
         graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
         print("2")
-        graph_arc = generate_undirectional_adj(graph_arc, device=self.device)  # @kiro, no problem, because of the attn_mask
+        # @kiro, no problem, because of the attn_mask
+        graph_arc = generate_undirectional_adj(graph_arc.transpose(0, 1), device=self.device)
         print("3")
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,

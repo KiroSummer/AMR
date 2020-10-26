@@ -86,7 +86,6 @@ def generate_adj(edges, num_heads=8, device=None):  # add by kiro
     edges[edges == -1] = 0
     edges = edges.unsqueeze(-1).type(torch.LongTensor).to(device)
     adj.scatter_(2, edges, 1)
-    print(adj.type(), mask.type())
     adj.masked_fill_(mask, 0)
     # adj.transpose_(1, 2)
     # adj = adj.flip(1)  # flip according to dim 1

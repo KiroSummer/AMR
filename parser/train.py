@@ -8,7 +8,7 @@ from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
 from parser.adam import AdamWeightDecayOptimizer
-from parser.utils import move_to_device
+from parser.utils import move_to_device, eval_smatch, remove_files, checkpoint
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
@@ -164,7 +164,7 @@ def main(local_rank, args):
 
     used_batches = 0
     batches_acm = 0
-    if args.resume_ckpt:  # false
+    if args.resume_ckpt:  # false, not supported @kiro
         ckpt = torch.load(args.resume_ckpt)
         model.load_state_dict(ckpt['model'])
         optimizer.load_state_dict(ckpt['optimizer'])
@@ -179,7 +179,9 @@ def main(local_rank, args):
     train_data_generator.start()
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
+    last_smatch, no_better_performance = 0.0, 0  # @kiro
     max_training_epochs = int(args.epochs)  # @kiro
+    checkpoint_file = checkpoint('%s/%s' % (args.ckpt, "checkpoint.txt"))
     print("Start training...")
     while epoch < max_training_epochs:  # there is no stop! @kiro
         batch = queue.get()
@@ -217,14 +219,27 @@ def main(local_rank, args):
                     model.train()
                 if (batches_acm > 10000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                     model.eval()
-                    parse_data(model, pp, dev_data, args.dev_data,
-                               '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm))
+                    output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
+                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file)
+                    saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                     torch.save({'args': args,
                                 'model': model.state_dict(),
                                 'batches_acm': batches_acm,
                                 'optimizer': optimizer.state_dict()},
-                               '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm))
+                               saved_model)
+                    smatch = eval_smatch(output_dev_file + ".pred", args.dev_data)
+                    if smatch >= last_smatch:  # early stopping @kiro
+                        no_better_performance = 0
+                        checkpoint_file.write_checkpoint("{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro
+                    else:
+                        no_better_performance += 1
+                        remove_files(saved_model + '*')  # remove low performance models. @kiro
+                        checkpoint_file.write_checkpoint(
+                            "{}\t{}\t".format(saved_model, smatch))  # write to checkpoint @kiro
+                    if no_better_performance > 30:  # if no better performance happens for 30 evaluation, break @kiro
+                        break
                     model.train()
+    checkpoint_file.close()
     print("Training process is done.")  # @kiro
 
 

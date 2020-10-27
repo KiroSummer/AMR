@@ -3,7 +3,39 @@ import torch.nn.functional as F
 from torch import nn
 import numpy as np
 import math
-import os
+import os, subprocess
+
+POSTPROCESSING1_SCRIPT = "postprocess_1.0.sh"  # TODO for amr 1.0 @kiro
+POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
+EVAL_SCRIPT = "compute_smatch.sh"
+
+
+def eval_smatch(dev_file, gold_dev_file):
+    subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
+    postprocessing_file = dev_file + ".post"
+    child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
+                             shell=True, stdout=subprocess.PIPE)
+    eval_info = child.communicate()[0].decode()
+    smatch = eval_info.split('\n')[0].strip().split()[-1]
+    return smatch
+
+
+def remove_files(filename):
+    subprocess.Popen('rm {}'.format(filename), shell=True)
+    print("Remove file {}".format(filename))
+
+
+class checkpoint:
+    def __init__(self, file_path):
+        if os.path.exists(file_path):
+            print(file_path, "exists! will be rewrite!")
+        self.file = open(file_path, 'w')
+
+    def write_checkpoint(self, info):
+        self.file.write(info + "\n")
+
+    def close(self):
+        self.file.close()
 
 
 def move_to_device(maybe_tensor, device):

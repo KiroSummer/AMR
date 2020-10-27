@@ -165,7 +165,7 @@ class Parser(nn.Module):
         # Transformer decoder, [set_state, graph_state]
         conc_ll, arc_ll, rel_ll = self.decoder(probe, snt_state, new_graph_state, snt_padding_mask, None, None,
                                                copy_seq, work=True)
-        for i in range(offset):
+        for i in range(offset):  # restore these variables from old state -> new state @kiro
             name = 'arc_ll%d' % i
             new_state_dict[name] = state_dict[name]
             name = 'rel_ll%d' % i
@@ -177,11 +177,11 @@ class Parser(nn.Module):
 
         pred_arc_prob = torch.exp(arc_ll)
         arc_confidence = torch.log(torch.max(pred_arc_prob, 1 - pred_arc_prob))  # what is this? @kiro
-        arc_confidence[:, :, 0] = 0.
+        arc_confidence[:, :, 0] = 0.  # [1, bsz, steps], 0 means the arc to dummy @kiro TODO
         # pred_arc = torch.lt(pred_arc_prob, 0.5)
         # pred_arc[:,:,0] = 1
         # rel_confidence = rel_ll.masked_fill(pred_arc, 0.).sum(-1, keepdim=True)
-        LL = conc_ll + arc_confidence.sum(-1, keepdim=True)  # + rel_confidence
+        LL = conc_ll + arc_confidence.sum(-1, keepdim=True)  # + rel_confidence, joint concept and arc during decoding
 
         def idx2token(idx, local_vocab):
             if idx in local_vocab:

@@ -47,6 +47,7 @@ class Hypothesis(object):
         # self.graph_adj[-1][:-1] = pred  # predicted arc @kiro
         self.graph_adj = F.pad(pred, [0, 1], 'constant', 0)
         self.graph_adj[-1, -1] = 1  # self-loop @kiro
+        self.graph_adj[-1, 0] = 0  # no arc to dummy node @kiro
 
     def is_completed(self):
         ###########

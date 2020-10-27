@@ -36,7 +36,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --lr_scale 1. \
                 --warmup_steps 2000\
                 --print_every 100 \
-                --eval_every 1000 \
+                --eval_every 100 \
                 --batches_per_update 4 \
                 --ckpt graph-ckpt\
                 --world_size 2\

@@ -11,11 +11,12 @@ EVAL_SCRIPT = "compute_smatch.sh"
 
 
 def eval_smatch(dev_file, gold_dev_file):
-    subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
+    info = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
     postprocessing_file = dev_file + ".post"
     child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                              shell=True, stdout=subprocess.PIPE)
     eval_info = child.communicate()[0].decode()
+    print("eval info", eval_info)
     smatch = eval_info.split('\n')[0].strip().split()[-1]
     return smatch
 

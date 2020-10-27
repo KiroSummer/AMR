@@ -217,7 +217,7 @@ def main(local_rank, args):
                     print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f' % (
                     epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg))
                     model.train()
-                if (batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
+                if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                     model.eval()
                     output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
                     parse_data(model, pp, dev_data, args.dev_data, output_dev_file)

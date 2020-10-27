@@ -11,7 +11,8 @@ EVAL_SCRIPT = "compute_smatch.sh"
 
 
 def eval_smatch(dev_file, gold_dev_file):
-    info = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
+    child = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
+    child.wait()
     postprocessing_file = dev_file + ".post"
     child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                              shell=True, stdout=subprocess.PIPE)

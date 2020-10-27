@@ -227,10 +227,15 @@ def main(local_rank, args):
                                 'batches_acm': batches_acm,
                                 'optimizer': optimizer.state_dict()},
                                saved_model)
-                    smatch = eval_smatch(output_dev_file + ".pred", args.dev_data)
+                    try:
+                        smatch = eval_smatch(output_dev_file + ".pred", args.dev_data)
+                    except Exception:
+                        print("encounter problems in eval, maybe caused by error amr nodes.")
+                        smatch = 0.0
                     if smatch >= last_smatch:  # early stopping @kiro
                         no_better_performance = 0
                         checkpoint_file.write_checkpoint("{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro
+                        last_smatch = smatch
                     else:
                         no_better_performance += 1
                         remove_files(saved_model + '*')  # remove low performance models. @kiro

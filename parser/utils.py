@@ -16,9 +16,8 @@ def eval_smatch(dev_file, gold_dev_file):
     child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                              shell=True, stdout=subprocess.PIPE)
     eval_info = child.communicate()[0].decode()
-    print("eval info", eval_info)
     smatch = eval_info.split('\n')[0].strip().split()[-1]
-    return smatch
+    return float(smatch)
 
 
 def remove_files(filename):

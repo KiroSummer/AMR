@@ -43,6 +43,7 @@ class checkpoint:
 
     def write_checkpoint(self, info):
         self.file.write(info + "\n")
+        self.file.flush()
 
     def close(self):
         self.file.close()

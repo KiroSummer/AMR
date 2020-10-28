@@ -89,17 +89,17 @@ class Parser(nn.Module):
         word_mask = word_mask[1:]
         return word_repr, word_mask, probe
 
-    def work(self, data, beam_size, max_time_step, min_time_step=1):  # beam size == 8
+    def work(self, data, beam_size, max_time_step, min_time_step=1, args=None):  # beam size == 8
         with torch.no_grad():
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
                     data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['word_char'],
-                    data['bert_token'], data['token_subword_index'], use_adj=True
+                    data['bert_token'], data['token_subword_index'], use_adj=args.encoder_graph
                 )
             else:
                 word_repr, word_mask, probe = self.encode_step(
                     data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                    data['word_char'], use_adj=True
+                    data['word_char'], use_adj=args.encoder_graph
                 )
 
             mem_dict = {'snt_state': word_repr,
@@ -111,7 +111,7 @@ class Parser(nn.Module):
             init_hyp = Hypothesis(init_state_dict, [DUM], 0.)
             bsz = word_repr.size(1)
             beams = [Beam(beam_size, min_time_step, max_time_step, [init_hyp]) for i in range(bsz)]  # init beams
-            search_by_batch(self, beams, mem_dict)
+            search_by_batch(self, beams, mem_dict, args)
         return beams
 
     def prepare_incremental_input(self, step_seq):
@@ -127,7 +127,7 @@ class Parser(nn.Module):
         batch_adj = torch.stack(adjs)
         return batch_adj
 
-    def decode_step(self, inp, state_dict, mem_dict, offset, topk):
+    def decode_step(self, inp, state_dict, mem_dict, offset, topk, args):
         step_concept, step_concept_char = inp
         word_repr = snt_state = mem_dict['snt_state']
         word_mask = snt_padding_mask = mem_dict['snt_padding_mask']
@@ -142,6 +142,8 @@ class Parser(nn.Module):
             step_concept, offset)
         concept_repr = self.concept_embed_layer_norm(concept_repr)
         adj = state_dict['adj']
+        if args.decoder_graph is False:
+            adj = None
         for idx, layer in enumerate(self.graph_encoder.layers):  # only for encoding concepts @kiro
             name_i = 'concept_repr_%d' % idx
             if name_i in state_dict:
@@ -199,17 +201,17 @@ class Parser(nn.Module):
 
         return new_state_dict, results
 
-    def forward(self, data):
+    def forward(self, data, encoder_graph=False, decoder_graph=False):
         if self.bert_encoder is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
                 data['word_char'], data['bert_token'],
-                data['token_subword_index'], use_adj=True
+                data['token_subword_index'], use_adj=encoder_graph
             )
         else:
             word_repr, word_mask, probe = self.encode_step(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                data['word_char'], use_adj=True
+                data['word_char'], use_adj=encoder_graph
             )
         concept_repr = self.embed_scale * self.concept_encoder(data['concept_char_in'],
                                                                data['concept_in']) + self.embed_positions(
@@ -225,6 +227,8 @@ class Parser(nn.Module):
         graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
         # @kiro, no problem, because of the attn_mask
         graph_arc = generate_undirectional_adj(graph_arc.transpose(0, 1), device=self.device)
+        if decoder_graph is False:
+            graph_arc = None
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)

@@ -38,11 +38,11 @@ def show_progress(model, dev_data):
     return loss_acm
 
 
-def parse_batch(model, batch, beam_size, alpha, max_time_step):
+def parse_batch(model, batch, beam_size, alpha, max_time_step, args=None):
     res = dict()
     concept_batch = []
     relation_batch = []
-    beams = model.work(batch, beam_size, max_time_step)
+    beams = model.work(batch, beam_size, max_time_step, args=args)
     score_batch = []
     for beam in beams:
         best_hyp = beam.get_k_best(1, alpha)[0]
@@ -64,12 +64,12 @@ def parse_batch(model, batch, beam_size, alpha, max_time_step):
     return res
 
 
-def parse_data(model, pp, data, input_file, output_file, beam_size=8, alpha=0.6, max_time_step=100):
+def parse_data(model, pp, data, input_file, output_file, args, beam_size=8, alpha=0.6, max_time_step=100):
     tot = 0
     with open(output_file, 'w') as fo:
         for batch in data:
             batch = move_to_device(batch, model.device)
-            res = parse_batch(model, batch, beam_size, alpha, max_time_step)
+            res = parse_batch(model, batch, beam_size, alpha, max_time_step, args=args)
             for concept, relation, score in zip(res['concept'], res['relation'], res['score']):
                 fo.write('# ::conc ' + ' '.join(concept) + '\n')
                 fo.write('# ::score %.6f\n' % score)
@@ -149,5 +149,5 @@ if __name__ == "__main__":
 
         # loss = show_progress(model, test_data)
         pp = PostProcessor(vocabs['rel'])
-        parse_data(model, pp, another_test_data, args.test_data, test_model + args.output_suffix, args.beam_size,
-                   args.alpha, args.max_time_step)
+        parse_data(model, pp, another_test_data, args.test_data, test_model + args.output_suffix, args,
+                   args.beam_size, args.alpha, args.max_time_step)

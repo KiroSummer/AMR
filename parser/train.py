@@ -190,7 +190,8 @@ def main(local_rank, args):
             print('epoch', epoch, 'done', 'batches', batches_acm)
         else:
             batch = move_to_device(batch, model.device)  # data moved to device
-            concept_loss, arc_loss, rel_loss, graph_arc_loss = model(batch)  # model forward
+            concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
+                batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)  # model forward
             loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
             loss_value = loss.item()
             concept_loss_value = concept_loss.item()
@@ -220,7 +221,7 @@ def main(local_rank, args):
                 if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                     model.eval()
                     output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
-                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file)
+                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
                     saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                     torch.save({'args': args,
                                 'model': model.state_dict(),

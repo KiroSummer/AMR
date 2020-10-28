@@ -3,11 +3,34 @@ import torch.nn.functional as F
 from torch import nn
 import numpy as np
 import math
-import os, subprocess
+import os, sys, subprocess, threading, time
 
 POSTPROCESSING1_SCRIPT = "postprocess_1.0.sh"  # TODO for amr 1.0 @kiro
 POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
 EVAL_SCRIPT = "compute_smatch.sh"
+
+
+class eval:
+    def __init__(self, checkpoint_file, gold_file, early_stops=30):
+        self.checkpoint_file = checkpoint(checkpoint_file)
+        self.no_performance_improvement = 0
+        self.last_smatch = 0.0
+        self.gold_file = gold_file
+        self.early_stops = early_stops
+
+    def eval(self, output_dev_file, saved_model):
+        smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file)
+        if smatch >= self.last_smatch:  # early stopping @kiro
+            self.no_performance_improvement = 0
+            self.checkpoint_file.write_checkpoint(
+                "{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro
+            self.last_smatch = smatch
+        else:
+            self.no_performance_improvement += 1
+            remove_files(saved_model + '*')  # remove low performance models. @kiro
+            self.checkpoint_file.write_checkpoint("{}\t{}\t".format(saved_model, smatch))  # write to checkpoint @kiro
+        if self.no_performance_improvement > self.early_stops:  # if no better performance happens for 30 evaluation, break @kiro
+            return True
 
 
 def eval_smatch(dev_file, gold_dev_file):
@@ -22,12 +45,23 @@ def eval_smatch(dev_file, gold_dev_file):
         print("Evaluation process encounters some problem, may be caused by some error nodes.")
         smatch = 0.0
     else:
-        # print(eval_info)
-        # print(eval_info.split('\n'))
-        # print(eval_info.split('\n')[0].strip().split())
         smatch = eval_info.split('\n')[0].strip().split()[-1]
         print("Smatch score:", smatch)
-    return float(smatch)
+    smatch_score = float(smatch)
+    return smatch_score
+
+
+class MyThread(threading.Thread):
+    def __init__(self, func, args=()):
+        super(MyThread, self).__init__()
+        self.func = func
+        self.args = args
+
+    def run(self):
+        self.result = self.func(*self.args)
+        if self.result is True:
+            print("No performance improvement happens! exit!")
+            os._exit(0)
 
 
 def remove_files(filename):
@@ -159,3 +193,29 @@ def label_smoothed_nll_loss(log_probs, target, eps):
     eps_i = eps / log_probs.size(-1)
     loss = (1. - eps) * nll_loss + eps_i * smooth_loss
     return loss
+
+
+if __name__ == "__main__":
+    class eval:
+        def __init__(self):
+            self.value = 0
+            self.max_value = 100
+
+        def add(self, a):
+            self.value = self.value + a
+            print(self.value)
+            if self.value > self.max_value:
+                return True
+            return False
+
+    eval = eval()
+    list = [23, 89]
+    task = MyThread(eval.add, (list[0],))  # 2s
+    task.start()
+    time.sleep(3)  # 2+3=5s, ensure the first is over
+    task = MyThread(eval.add, (list[1],))  # 5+2 = 8s
+    task.start()
+    print("post")
+    time.sleep(10)
+    print("post 2")
+

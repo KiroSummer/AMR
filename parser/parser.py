@@ -242,8 +242,8 @@ class Parser(nn.Module):
         graph_arc_loss = graph_arc_loss.masked_fill_(graph_arc_mask, 0.).sum((0, 2))
 
         probe = probe.expand_as(concept_repr)  # tgt_len x bsz x embed_dim
-        concept_loss, arc_loss, rel_loss = self.decoder(probe, word_repr, concept_repr, word_mask, concept_mask,
-                                                        attn_mask,
+        concept_loss, arc_loss, rel_loss = self.decoder(probe, word_repr, concept_repr,
+                                                        word_mask, concept_mask, attn_mask,
                                                         data['copy_seq'], target=data['concept_out'],
                                                         target_rel=data['rel'][1:])
 

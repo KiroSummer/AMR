@@ -18,6 +18,8 @@ def eval_smatch(dev_file, gold_dev_file):
                              shell=True)
     eval_info = child.communicate()[0].decode()
     print(eval_info)
+    print(eval_info.split('\n')[0])
+    print(eval_info.split('\n')[0].strip().split())
     smatch = eval_info.split('\n')[0].strip().split()[-1]
     print("Smatch score:", smatch)
     return float(smatch)

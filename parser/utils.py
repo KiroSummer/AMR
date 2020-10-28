@@ -17,7 +17,7 @@ def eval_smatch(dev_file, gold_dev_file):
         postprocessing_file = dev_file + ".post"
         child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                                  shell=True, stdout=subprocess.PIPE)
-        eval_info = str(child.communicate()[0])
+        eval_info = str(child.communicate()[0].decode())
     except Exception:
         print("Evaluation process encounters some problem, may be caused by some error nodes.")
         smatch = 0.0

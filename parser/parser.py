@@ -9,7 +9,7 @@ from parser.decoder import DecodeLayer
 from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfAttentionMask
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
-from parser.utils import move_to_device, generate_adj, generate_undirectional_adj
+from parser.utils import move_to_device, generate_adj, generate_directional_self_loop_adj
 
 
 class Parser(nn.Module):
@@ -224,9 +224,8 @@ class Parser(nn.Module):
         graph_target_rel = data['rel'][:-1]
         graph_target_arc = torch.ne(graph_target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         graph_arc_mask = torch.eq(graph_target_rel, self.vocabs['rel'].token2idx(PAD))
-        graph_arc = graph_target_arc * graph_arc_mask  # @kiro, the arc matrix
-        # @kiro, no problem, because of the attn_mask
-        graph_arc = generate_undirectional_adj(graph_arc.transpose(0, 1), device=self.device)
+        graph_arc = graph_target_arc * (graph_arc_mask == 0)  # @kiro, the arc matrix
+        graph_arc = generate_directional_self_loop_adj(graph_arc.transpose(0, 1), device=self.device)
         if decoder_graph is False:
             graph_arc = None
         # concept_repr = self.graph_encoder(concept_repr,

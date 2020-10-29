@@ -130,7 +130,7 @@ def compute_f_by_tensor(input, target, mask):
     return P, R, F
 
 
-def generate_self_adj(adj, device=None):  # add by kiro
+def add_self_loop_to_matrix(adj, device=None):  # add by kiro, add self-loop to adj
     bsz, node_num = adj.size(0), adj.size(1)
     dia = torch.ones((bsz, node_num), dtype=torch.bool).to(device)
     dia = torch.diag_embed(dia)  # .flip(1)
@@ -148,10 +148,17 @@ def repreat_matrix(adj, num_heads=8):
 
 def generate_undirectional_adj(adj, num_heads=8, self_adj=None, device=None):
     if self_adj is None:
-        self_adj = generate_self_adj(adj, device)
+        self_adj = add_self_loop_to_matrix(adj, device)
     undir_adj = adj.transpose(1, 2) | self_adj
     undir_adj = repreat_matrix(undir_adj, num_heads=num_heads)
     return undir_adj
+
+
+def generate_directional_self_loop_adj(adj, num_heads=8, self_adj=None, device=None):
+    if self_adj is None:
+        self_adj = add_self_loop_to_matrix(adj, device)
+    dir_adj = repreat_matrix(self_adj, num_heads=num_heads)
+    return dir_adj
 
 
 def generate_adj(edges, num_heads=8, device=None):  # add by kiro
@@ -169,7 +176,7 @@ def generate_adj(edges, num_heads=8, device=None):  # add by kiro
     # adj.transpose_(1, 2)
     # adj = adj.flip(1)  # flip according to dim 1
     # add diagonal
-    self_adj = generate_self_adj(adj, device)
+    self_adj = add_self_loop_to_matrix(adj, device)
     # un-directional adj
     undir_adj = generate_undirectional_adj(adj, num_heads=num_heads, self_adj=self_adj, device=device)
     return adj, self_adj, undir_adj

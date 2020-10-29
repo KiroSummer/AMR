@@ -28,8 +28,8 @@ def parse_config():
     parser.add_argument('--pretrained_file', type=str, default=None)
     parser.add_argument('--with_bert', dest='with_bert', action='store_true')
     parser.add_argument('--bert_path', type=str, default=None)
-    parser.add_argument('--encoder_graph', default=False, action='store_false')
-    parser.add_argument('--decoder_graph', default=False, action='store_false')
+    parser.add_argument('--encoder_graph', dest='with encoder_graph', action='store_false')
+    parser.add_argument('--decoder_graph', default='with decoder_graph', action='store_false')
 
     parser.add_argument('--word_char_dim', type=int)
     parser.add_argument('--word_dim', type=int)

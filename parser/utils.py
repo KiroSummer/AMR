@@ -35,9 +35,11 @@ class eval:
 
 def eval_smatch(dev_file, gold_dev_file):
     try:
+        print('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file))
         child = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
         child.wait()
         postprocessing_file = dev_file + ".post"
+        print('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file))
         child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                                  shell=True, stdout=subprocess.PIPE)
         eval_info = str(child.communicate()[0].decode())

@@ -149,9 +149,9 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
 
     _concept_in = ListsToTensor(augmented_concept, vocabs['concept'], unk_rate=unk_rate)[:-1]
     _concept_char_in = ListsofStringToTensor(augmented_concept, vocabs['concept_char'])[:-1]
-    _concept_out = ListsToTensor(augmented_concept, vocabs['predictable_concept'], local_token2idx)[1:]
+    _concept_out = ListsToTensor(augmented_concept, vocabs['predictable_concept'], local_token2idx)[1:]  # out no $start
 
-    out_conc_len, bsz = _concept_out.shape
+    out_conc_len, bsz = _concept_out.shape  # out_conc_len, concept_0, concept_1, ..., concept_n-1, <end>
     _rel = np.full((1 + out_conc_len, bsz, out_conc_len), vocabs['rel'].token2idx(PAD))
     # v: [<dummy>, concept_0, ..., concept_l, ..., concept_{n-1}, <end>] u: [<dummy>, concept_0, ..., concept_l, ..., concept_{n-1}]
 
@@ -235,6 +235,7 @@ class DataLoader(object):
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)
+            print("Total {} training batches.".format(len(batches)))
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)

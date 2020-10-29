@@ -15,7 +15,7 @@ class eval:
         self.checkpoint_file = checkpoint(checkpoint_file)
         self.no_performance_improvement = 0
         self.last_smatch = 0.0
-        self.gold_file = gold_file
+        self.gold_file = gold_file[:len(gold_file) - len('.features.preproc')]
         self.early_stops = early_stops
 
     def eval(self, output_dev_file, saved_model):

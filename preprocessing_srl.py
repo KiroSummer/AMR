@@ -38,9 +38,13 @@ class DependencyParser:
         """
         sentence_number = 0
         with codecs.open(filepath, encoding="utf8") as f:
+            print("read srl file from {}".format(filepath))
             with codecs.open(filepath[:-len(".json")] + '.dep.json', encoding='utf8', mode='w') as out_f:
+                print("parse and write file to {}".format(filepath[:-len(".json")] + '.dep.json'))
                 for line in f.readlines():
                     sentence_number += 1
+                    if sentence_number % 1000 == 0:
+                        print("processed {} sentences".format(sentence_number))
                     sen = json.loads(line)
                     srl_sen = srl_example(sen)
                     self.parser_sentence(srl_sen)  # parse sentence

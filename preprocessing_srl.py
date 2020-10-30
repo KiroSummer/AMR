@@ -10,7 +10,7 @@ class srl_example:
     def __init__(self, obj):
         self.speakers = obj["speakers"]
         self.doc_key = obj["doc_key"]
-        self.sentences = obj["sentences"]
+        self.sentences = obj["sentences"][0]
         self.srl = obj["srl"][0]
         self.constituents = obj["constituents"]
         self.clusters = obj["clusters"]
@@ -39,7 +39,7 @@ class DependencyParser:
         sentence_number = 0
         with codecs.open(filepath, encoding="utf8") as f:
             print("read srl file from {}".format(filepath))
-            with codecs.open(filepath[:-len(".json")] + '.dep.json', encoding='utf8', mode='w') as out_f:
+            with codecs.open(filepath[:-len(".jsonlines")] + '.dep.json', encoding='utf8', mode='w') as out_f:
                 print("parse and write file to {}".format(filepath[:-len(".json")] + '.dep.json'))
                 for line in f.readlines():
                     sentence_number += 1

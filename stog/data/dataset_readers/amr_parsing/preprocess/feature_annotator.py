@@ -40,7 +40,7 @@ class FeatureAnnotator:
                 precedents = ''
                 for token in compounds:
                     if len(precedents) > 0:
-                        _precedents = precedents[:-1] # exclude dash
+                        _precedents = precedents[:-1]  # exclude dash
                     else:
                         _precedents = ''
                     if _precedents not in compound_map:

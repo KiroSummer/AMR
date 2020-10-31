@@ -62,7 +62,7 @@ class DependencyParser:
                     srl_sen = srl_example(sen)
                     self.parser_sentence(srl_sen)  # parse sentence
                     # stanford parser parse
-                    annotation = annotator(srl_sen.sentences)
+                    annotation = annotator(' '.join(srl_sen.sentences))
                     srl_sen.tokens = annotation['tokens']
                     srl_sen.lemmas = annotation['lemmas']
                     assert len(srl_sen.tokens) == len(srl_sen.lemmas) == len(srl_sen.sentences)

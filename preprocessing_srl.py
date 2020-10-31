@@ -55,7 +55,7 @@ class DependencyParser:
         Data loading with json format. then dependency parsing.
         """
         sentence_number = 0
-        with codecs.open(filepath, encoding="utf8") as f:
+        with open(filepath, 'r') as f:
             print("read srl file from {}".format(filepath))
             with codecs.open(filepath + '.dep.json', encoding='utf8', mode='w') as out_f:
                 print("parse and write file to {}".format(filepath + '.dep.json'))

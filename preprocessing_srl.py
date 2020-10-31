@@ -71,7 +71,6 @@ class DependencyParser:
                     if len(srl_sen.tokens) > 200 or max([len(word) for word in srl_sen.tokens]) > 20:
                         continue
                     srl_sen.lemmas = annotation['lemmas']
-                    assert len(srl_sen.tokens) == len(srl_sen.lemmas) == len(srl_sen.sentences)
                     srl_sen.pos_tags = annotation['pos_tags']
                     srl_sen.ner_tags = annotation['ner_tags']
 

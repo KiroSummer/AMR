@@ -17,6 +17,8 @@ def parse_config():
     parser.add_argument('--load_path', type=str)
     parser.add_argument('--test_data', type=str)
     parser.add_argument('--test_batch_size', type=int)
+    parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
+    parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
     parser.add_argument('--beam_size', type=int)
     parser.add_argument('--alpha', type=float)
     parser.add_argument('--max_time_step', type=int)

@@ -67,6 +67,9 @@ class DependencyParser:
                     srl_sen = srl_example(text=line.strip())
                     annotation = annotator(line)
                     srl_sen.tokens = annotation['tokens']
+                    # remove sentence that with length > 200 or word char number > 20
+                    if len(srl_sen.tokens) > 200 or max([len(word) for word in srl_sen.tokens]) > 20:
+                        continue
                     srl_sen.lemmas = annotation['lemmas']
                     assert len(srl_sen.tokens) == len(srl_sen.lemmas) == len(srl_sen.sentences)
                     srl_sen.pos_tags = annotation['pos_tags']

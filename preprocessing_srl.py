@@ -59,7 +59,7 @@ class DependencyParser:
             print("read srl file from {}".format(filepath))
             with codecs.open(filepath + '.dep.json', encoding='utf8', mode='w') as out_f:
                 print("parse and write file to {}".format(filepath + '.dep.json'))
-                for line in f.readline():
+                for line in f:
                     sentence_number += 1
                     if sentence_number % 1000 == 0:
                         print("processed {} sentences".format(sentence_number))

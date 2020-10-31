@@ -65,7 +65,7 @@ class DependencyParser:
                         print("processed {} sentences".format(sentence_number))
                     # stanford parser parse
                     srl_sen = srl_example(text=line.strip())
-                    annotation = annotator([line])
+                    annotation = annotator(line)
                     srl_sen.tokens = annotation['tokens']
                     # remove sentence that with length > 200 or word char number > 20
                     if len(srl_sen.tokens) > 200 or max([len(word) for word in srl_sen.tokens]) > 20:

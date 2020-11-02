@@ -60,6 +60,7 @@ def parse_config():
     parser.add_argument('--batches_per_update', type=int)
     parser.add_argument('--dev_batch_size', type=int)
     parser.add_argument('--lr_scale', type=float)
+    parser.add_argument('--weight_decay', type=float)
     parser.add_argument('--warmup_steps', type=int)
     parser.add_argument('--resume_ckpt', type=str, default=None)
     parser.add_argument('--ckpt', type=str)

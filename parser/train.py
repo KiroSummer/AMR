@@ -165,7 +165,8 @@ def main(local_rank, args):
             weight_decay_params.append(param)
     grouped_params = [{'params': weight_decay_params, 'weight_decay': 1e-4},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
-    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
+    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6,
+                                         weight_decay=args.weight_decay)  # "correct" L2 @kiro
 
     used_batches = 0
     batches_acm = 0
@@ -177,6 +178,7 @@ def main(local_rank, args):
         del ckpt
 
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
+    # Load SRL data, for train @kiro TODO
     train_data.set_unk_rate(args.unk_rate)
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))

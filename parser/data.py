@@ -239,3 +239,69 @@ class DataLoader(object):
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)
+
+
+class SRLDataLoader(object):
+    """
+    For Loading SRL data @kiro
+    """
+    def __init__(self, vocabs, filename, batch_size, for_train):
+        self.data = []
+        bert_tokenizer = vocabs.get('bert_tokenizer', None)
+        for amr, token, lemma, pos, ner, edge in zip(*read_file(filename)):
+            if for_train:
+                _, _, not_ok = amr.root_centered_sort()
+                if not_ok or len(token) == 0:
+                    continue
+            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, \
+                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
+                     'token2idx': token2idx, 'idx2token': idx2token}
+            if bert_tokenizer is not None:
+                bert_token, token_subword_index = bert_tokenizer.tokenize(token)
+                datum['bert_token'] = bert_token
+                datum['token_subword_index'] = token_subword_index
+
+            self.data.append(datum)
+        print("Get %d AMRs from %s" % (len(self.data), filename))
+        self.vocabs = vocabs
+        self.batch_size = batch_size
+        self.train = for_train
+        self.unk_rate = 0.
+
+    def set_unk_rate(self, x):
+        self.unk_rate = x
+
+    def __iter__(self):
+        idx = list(range(len(self.data)))
+
+        if self.train:
+            random.shuffle(idx)
+            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))  # fixed idx? @kiro check TODO
+
+        batches = []
+        num_tokens, data = 0, []
+        for i in idx:
+            num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])  # tokens_num = len(toks) + len(concepts)
+            data.append(self.data[i])
+            if num_tokens >= self.batch_size:
+                sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+                if sz > GPU_SIZE:
+                    # because we only have limited GPU memory
+                    batches.append(data[:len(data) // 2])
+                    data = data[len(data) // 2:]
+                batches.append(data)
+                num_tokens, data = 0, []
+        if data:
+            sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+            if sz > GPU_SIZE:
+                # because we only have limited GPU memory
+                batches.append(data[:len(data) // 2])
+                data = data[len(data) // 2:]
+            batches.append(data)
+
+        if self.train:  # but the samples in each batch are always the same? @kiro TODO
+            random.shuffle(batches)
+            print("Total {} training batches.".format(len(batches)))
+
+        for batch in batches:
+            yield batchify(batch, self.vocabs, self.unk_rate)

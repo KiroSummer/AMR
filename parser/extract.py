@@ -117,7 +117,7 @@ def parse_config():
 
 if __name__ == "__main__":
     args = parse_config()
-    amrs, token, lemma, pos, ner = read_file(args.train_data)
+    amrs, token, lemma, pos, ner, _ = read_file(args.train_data)
     lexical_map = LexicalMap()
 
     # collect concepts and relations

@@ -20,10 +20,10 @@ class SRL_module(nn.Module):  # add by kiro
         self.ffnn_depth = ffnn_depth
         self.label_space_size = label_space_size
         # self.pred_loss_function = nn.CrossEntropyLoss()
-        self.focal_loss_alpha = fl_alpha # 0.25
+        self.focal_loss_alpha = fl_alpha  # 0.25
         self.focal_loss_gamma = fl_gamma  # 2
         # predicate rep
-        self.pred_reps = nn.Linear(2 * self.input_size, self.pred_size)
+        self.pred_reps = nn.Linear(self.input_size, self.pred_size)
         self.pred_reps_drop = nn.Dropout(self.dropout)
         # predicate scores
         self.pred_unary_score_layers = nn.ModuleList(
@@ -33,7 +33,7 @@ class SRL_module(nn.Module):  # add by kiro
         self.pred_dropout_layers = nn.ModuleList([nn.Dropout(self.dropout) for _ in range(self.ffnn_depth)])
         self.pred_unary_score_projection = nn.Linear(self.ffnn_size, 2)
         # argument rep
-        self.argu_reps_0 = nn.Linear(2 * self.input_size, self.argu_size, bias=False)
+        self.argu_reps_0 = nn.Linear(self.input_size, self.argu_size, bias=False)
         self.argu_reps_drop_0 = nn.Dropout(self.dropout)
         self.span_emb_size = 2 * self.argu_size
         # span_rep

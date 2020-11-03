@@ -140,7 +140,8 @@ if __name__ == "__main__":
             rel.append([e[-1] for e in edge])
 
     # read srl data
-    read_srl_file(args.srl_data, token, lemma, pos, ner)
+    if args.srl_data != '':
+        read_srl_file(args.srl_data, token, lemma, pos, ner)
     # make vocabularies
     token_vocab, token_char_vocab = make_vocab(token, char_level=True)
     lemma_vocab, lemma_char_vocab = make_vocab(lemma, char_level=True)

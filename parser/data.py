@@ -4,6 +4,7 @@ from torch import nn
 import numpy as np
 from parser.AMRGraph import AMRGraph
 from parser.extract import read_file
+from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
 GPU_SIZE = 12000  # okay for 8G memory
@@ -241,6 +242,98 @@ class DataLoader(object):
             yield batchify(batch, self.vocabs, self.unk_rate)
 
 
+def get_all_gold_predicates(srl):
+    if len(srl) > 0:
+        predicates, _, _, _ = zip(*srl)
+    else:
+        predicates = []
+    predicates = np.unique(predicates)
+    return predicates, len(predicates)
+
+
+def get_all_gold_arguments(srl):
+    arguments = []
+    for srl_label in srl:  # remove self-loop V-V
+        if srl_label[-1] in ["V", "C-V"]:
+            continue
+        arguments.append([int(srl_label[1]), int(srl_label[2])])
+    if len(arguments) == 0:  # if the sentence has no arguments.
+        return [[], []]
+    tokenized_arg_starts, tokenized_arg_ends = zip(*arguments)
+    return tokenized_arg_starts, tokenized_arg_ends
+
+
+def tokenize_argument_spans(srl, dictionary):
+    srl_span = []
+    for srl_label in srl:  # remove self-loop V-V
+        if srl_label[-1] in ["V", "C-V"]:
+            continue
+        srl_span.append([int(srl_label[0]), int(srl_label[1]), int(srl_label[2]),
+                         int(dictionary.token2idx(srl_label[3]))]
+                        )
+    if len(srl_span) == 0:  # if the sentence has no arguments.
+        return [[], [], [], []]
+    tokenized_predicates, tokenized_arg_starts, tokenized_arg_ends, tokenized_arg_labels = zip(*srl_span)
+    return tokenized_predicates, tokenized_arg_starts, tokenized_arg_ends, tokenized_arg_labels
+
+
+def batchify_srl(data, vocabs, unk_rate=0.):  # batchify the data
+    _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
+    _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
+    _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
+    _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
+    _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
+    _word_char = ListsofStringToTensor([[CLS] + x['tok'] for x in data], vocabs['word_char'])
+
+    # srl tuple
+    _predicates = [get_all_gold_predicates(x['srl']) for x in data]
+    # _argument_starts_ends = [get_all_gold_arguments(x['srl']) for x in data]
+    _srl_tuple = [tokenize_argument_spans(x['srl'], vocabs['srl']) for x in data]
+
+    batch_sample_size = len(data)
+    max_sample_length = max([1 + x['tok'] for x in data])  # add 1 because of the [CLS]
+    max_sample_arg_number = max([len(x['srl']) for x in data])
+    max_sample_gold_predicates_number = max([_pred[1] for _pred in _predicates])
+    # gold predicates
+    padded_gold_predicates = np.zeros([batch_sample_size, max_sample_gold_predicates_number], dtype=np.int)
+    padded_num_gold_predicates = np.zeros(batch_sample_size, dtype=np.int)
+    # target predicates
+    padded_target_predicates = np.zeros([batch_sample_size, max_sample_length], dtype=np.int)
+
+    padded_predicates = np.zeros([batch_sample_size, max_sample_arg_number], dtype=np.int)
+    padded_arg_starts = np.zeros([batch_sample_size, max_sample_arg_number],
+                                 dtype=np.int)  # one for padding the arg start
+    padded_arg_ends = np.zeros([batch_sample_size, max_sample_arg_number],
+                               dtype=np.int)  # zero for padding the arg end
+    padded_arg_labels = np.zeros([batch_sample_size, max_sample_arg_number], dtype=np.int)
+    padded_srl_lens = np.zeros(batch_sample_size, dtype=np.int)
+    for i in range(batch_sample_size):
+        # gold predicates
+        padded_gold_predicates[i, : _predicates[i][1]] = _predicates[i][0]
+        padded_num_gold_predicates[i] = _predicates[i][1]
+        # target predicates
+        for p in _predicates[5][0]:
+            padded_target_predicates[i, p] = 1
+        # output
+        sample_arg_number = len(data[i]['srl'])
+        padded_predicates[i, :sample_arg_number] = _srl_tuple[i][0]
+        padded_arg_starts[i, :sample_arg_number] = _srl_tuple[i][1]
+        padded_arg_ends[i, :sample_arg_number] = _srl_tuple[i][2]
+        padded_arg_labels[i, :sample_arg_number] = _srl_tuple[i][3]
+        padded_srl_lens[i] = sample_arg_number
+    _labels = (padded_predicates, padded_arg_starts, padded_arg_ends, padded_arg_labels, padded_srl_lens)
+    _gold_preds = (padded_gold_predicates, padded_num_gold_predicates, padded_target_predicates),
+
+    ret = {'lem': _lem, 'tok': _tok, 'pos': _pos, 'ner': _ner, 'edge': _edges, 'word_char': _word_char,
+           'gold_preds': _gold_preds, 'srl': _labels}
+
+    bert_tokenizer = vocabs.get('bert_tokenizer', None)
+    if bert_tokenizer is not None:
+        ret['bert_token'] = ArraysToTensor([x['bert_token'] for x in data])
+        ret['token_subword_index'] = ArraysToTensor([x['token_subword_index'] for x in data])
+    return ret
+
+
 class SRLDataLoader(object):
     """
     For Loading SRL data @kiro
@@ -248,21 +341,15 @@ class SRLDataLoader(object):
     def __init__(self, vocabs, filename, batch_size, for_train):
         self.data = []
         bert_tokenizer = vocabs.get('bert_tokenizer', None)
-        for amr, token, lemma, pos, ner, edge in zip(*read_file(filename)):
-            if for_train:
-                _, _, not_ok = amr.root_centered_sort()
-                if not_ok or len(token) == 0:
-                    continue
-            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, \
-                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
-                     'token2idx': token2idx, 'idx2token': idx2token}
+        for token, lemma, pos, ner, edge, _, srl in zip(*read_srl_file(filename)):
+            datum = {'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, 'srl': srl}
             if bert_tokenizer is not None:
                 bert_token, token_subword_index = bert_tokenizer.tokenize(token)
                 datum['bert_token'] = bert_token
                 datum['token_subword_index'] = token_subword_index
 
             self.data.append(datum)
-        print("Get %d AMRs from %s" % (len(self.data), filename))
+        print("Get %d SRLs from %s" % (len(self.data), filename))
         self.vocabs = vocabs
         self.batch_size = batch_size
         self.train = for_train
@@ -276,15 +363,15 @@ class SRLDataLoader(object):
 
         if self.train:
             random.shuffle(idx)
-            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))  # fixed idx? @kiro check TODO
+            idx.sort(key=lambda x: len(self.data[x]['tok']))  # fixed idx? @kiro check TODO
 
         batches = []
         num_tokens, data = 0, []
         for i in idx:
-            num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])  # tokens_num = len(toks) + len(concepts)
+            num_tokens += len(self.data[i]['tok'])  # tokens_num = len(toks) + len(concepts)
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
-                sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+                sz = len(data) * (2 + max(len(x['tok']) for x in data))
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
                     batches.append(data[:len(data) // 2])
@@ -292,7 +379,7 @@ class SRLDataLoader(object):
                 batches.append(data)
                 num_tokens, data = 0, []
         if data:
-            sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+            sz = len(data) * (2 + max(len(x['tok']) for x in data))
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
                 batches.append(data[:len(data) // 2])
@@ -304,4 +391,4 @@ class SRLDataLoader(object):
             print("Total {} training batches.".format(len(batches)))
 
         for batch in batches:
-            yield batchify(batch, self.vocabs, self.unk_rate)
+            yield batchify_srl(batch, self.vocabs, self.unk_rate)

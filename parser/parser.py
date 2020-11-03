@@ -10,6 +10,7 @@ from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfA
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
 from parser.utils import move_to_device, generate_adj, generate_directional_self_loop_adj
+from parser.srl import SRL_module
 
 
 class Parser(nn.Module):
@@ -19,7 +20,9 @@ class Parser(nn.Module):
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
                  pretrained_file=None, bert_encoder=None,
-                 device=0):
+                 device=0,
+                 use_srl=False, pred_size=0, argu_size=0, span_size=0, label_space_size=0,
+                 ffnn_size=0, ffnn_depth=0):
         super(Parser, self).__init__()
         self.vocabs = vocabs
 
@@ -48,6 +51,16 @@ class Parser(nn.Module):
         self.bert_encoder = bert_encoder
         if bert_encoder is not None:
             self.bert_adaptor = nn.Linear(768, embed_dim)
+        if use_srl:
+            self.pred_size = pred_size
+            self.argu_size = argu_size
+            self.span_size = span_size
+            self.label_space_size = label_space_size
+            self.ffnn_size = ffnn_size
+            self.ffnn_depth = ffnn_depth
+            self.dropout = dropout
+            self.srl = SRL_module(self.embed_dim, self.pred_size, self.argu_size, self.span_size, self.label_space_size,
+                                  self.ffnn_size, self.ffnn_depth, self.dropout)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -200,6 +213,21 @@ class Parser(nn.Module):
             results.append(res)
 
         return new_state_dict, results
+
+    def srl_forward(self, data, encoder_graph=False):
+        if self.bert_encoder is not None:
+            word_repr, word_mask, probe = self.encode_step_with_bert(
+                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
+                data['word_char'], data['bert_token'],
+                data['token_subword_index'], use_adj=encoder_graph
+            )
+        else:
+            word_repr, word_mask, probe = self.encode_step(
+                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
+                data['word_char'], use_adj=encoder_graph
+            )
+        srl_loss = self.srl.forward(word_repr, word_mask, data['gold_preds'], data['srl'])
+        return srl_loss
 
     def forward(self, data, encoder_graph=False, decoder_graph=False):
         if self.bert_encoder is not None:

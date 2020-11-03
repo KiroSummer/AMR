@@ -3,7 +3,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 import argparse, os, random
-from parser.data import Vocab, DataLoader, DUM, END, CLS, NIL
+from parser.data import Vocab, DataLoader, SRLDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
@@ -20,6 +20,7 @@ def parse_config():
     parser.add_argument('--lem_vocab', type=str)
     parser.add_argument('--pos_vocab', type=str)
     parser.add_argument('--ner_vocab', type=str)
+    parser.add_argument('--srl_vocab', type=str)
     parser.add_argument('--concept_vocab', type=str)
     parser.add_argument('--predictable_concept_vocab', type=str)
     parser.add_argument('--rel_vocab', type=str)
@@ -56,6 +57,7 @@ def parse_config():
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--train_data', type=str)
     parser.add_argument('--dev_data', type=str)
+    parser.add_argument('--srl_data', type=str)
     parser.add_argument('--train_batch_size', type=int)
     parser.add_argument('--batches_per_update', type=int)
     parser.add_argument('--dev_batch_size', type=int)
@@ -104,6 +106,7 @@ def load_vocabs(args):
     vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
+    vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
     vocabs['concept'] = Vocab(args.concept_vocab, 5, [DUM, END])
     vocabs['rel'] = Vocab(args.rel_vocab, 50, [NIL])
@@ -179,12 +182,19 @@ def main(local_rank, args):
         del ckpt
 
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
-    # Load SRL data, for train @kiro TODO
     train_data.set_unk_rate(args.unk_rate)
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
+    # Load SRL data, for train @kiro TODO
+    srl_train_data = SRLDataLoader(vocabs, args.srl_data, int(args.train_batch_size / 2),
+                                   for_train=True)
+    srl_train_data.set_unk_rate(args.unk_rate)
+    srl_queue = mp.Queue(10)
+    srl_train_data_generator = mp.Process(target=data_proc, args=(srl_train_data, srl_queue))
+
     train_data_generator.start()
+    srl_train_data_generator.start()
     model.train()
     epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
@@ -196,6 +206,15 @@ def main(local_rank, args):
             epoch += 1
             print('epoch', epoch, 'done', 'batches', batches_acm)
         else:
+            """SRL process begin"""
+            srl_batch = srl_queue.get()
+            if isinstance(srl_batch, str):
+                srl_batch = srl_queue.get()
+            srl_batch = move_to_device(srl_batch, model.device)
+            srl_loss = model.srl_forward(srl_batch, encoder_graph=args.encoder_graph)
+            srl_loss = srl_loss / args.batches_per_update
+            srl_loss.backward()
+            """SRL process end"""
             batch = move_to_device(batch, model.device)  # data moved to device
             concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                 batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)

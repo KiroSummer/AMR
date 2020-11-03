@@ -141,8 +141,12 @@ if __name__ == "__main__":
 
     # read srl data
     if args.srl_data != 'no':
-        srl_tags = read_srl_file(args.srl_data, token, lemma, pos, ner)
-        srl_vocab = make_vocab(srl_tags)
+        srl_tokens, srl_lemmas, srl_pos, srl_ner, _, srl_srl_tags, _ = read_srl_file(args.srl_data)
+        token.extend(srl_tokens)
+        lemma.extend(srl_lemmas)
+        pos.extend(srl_pos)
+        ner.extend(srl_ner)
+        srl_vocab = make_vocab(srl_srl_tags)
         write_vocab(srl_vocab, 'srl_vocab')
     # make vocabularies
     token_vocab, token_char_vocab = make_vocab(token, char_level=True)

@@ -3,6 +3,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --lem_vocab ${dataset}/lem_vocab\
                 --pos_vocab  ${dataset}/pos_vocab\
                 --ner_vocab ${dataset}/ner_vocab\
+                --srl_vocab ${dataset}/srl_vocab\
                 --concept_vocab ${dataset}/concept_vocab\
                 --predictable_concept_vocab ${dataset}/predictable_concept_vocab\
                 --rel_vocab ${dataset}/rel_vocab\

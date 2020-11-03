@@ -51,6 +51,12 @@ def parse_config():
     parser.add_argument('--graph_layers', type=int)
     parser.add_argument('--inference_layers', type=int)
 
+    parser.add_argument('--pred_size', type=int)
+    parser.add_argument('--argu_size', type=int)
+    parser.add_argument('--span_size', type=int)
+    parser.add_argument('--ffnn_size', type=int)
+    parser.add_argument('--ffnn_depth', type=int)
+
     parser.add_argument('--dropout', type=float)
     parser.add_argument('--unk_rate', type=float)
 
@@ -149,7 +155,9 @@ def main(local_rank, args):
                    args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                    args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                    args.pretrained_file, bert_encoder,
-                   device)
+                   device,
+                   True, args.pred_size, args.argu_size, args.span_size, args.label_space_size,
+                   args.ffnn_size, args.ffnn_depth)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())

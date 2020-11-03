@@ -11,6 +11,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --concept_char_vocab ${dataset}/concept_char_vocab\
                 --train_data ${dataset}/train.txt.features.preproc \
                 --dev_data ${dataset}/dev.txt.features.preproc  \
+                --srl_data ./data/auto_srl/enwiki-latest-pages-articles_nltk_preprocessed-split.txtaacut.txt.dep.json+.srl.out.json.pruned \
                 --with_bert \
                 --bert_path bert-base-cased \
                 --word_char_dim 32\
@@ -26,6 +27,11 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --embed_dim 512\
                 --ff_embed_dim 1024\
                 --num_heads 8\
+                --pred_size 200\
+                --argu_size 200\
+                --span_size 200\
+                --ffnn_size 200\
+                --ffnn_depth 1\
                 --snt_layers 4\
                 --graph_layers 2\
                 --inference_layers 4\

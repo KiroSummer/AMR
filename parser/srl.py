@@ -26,3 +26,18 @@ class srl_example:
         file_path.write(json.dumps(output) + '\n')
 
 
+def read_srl_file(filepath, token_vocab, lemma_vocab, pos_tags, ner_tags):
+    with open(filepath, 'r') as f:
+        sentence_number = 0
+        print("read srl file from {}".format(filepath))
+        for line in f:  # read line
+            sentence_number += 1
+            if sentence_number % 1000 == 0:
+                print("processed {} sentences".format(sentence_number))
+            # stanford parser parse
+            srl_sen = srl_example(json.loads(line))
+            token_vocab.append(srl_sen.tokens)
+            lemma_vocab.append(srl_sen.lemmas)
+            pos_tags.append(srl_sen.pos_tags)
+            ner_tags.append(srl_sen.ner_tags)
+        print("{} total sentences number {}".format(filepath, sentence_number))

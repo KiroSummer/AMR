@@ -156,7 +156,7 @@ def main(local_rank, args):
                    args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                    args.pretrained_file, bert_encoder,
                    device,
-                   True, args.pred_size, args.argu_size, args.span_size, args.label_space_size,
+                   True, args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size(),
                    args.ffnn_size, args.ffnn_depth)
 
     if args.world_size > 1:

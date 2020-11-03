@@ -44,7 +44,7 @@ def pruning_srl_samples(filepath):
                 if sentence_number % 1000 == 0:
                     print("processed {} sentences".format(sentence_number))
                 # stanford parser parse
-                srl_sen = srl_example(line)
+                srl_sen = srl_example(json.loads(line))
                 if len(srl_sen.srl) == 0:  # this sample without srl
                     continue
                 saved_number += 1

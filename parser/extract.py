@@ -110,6 +110,7 @@ import argparse
 def parse_config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_data', type=str)
+    parser.add_argument('--srl_data', type=str)  # add srl data
     return parser.parse_args()
 
 

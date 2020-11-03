@@ -27,6 +27,7 @@ class srl_example:
         self.pos_tags = None
         self.ner_tags = None
         self.dependency_edges = None
+        self.srl = None
 
     def write_json(self, file_path):
         output = OrderedDict()

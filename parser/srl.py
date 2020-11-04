@@ -289,8 +289,8 @@ class SRL_module(nn.Module):  # add by kiro
                 offset += argu_num
         padded_sparse_argu_index = padded_sparse_argu_index.cuda()
 
-        argu_starts = torch.gather(candidate_span_starts, 1, padded_sparse_argu_index.cpu())
-        argu_ends = torch.gather(candidate_span_ends, 1, padded_sparse_argu_index.cpu())
+        argu_starts = torch.gather(candidate_span_starts, 1, padded_sparse_argu_index)
+        argu_ends = torch.gather(candidate_span_ends, 1, padded_sparse_argu_index)
         argu_scores = self.batch_index_select(argument_scores, padded_sparse_argu_index)
         arg_span_indices = torch.gather(candidate_span_ids, 1, padded_sparse_argu_index)  # [num_sentences, max_num_args]
         arg_emb = argument_reps.index_select(0, arg_span_indices.view(-1)).view(

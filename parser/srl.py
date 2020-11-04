@@ -258,6 +258,46 @@ class SRL_module(nn.Module):  # add by kiro
         loss = losses.sum()
         return loss
 
+    def get_arguments_according_to_index(self, argument_reps, argument_scores,
+                                         candidate_span_starts, candidate_span_ends, candidate_span_ids,
+                                         argu_dense_index):
+        """
+        return predicted arguments
+        :param argument_reps: flatted; [batch_total_span_num]
+        :param argument_scores:
+        :param candidate_span_starts:
+        :param candidate_span_ends:
+        :param candidate_span_ids:
+        :param argu_dense_index:
+        :return:
+        """
+        num_sentences, max_span_num = argu_dense_index.size(0), argu_dense_index.size(1)
+        num_args = argu_dense_index.sum(-1)
+        sparse_argu_index = argu_dense_index.nonzero()
+        max_argu_num = int(max(num_args))
+        if max_argu_num == 0:
+            padded_sparse_argu_index = torch.zeros([num_sentences, 1]).type(torch.LongTensor)
+            num_args[0] = 1
+        else:
+            padded_sparse_argu_index = torch.zeros([num_sentences, max_argu_num]).type(torch.LongTensor)
+            sent_wise_sparse_argu_index = sparse_argu_index[:, -1]
+            offset = 0
+            for i, argu_num in enumerate(num_args):
+                argu_num = int(argu_num)
+                ith_argu_index = sent_wise_sparse_argu_index[offset: offset + argu_num]
+                padded_sparse_argu_index[i, :argu_num] = ith_argu_index
+                offset += argu_num
+        padded_sparse_argu_index = padded_sparse_argu_index.cuda()
+
+        argu_starts = torch.gather(candidate_span_starts, 1, padded_sparse_argu_index.cpu())
+        argu_ends = torch.gather(candidate_span_ends, 1, padded_sparse_argu_index.cpu())
+        argu_scores = self.batch_index_select(argument_scores, padded_sparse_argu_index)
+        arg_span_indices = torch.gather(candidate_span_ids, 1, padded_sparse_argu_index)  # [num_sentences, max_num_args]
+        arg_emb = argument_reps.index_select(0, arg_span_indices.view(-1)).view(
+            arg_span_indices.size()[0], arg_span_indices.size()[1], -1
+        )
+        return arg_emb, argu_scores, argu_starts, argu_ends, num_args
+
     def sequence_mask(self, sent_lengths, max_sent_length=None):
         batch_size, max_length = sent_lengths.size()[0], torch.max(sent_lengths)
         if max_sent_length is not None:
@@ -378,6 +418,7 @@ class SRL_module(nn.Module):  # add by kiro
     def forward(self, input_emb, masks, gold_predicates, labels):
         input_emb.transpose_(0, 1)
         masks.transpose_(0, 1)
+        masks = masks == False
         num_sentences, max_sent_length = input_emb.size(0), input_emb.size(1)
         sent_lengths = masks.sum(-1)
         """Get the candidate predicate"""

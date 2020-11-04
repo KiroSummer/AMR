@@ -439,7 +439,7 @@ class SRL_module(nn.Module):  # add by kiro
             .view(candidate_span_ids.size()[0], candidate_span_ids.size()[1], -1)
         # spans_log_mask = torch.log(candidate_mask.type(torch.Tensor)).cuda()
         # candidate_arg_scores = candidate_arg_scores + spans_log_mask
-        spans_mask = candidate_mask.type(torch.Tensor).unsqueeze(2).expand(-1, -1, 2).cuda()
+        spans_mask = candidate_mask.unsqueeze(2).expand(-1, -1, 2).cuda()
         candidate_arg_scores = candidate_arg_scores * spans_mask
         # print(candidate_arg_scores)
         # print(spans_mask.size(), candidate_arg_scores.size())

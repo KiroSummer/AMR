@@ -291,7 +291,7 @@ def batchify_srl(data, vocabs, unk_rate=0.):  # batchify the data
     _srl_tuple = [tokenize_argument_spans(x['srl'], vocabs['srl']) for x in data]
 
     batch_sample_size = len(data)
-    max_sample_length = max([1 + len(x['tok']) for x in data])  # add 1 because of the [CLS]
+    max_sample_length = max([len(x['tok']) for x in data])
     max_sample_arg_number = max([len(x['srl']) for x in data])
     max_sample_gold_predicates_number = max([_pred[1] for _pred in _predicates])
     # gold predicates

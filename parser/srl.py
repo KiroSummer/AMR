@@ -511,10 +511,10 @@ def read_srl_file(filepath):
             ner.append(srl_sen.ner_tags)
             edge.append(srl_sen.dependency_edges)
             srl_tags.append([tuple[-1] for tuple in srl_sen.srl])
-            for srl_tuple in srl_sen.srl:  # because of CLS added in the beginning of the sentence @kiro
-                srl_tuple[0] += 1
-                srl_tuple[1] += 1
-                srl_tuple[2] += 1
+            # for srl_tuple in srl_sen.srl:  # because of CLS added in the beginning of the sentence @kiro
+            #     srl_tuple[0] += 1
+            #     srl_tuple[1] += 1
+            #     srl_tuple[2] += 1
             srl_tuples.append(srl_sen.srl)
         print("{} total sentences number {}".format(filepath, sentence_number))
     return tokens, lemmas, pos, ner, edge, srl_tags, srl_tuples

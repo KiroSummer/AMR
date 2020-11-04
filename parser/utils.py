@@ -98,7 +98,7 @@ def move_to_device(maybe_tensor, device):
     elif isinstance(maybe_tensor, list):
         return [move_to_device(x, device) for x in maybe_tensor]
     elif isinstance(maybe_tensor, tuple):
-        return tuple(move_to_device(x, device) for x in maybe_tensor)
+        return (move_to_device(x, device) for x in maybe_tensor)
     return maybe_tensor
 
 

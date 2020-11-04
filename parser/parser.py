@@ -226,7 +226,7 @@ class Parser(nn.Module):
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
                 data['word_char'], use_adj=encoder_graph
             )
-        srl_loss = self.srl.forward(word_repr, word_mask, data['gold_preds'], data['srl'])
+        srl_loss = self.srl.forward(word_repr, word_mask, data['gold_preds'][0], data['srl'][0])
         return srl_loss
 
     def forward(self, data, encoder_graph=False, decoder_graph=False):

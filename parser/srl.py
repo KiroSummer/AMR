@@ -446,15 +446,14 @@ class SRL_module(nn.Module):  # add by kiro
 
         # 1. get predicted arguments
         predicted_arguments_index = \
-            self.get_candidate_argument_index(candidate_arg_scores,
-                                              candidate_mask.type(torch.cuda.LongTensor).view(num_sentences, -1))
+            self.get_candidate_argument_index(candidate_arg_scores, candidate_mask.view(num_sentences, -1))
         # 2. eval predicted argument
         dense_gold_argus_index = \
             self.get_gold_dense_argu_index(labels, max_sent_length,
                                            candidate_mask.view(num_sentences, -1))
         # 3. compute argument loss
         argument_loss = self.get_argument_focal_loss(candidate_arg_scores, dense_gold_argus_index,
-                                                     candidate_mask.type(torch.cuda.LongTensor).view(num_sentences, -1))
+                                                     candidate_mask.view(num_sentences, -1))
         # 4. get the predicted argument representations according to the index
         if self.use_gold_arguments:
             arg_emb, arg_scores, arg_starts, arg_ends, num_args = \

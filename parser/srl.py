@@ -407,7 +407,7 @@ class SRL_module(nn.Module):  # add by kiro
         candidate_starts, candidate_ends, candidate_mask = self.get_candidate_spans(
             sent_lengths, max_sent_length)
         flatted_candidate_mask = candidate_mask.view(-1)
-        batch_word_offset = SRL_module.exclusive_cumsum(sent_lengths)  # get the word offset in a batch
+        batch_word_offset = SRL_module.exclusive_cumsum(sent_lengths).cpu()  # get the word offset in a batch
         # choose the flatted_candidate_starts with the actual existing positions, i.e. exclude the illegal starts
         flatted_candidate_starts = candidate_starts + batch_word_offset
         flatted_candidate_starts = flatted_candidate_starts.view(-1)[flatted_candidate_mask].type(torch.LongTensor)

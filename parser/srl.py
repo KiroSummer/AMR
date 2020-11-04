@@ -19,6 +19,8 @@ class SRL_module(nn.Module):  # add by kiro
         self.ffnn_size = ffnn_size
         self.ffnn_depth = ffnn_depth
         self.label_space_size = label_space_size
+        self.use_gold_predicates = True
+        self.use_gold_arguments = False
         # self.pred_loss_function = nn.CrossEntropyLoss()
         self.focal_loss_alpha = fl_alpha  # 0.25
         self.focal_loss_gamma = fl_gamma  # 2

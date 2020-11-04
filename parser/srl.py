@@ -415,8 +415,8 @@ class SRL_module(nn.Module):  # add by kiro
         return loss, srl_mask
 
     def forward(self, input_emb, masks, gold_predicates, labels):
-        input_emb.transpose_(0, 1)
-        masks.transpose_(0, 1)
+        input_emb = input_emb.transpose(0, 1)
+        masks = masks.transpose(0, 1)
         masks = masks == False
         num_sentences, max_sent_length = input_emb.size(0), input_emb.size(1)
         sent_lengths = masks.sum(-1)

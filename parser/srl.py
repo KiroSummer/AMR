@@ -181,10 +181,10 @@ class SRL_module(nn.Module):  # add by kiro
         max_pred_num = max(pred_nums)
         sparse_pred_index = pred_dense_index.nonzero()
         if max_pred_num == 0:  # if there is no predicate in this batch
-            padded_sparse_pred_index = torch.zeros([num_sentence, 1]).type(torch.LongTensor)
+            padded_sparse_pred_index = torch.zeros([num_sentence, 1]).type(torch.cuda.LongTensor)
             pred_nums[0] = 1  # give an artificial predicate
         else:
-            padded_sparse_pred_index = torch.zeros([num_sentence, max_pred_num]).type(torch.LongTensor)
+            padded_sparse_pred_index = torch.zeros([num_sentence, max_pred_num]).type(torch.cuda.LongTensor)
             # sent_wise_sparse_pred_index = sparse_pred_index.chunk(2, dim=-1)[1].view(-1)
             sent_wise_sparse_pred_index = sparse_pred_index[:, -1]
             offset = 0
@@ -196,7 +196,7 @@ class SRL_module(nn.Module):  # add by kiro
         padded_sparse_pred_index = padded_sparse_pred_index.cuda()
         # get the returns
         pred_emb = self.batch_index_select(pred_reps, padded_sparse_pred_index)
-        pred_ids = torch.gather(candidate_pred_ids, 1, padded_sparse_pred_index.cpu())
+        pred_ids = torch.gather(candidate_pred_ids, 1, padded_sparse_pred_index)
         pred_scores = self.batch_index_select(candidate_pred_scores, padded_sparse_pred_index)
         return pred_ids, pred_emb, pred_scores, pred_nums
 
@@ -382,7 +382,7 @@ class SRL_module(nn.Module):  # add by kiro
         sent_lengths = masks.sum(-1)
         """Get the candidate predicate"""
         pred_reps = self.pred_reps_drop(F.relu(self.pred_reps.forward(input_emb)))
-        candidate_pred_ids = torch.arange(0, max_sent_length).unsqueeze(0).expand(num_sentences, -1)
+        candidate_pred_ids = torch.arange(0, max_sent_length).unsqueeze(0).expand(num_sentences, -1).cuda()
         candidate_pred_emb = pred_reps
         candidate_pred_scores = self.get_pred_unary_scores(candidate_pred_emb)
         # 1. get the predicted predicate index [batch_size, max_sentence_length]

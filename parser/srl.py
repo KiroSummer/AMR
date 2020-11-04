@@ -428,7 +428,7 @@ class SRL_module(nn.Module):  # add by kiro
         candidate_span_number = candidate_span_emb.size()[0]
         max_candidate_spans_num_per_sentence = candidate_mask.size()[1]
         sparse_indices = (candidate_mask == 1).nonzero()
-        sparse_values = torch.arange(0, candidate_span_number)
+        sparse_values = torch.arange(0, candidate_span_number).cuda()
         candidate_span_ids = \
             torch.sparse.FloatTensor(sparse_indices.t(), sparse_values,
                                      torch.Size([num_sentences, max_candidate_spans_num_per_sentence])).to_dense()
@@ -451,7 +451,7 @@ class SRL_module(nn.Module):  # add by kiro
         # 2. eval predicted argument
         dense_gold_argus_index = \
             self.get_gold_dense_argu_index(labels, max_sent_length,
-                                           candidate_mask.type(torch.LongTensor).view(num_sentences, -1))
+                                           candidate_mask.view(num_sentences, -1))
         # 3. compute argument loss
         argument_loss = self.get_argument_focal_loss(candidate_arg_scores, dense_gold_argus_index,
                                                      candidate_mask.type(torch.cuda.LongTensor).view(num_sentences, -1))

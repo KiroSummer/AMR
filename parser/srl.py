@@ -356,7 +356,7 @@ class SRL_module(nn.Module):  # add by kiro
         # exit()
         return srl_labels
 
-    def get_srl_unary_scores(self, span_emb, config, dropout, num_labels=1, name="span_scores"):
+    def get_srl_unary_scores(self, span_emb):
         input = span_emb
         for i, ffnn in enumerate(self.srl_unary_score_layers):
             input = F.relu(ffnn.forward(input))
@@ -365,7 +365,7 @@ class SRL_module(nn.Module):  # add by kiro
         output = self.srl_unary_score_projection.forward(input)
         return output
 
-    def get_srl_scores(self, arg_emb, pred_emb, num_labels, config, dropout):
+    def get_srl_scores(self, arg_emb, pred_emb, num_labels):
         num_sentences = arg_emb.size()[0]
         num_args = arg_emb.size()[1]  # [batch_size, max_arg_num, arg_emb_size]
         num_preds = pred_emb.size()[1]  # [batch_size, max_pred_num, pred_emb_size]
@@ -378,8 +378,7 @@ class SRL_module(nn.Module):  # add by kiro
         pair_emb = torch.cat(pair_emb_list, 3)  # concatenate the argument emb and pre emb
         pair_emb_size = pair_emb.size()[3]
         flat_pair_emb = pair_emb.view(num_sentences * num_args * num_preds, pair_emb_size)
-        flat_srl_scores = self.get_srl_unary_scores(flat_pair_emb, config, dropout, num_labels - 1,
-                                                    "predicate_argument_scores")
+        flat_srl_scores = self.get_srl_unary_scores(flat_pair_emb)
         srl_scores = flat_srl_scores.view(num_sentences, num_args, num_preds, -1)
         dummy_scores = torch.zeros([num_sentences, num_args, num_preds, 1]).cuda()
         srl_scores = torch.cat([dummy_scores, srl_scores], 3)
@@ -508,8 +507,7 @@ class SRL_module(nn.Module):  # add by kiro
                                                       predicted_arguments_index)
         """Compute the candidate predicates and arguments semantic roles"""
         srl_labels = self.get_srl_labels(arg_starts, arg_ends, predicates, labels, max_sent_length)
-        srl_scores = self.get_srl_scores(arg_emb, pred_emb, self.label_space_size, self.config,
-                                         self.dropout)
+        srl_scores = self.get_srl_scores(arg_emb, pred_emb, self.label_space_size)
         srl_loss, srl_mask = self.get_srl_softmax_focal_loss(srl_scores, srl_labels, num_args, num_preds)
         return pred_loss + argument_loss + srl_loss
 

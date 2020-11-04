@@ -312,7 +312,7 @@ def batchify_srl(data, vocabs, unk_rate=0.):  # batchify the data
         padded_gold_predicates[i, : _predicates[i][1]] = _predicates[i][0]
         padded_num_gold_predicates[i] = _predicates[i][1]
         # target predicates
-        for p in _predicates[5][0]:
+        for p in _predicates[i][0]:
             padded_target_predicates[i, p] = 1
         # output
         sample_arg_number = len(data[i]['srl'])

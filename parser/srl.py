@@ -92,7 +92,7 @@ class SRL_module(nn.Module):  # add by kiro
         """
         assert exclusive is True
         if exclusive is True:
-            exclusive_sent_lengths = torch.zeros(1).type(torch.LongTensor)
+            exclusive_sent_lengths = torch.zeros(1).type(torch.cuda.LongTensor)
             result = torch.cumsum(torch.cat([exclusive_sent_lengths, input], 0)[:-1], 0).view(-1, 1)
         else:
             result = torch.cumsum(input, 0).view(-1, 1)

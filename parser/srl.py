@@ -107,7 +107,7 @@ class SRL_module(nn.Module):  # add by kiro
     def flatten_emb_in_sentence(self, emb, batch_sentences_mask):
         num_sentences, max_sentence_length = emb.size()[0], emb.size()[1]
         flatted_emb = self.flatten_emb(emb)
-        return flatted_emb[batch_sentences_mask.view(num_sentences * max_sentence_length)]
+        return flatted_emb[batch_sentences_mask.continuous().view(num_sentences * max_sentence_length)]
 
     def get_span_emb(self, flatted_context_emb, flatted_candidate_starts, flatted_candidate_ends):
         batch_word_num = flatted_context_emb.size()[0]

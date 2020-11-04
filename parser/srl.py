@@ -340,7 +340,7 @@ class SRL_module(nn.Module):  # add by kiro
         max_arg_num = arg_starts.size()[1]
         max_pred_num = predicates.size()[1]
 
-        sentence_indices_2d = torch.arange(0, num_sentences).unsqueeze(1).unsqueeze(2).expand(-1, max_arg_num, max_pred_num)
+        sentence_indices_2d = torch.arange(0, num_sentences).unsqueeze(1).unsqueeze(2).expand(-1, max_arg_num, max_pred_num).cuda()
         expanded_arg_starts = arg_starts.unsqueeze(2).expand(-1, -1, max_pred_num)
         expanded_arg_ends = arg_ends.unsqueeze(2).expand(-1, -1, max_pred_num)
         expanded_predicates = predicates.unsqueeze(1).expand(-1, max_arg_num, -1)
@@ -507,7 +507,7 @@ class SRL_module(nn.Module):  # add by kiro
                                                       candidate_starts, candidate_ends, candidate_span_ids,
                                                       predicted_arguments_index)
         """Compute the candidate predicates and arguments semantic roles"""
-        srl_labels = self.get_srl_labels(arg_starts.cpu(), arg_ends.cpu(), predicates, labels, max_sent_length)
+        srl_labels = self.get_srl_labels(arg_starts, arg_ends, predicates, labels, max_sent_length)
         srl_scores = self.get_srl_scores(arg_emb, pred_emb, self.label_space_size, self.config,
                                          self.dropout)
         srl_loss, srl_mask = self.get_srl_softmax_focal_loss(srl_scores, srl_labels, num_args, num_preds)

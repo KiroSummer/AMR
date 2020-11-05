@@ -182,6 +182,9 @@ def main(local_rank, args):
 
     used_batches = 0
     batches_acm = 0
+
+    used_srl_batches = 0
+
     if args.resume_ckpt:  # false, not supported @kiro
         ckpt = torch.load(args.resume_ckpt)
         model.load_state_dict(ckpt['model'])
@@ -209,11 +212,7 @@ def main(local_rank, args):
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
     while epoch < max_training_epochs:  # there is no stop! @kiro
-        batch = queue.get()
-        if isinstance(batch, str):
-            epoch += 1
-            print('epoch', epoch, 'done', 'batches', batches_acm)
-        else:
+        while True:
             """SRL process begin"""
             srl_batch = srl_queue.get()
             if isinstance(srl_batch, str):
@@ -222,50 +221,67 @@ def main(local_rank, args):
             srl_loss = model.srl_forward(srl_batch, encoder_graph=args.encoder_graph)
             srl_loss = srl_loss / args.batches_per_update
             srl_loss.backward()
-            """SRL process end"""
-            batch = move_to_device(batch, model.device)  # data moved to device
-            concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
-                batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
-            # model forward, please note that graph_arc_loss is not used
-            loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
-            loss_value = loss.item()
-            concept_loss_value = concept_loss.item()
-            arc_loss_value = arc_loss.item()
-            rel_loss_value = rel_loss.item()
-            loss_avg = loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
-            concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
-            arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
-            rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
-            loss.backward()  # loss backward
-            used_batches += 1
-            if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
+            used_srl_batches += 1
+            if not (used_srl_batches % args.batches_per_update == -1 % args.batches_per_update):
                 continue
-
-            batches_acm += 1
             if args.world_size > 1:
                 average_gradients(model)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+            # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
             optimizer.step()  # update the model parameters according to the losses @kiro
             optimizer.zero_grad()
-            if args.world_size == 1 or (dist.get_rank() == 0):
-                if batches_acm % args.print_every == -1 % args.print_every:
-                    print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f' % (
-                    epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg))
-                    model.train()
-                if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
-                    model.eval()
-                    output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
-                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
-                    saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
-                    torch.save({'args': args,
-                                'model': model.state_dict(),
-                                'batches_acm': batches_acm,
-                                'optimizer': optimizer.state_dict()},
-                               saved_model)
-                    eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model,))
-                    eval_task.start()
-                    model.train()
+            """SRL process end"""
+            break
+        while True:
+            batch = queue.get()
+            if isinstance(batch, str):
+                epoch += 1
+                print('epoch', epoch, 'done', 'batches', batches_acm)
+            else:
+                batch = move_to_device(batch, model.device)  # data moved to device
+                concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
+                    batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
+                # model forward, please note that graph_arc_loss is not used
+                loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
+                loss_value = loss.item()
+                concept_loss_value = concept_loss.item()
+                arc_loss_value = arc_loss.item()
+                rel_loss_value = rel_loss.item()
+                loss_avg = loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
+                concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
+                arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
+                rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
+                loss.backward()  # loss backward
+                used_batches += 1
+                if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
+                    continue
+
+                batches_acm += 1
+                if args.world_size > 1:
+                    average_gradients(model)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+                optimizer.step()  # update the model parameters according to the losses @kiro
+                optimizer.zero_grad()
+                if args.world_size == 1 or (dist.get_rank() == 0):
+                    if batches_acm % args.print_every == -1 % args.print_every:
+                        print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f' % (
+                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg))
+                        model.train()
+                    if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
+                        model.eval()
+                        output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
+                        parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
+                        saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
+                        torch.save({'args': args,
+                                    'model': model.state_dict(),
+                                    'batches_acm': batches_acm,
+                                    'optimizer': optimizer.state_dict()},
+                                   saved_model)
+                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model,))
+                        eval_task.start()
+                        model.train()
+                break
     print("Training process is done.")  # @kiro
 
 

@@ -18,7 +18,7 @@ class srl_example:
         self.lemmas = None
         self.pos_tags = None
         self.ner_tags = None
-        self.dependency_edges = obj["dependency_edges"]
+        self.dependency_edges = None
         self.srl = obj["srl"][0]
 
     def write_json(self, file_path):

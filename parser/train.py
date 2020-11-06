@@ -207,7 +207,7 @@ def main(local_rank, args):
     train_data_generator.start()
     srl_train_data_generator.start()
     model.train()
-    epoch, loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0
+    epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
@@ -220,6 +220,7 @@ def main(local_rank, args):
             srl_batch = move_to_device(srl_batch, model.device)
             srl_loss = model.srl_forward(srl_batch, encoder_graph=args.encoder_graph)
             srl_loss = srl_loss / args.batches_per_update
+            srl_loss_avg = srl_loss_avg * 0.8 + srl_loss.item() * 0.2
             srl_loss.backward()
             used_srl_batches += 1
             if not (used_srl_batches % args.batches_per_update == -1 % args.batches_per_update):
@@ -265,8 +266,8 @@ def main(local_rank, args):
                 optimizer.zero_grad()
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
-                        print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f' % (
-                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg))
+                        print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, srl_loss %.3f' % (
+                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, srl_loss_avg))
                         model.train()
                     if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                         model.eval()

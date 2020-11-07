@@ -155,7 +155,7 @@ class SRL_module(nn.Module):  # add by kiro
         loss = -1.0 * self.focal_loss_alpha * (1 - pt) ** self.focal_loss_gamma * loss_flat
         losses = loss.view(*gold_predicates.size())
         losses = losses * mask.float()
-        loss = losses.sum()
+        loss = losses.mean()
         return loss
 
     def batch_index_select(self, emb, indices):
@@ -255,7 +255,7 @@ class SRL_module(nn.Module):  # add by kiro
         loss = -1.0 * self.focal_loss_alpha * (1 - pt) ** self.focal_loss_gamma * loss_flat
         losses = loss.view(*gold_argument_index.size())
         losses = losses * candidate_argu_mask.float()
-        loss = losses.sum()
+        loss = losses.mean()
         return loss
 
     def get_arguments_according_to_index(self, argument_reps, argument_scores,
@@ -411,7 +411,7 @@ class SRL_module(nn.Module):  # add by kiro
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         negative_log_likelihood_flat = negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask
-        loss = negative_log_likelihood_flat.sum()
+        loss = negative_log_likelihood_flat.mean()
         return loss, srl_mask
 
     def forward(self, input_emb, masks, gold_predicates, labels):

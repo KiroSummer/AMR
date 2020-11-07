@@ -183,6 +183,30 @@ class FeatureAnnotator:
         return output
 
 
+class FeatureAnnotatorGivenToken:
+    def __init__(self, url):
+        self.nlp = StanfordCoreNLP(url)
+        self.nlp_properties = {
+            'annotators': "tokenize, pos,lemma,ner",
+            "tokenize.options": "splitHyphenated=true,normalizeParentheses=false",
+            "tokenize.whitespace": True,
+            'ssplit.isOneSentence': True,
+            'outputFormat': 'json'
+        }
+
+    def annotate(self, text):
+        tokens = self.nlp.annotate(text.strip(), self.nlp_properties)['sentences'][0]['tokens']
+        output = dict(
+            tokens=[], lemmas=[], pos_tags=[], ner_tags=[]
+        )
+        for token in tokens:
+            output['tokens'].append(token['word'])
+            output['lemmas'].append(token['lemma'])
+            output['pos_tags'].append(token['pos'])
+            output['ner_tags'].append(token['ner'])
+        return output
+
+
 if __name__ == '__main__':
     import argparse
 

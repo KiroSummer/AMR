@@ -4,11 +4,11 @@ import json
 import codecs
 import sys
 from collections import OrderedDict
-from stog.data.dataset_readers.amr_parsing.preprocess.feature_annotator import FeatureAnnotator
+from stog.data.dataset_readers.amr_parsing.preprocess.feature_annotator import FeatureAnnotator, FeatureAnnotatorGivenToken
 
 
 compound_file = 'data/AMR/amr_2.0_utils/joints.txt'
-annotator = FeatureAnnotator('http://localhost:9000', compound_file)
+annotator = FeatureAnnotatorGivenToken('http://localhost:9000')
 
 
 class srl_example:
@@ -56,7 +56,7 @@ def pruning_srl_samples(filepath):
                 srl_sen = srl_example(json.loads(line))
                 if len(srl_sen.srl) == 0:  # this sample without srl
                     continue
-                annotation = annotator(srl_sen.text)
+                annotation = annotator.annotate(srl_sen.text)
                 srl_sen.tokens = annotation['tokens']
                 assert srl_sen.tokens == srl_sen.text
                 # remove sentence that with length > 200 or word char number > 20

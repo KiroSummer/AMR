@@ -555,6 +555,6 @@ def read_srl_file(filepath):
             #     srl_tuple[0] += 1
             #     srl_tuple[1] += 1
             #     srl_tuple[2] += 1
-            srl_tuples.append(srl_sen.srl)
+            srl_tuples.append([t for t in srl_sen.srl if t[-1] not in ['V', 'C-V']])
         print("{} total sentences number {}".format(filepath, sentence_number))
     return tokens, lemmas, pos, ner, edge, srl_tags, srl_tuples

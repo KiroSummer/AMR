@@ -56,7 +56,7 @@ def pruning_srl_samples(filepath):
                 srl_sen = srl_example(json.loads(line))
                 if len(srl_sen.srl) == 0:  # this sample without srl
                     continue
-                annotation = annotator.annotate(srl_sen.text)
+                annotation = annotator.annotate(' '.join(srl_sen.text))
                 srl_sen.tokens = annotation['tokens']
                 assert srl_sen.tokens == srl_sen.text
                 # remove sentence that with length > 200 or word char number > 20
@@ -68,7 +68,7 @@ def pruning_srl_samples(filepath):
                 parser_sentence(srl_sen)  # parse sentence
 
                 saved_number += 1
-                out_f.write(line)
+                srl_sen.write_json(out_f)
             print("{} total sentences number {}".format(filepath, sentence_number))
             print("{} total sentences saved {}".format(filepath + '.features', saved_number))
 

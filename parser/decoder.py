@@ -105,7 +105,7 @@ class ConceptGenerator(nn.Module):
         # index: tgt_len x bsz x (src_len x 2)
         index = copy_seq.transpose(0, 1).contiguous().view(1, bsz, -1).expand(seq_len, -1, -1)
         copy_probs = (copy_gate.unsqueeze(2) * alignment_weight.unsqueeze(-1)).view(seq_len, bsz, -1)
-        probs = torch.scatter_add(probs, -1, index, copy_probs)
+        probs = torch.scatter_add(probs, -1, index, copy_probs)  # modify add_ to add
         ll = torch.log(probs + 1e-12)
 
         if work:

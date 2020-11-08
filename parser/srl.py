@@ -605,16 +605,18 @@ def read_srl_file(filepath):
                 print("processed {} sentences".format(sentence_number))
             # stanford parser parse
             srl_sen = srl_example(json.loads(line))
-            tokens.append(srl_sen.tokens)
-            lemmas.append(srl_sen.lemmas)
-            pos.append(srl_sen.pos_tags)
-            ner.append(srl_sen.ner_tags)
-            edge.append(srl_sen.dependency_edges)
-            srl_tags.append([tuple[-1] for tuple in srl_sen.srl])
             # for srl_tuple in srl_sen.srl:  # because of CLS added in the beginning of the sentence @kiro
             #     srl_tuple[0] += 1
             #     srl_tuple[1] += 1
             #     srl_tuple[2] += 1
-            srl_tuples.append([t for t in srl_sen.srl if t[-1] not in ['V', 'C-V']])
+            preprocessing_srl = [t for t in srl_sen.srl if t[-1] not in ['V', 'C-V']]
+            if len(preprocessing_srl) > 0:
+                tokens.append(srl_sen.tokens)
+                lemmas.append(srl_sen.lemmas)
+                pos.append(srl_sen.pos_tags)
+                ner.append(srl_sen.ner_tags)
+                edge.append(srl_sen.dependency_edges)
+                srl_tags.append([tuple[-1] for tuple in srl_sen.srl])
+                srl_tuples.append(preprocessing_srl)
         print("{} total sentences number {}".format(filepath, sentence_number))
     return tokens, lemmas, pos, ner, edge, srl_tags, srl_tuples

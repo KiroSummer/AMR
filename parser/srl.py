@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 class SRL_module(nn.Module):  # add by kiro
     def __init__(self, input_size, pred_size, argu_size, span_size, label_space_size,
-                 ffnn_size, ffnn_depth, dropout, fl_alpha=1.0, fl_gamma=2.0):
+                 ffnn_size, ffnn_depth, dropout, fl_alpha=1.0, fl_gamma=0.0):
         super(SRL_module, self).__init__()
         self.dropout = dropout
         self.input_size = input_size
@@ -145,6 +145,21 @@ class SRL_module(nn.Module):  # add by kiro
         max_indexes = max_indexes.type(torch.cuda.LongTensor) * mask.type(torch.cuda.LongTensor)  # since the padded position should be 0
         return max_indexes
 
+    def get_pred_loss(self, pred_scores, gold_predicates, mask=None):
+        assert len(pred_scores.size()) == 3  # [batch_size, max_sent_len, 2]
+        pred_scores = pred_scores.view(-1, pred_scores.size(-1))  # [-1, 2], [total_words, 2]
+        # print(pred_scores)
+        y = F.log_softmax(pred_scores, -1)
+        # print(y)
+        y_hat = gold_predicates.view(-1, 1)
+        # print(y_hat)
+        loss_flat = -torch.gather(y, dim=-1, index=y_hat)
+        # print(loss_flat)
+        losses = loss_flat.view(*gold_predicates.size())
+        losses = losses * mask.float()
+        loss = losses.mean()
+        return loss
+
     def get_pred_focal_loss(self, pred_scores, gold_predicates, mask=None):
         assert len(pred_scores.size()) == 3  # [batch_size, max_sent_len, 2]
         pred_scores = pred_scores.view(-1, pred_scores.size(-1))  # [-1, 2], [total_words, 2]
@@ -239,6 +254,22 @@ class SRL_module(nn.Module):  # add by kiro
         # print(dense_gold_argus.size(), dense_gold_argus)
         # exit()
         return dense_gold_argus
+
+    def get_argument_loss(self, argument_scores, gold_argument_index, candidate_argu_mask):
+        """
+        :param argument_scores: [num_sentence, max_candidate_span_num, 2]
+        :param gold_argument_index: [num_sentence, max_candidate_span_num, 1]
+        :param candidate_argu_mask: [num_sentence, max_candidate_span_num]
+        :return:
+        """
+        y = F.log_softmax(argument_scores, dim=-1)
+        y = y.view(-1, argument_scores.size(2))
+        y_hat = gold_argument_index.view(-1, 1)
+        loss_flat = -torch.gather(y, dim=-1, index=y_hat)
+        losses = loss_flat.view(*gold_argument_index.size())
+        losses = losses * candidate_argu_mask.float()
+        loss = losses.mean()
+        return loss
 
     def get_argument_focal_loss(self, argument_scores, gold_argument_index, candidate_argu_mask):
         """
@@ -384,6 +415,30 @@ class SRL_module(nn.Module):  # add by kiro
         srl_scores = torch.cat([dummy_scores, srl_scores], 3)
         return srl_scores
 
+    def get_srl_softmax_loss(self, srl_scores, srl_labels, num_predicted_args, num_predicted_preds):
+        max_num_arg = srl_scores.size()[1]
+        max_num_pred = srl_scores.size()[2]
+        num_labels = srl_scores.size()[3]
+
+        # num_predicted_args, 1D tensor; max_num_arg: a int variable means the gold ans's max arg number
+        args_mask = self.sequence_mask(num_predicted_args, max_num_arg)
+        pred_mask = self.sequence_mask(num_predicted_preds, max_num_pred)
+        srl_mask = (args_mask.unsqueeze(2) == 1) & (pred_mask.unsqueeze(1) == 1)
+
+        srl_scores = srl_scores.view(-1, num_labels)
+        srl_labels = srl_labels.view(-1, 1).cuda()
+        output = F.log_softmax(srl_scores, 1)
+
+        negative_log_likelihood_flat = -torch.gather(output, dim=1, index=srl_labels).view(-1)
+        srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
+        if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
+            loss = negative_log_likelihood_flat.mean()
+            return loss, srl_mask
+        srl_mask = srl_mask.type(torch.cuda.FloatTensor)
+        negative_log_likelihood_flat = negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask
+        loss = negative_log_likelihood_flat.mean()
+        return loss, srl_mask
+
     def get_srl_softmax_focal_loss(self, srl_scores, srl_labels, num_predicted_args, num_predicted_preds):
         # print(srl_scores.size(), srl_labels.size(), num_predicted_args, num_predicted_preds)
         max_num_arg = srl_scores.size()[1]
@@ -407,7 +462,7 @@ class SRL_module(nn.Module):  # add by kiro
 
         srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
         if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
-            loss = negative_log_likelihood_flat.sum()
+            loss = negative_log_likelihood_flat.mean()
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         negative_log_likelihood_flat = negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask
@@ -428,7 +483,7 @@ class SRL_module(nn.Module):  # add by kiro
         # 1. get the predicted predicate index [batch_size, max_sentence_length]
         predicted_predicates_index = self.get_candidate_predicates_index(candidate_pred_scores, masks)
         # 3. compute the predicate process loss
-        pred_loss = self.get_pred_focal_loss(candidate_pred_scores, gold_predicates[2], mask=masks)
+        pred_loss = self.get_pred_loss(candidate_pred_scores, gold_predicates[2], mask=masks)
         # 4. get the candidate predicates, scores, num_preds according to the index
         if self.use_gold_predicates:
             predicates, pred_emb, pred_scores, num_preds = \
@@ -492,7 +547,7 @@ class SRL_module(nn.Module):  # add by kiro
             self.get_gold_dense_argu_index(labels, max_sent_length,
                                            candidate_mask.view(num_sentences, -1))
         # 3. compute argument loss
-        argument_loss = self.get_argument_focal_loss(candidate_arg_scores, dense_gold_argus_index,
+        argument_loss = self.get_argument_loss(candidate_arg_scores, dense_gold_argus_index,
                                                      candidate_mask.view(num_sentences, -1))
         # 4. get the predicted argument representations according to the index
         if self.use_gold_arguments:
@@ -508,7 +563,7 @@ class SRL_module(nn.Module):  # add by kiro
         """Compute the candidate predicates and arguments semantic roles"""
         srl_labels = self.get_srl_labels(arg_starts, arg_ends, predicates, labels, max_sent_length)
         srl_scores = self.get_srl_scores(arg_emb, pred_emb, self.label_space_size)
-        srl_loss, srl_mask = self.get_srl_softmax_focal_loss(srl_scores, srl_labels, num_args, num_preds)
+        srl_loss, srl_mask = self.get_srl_softmax_loss(srl_scores, srl_labels, num_args, num_preds)
         return pred_loss + argument_loss + srl_loss
 
 

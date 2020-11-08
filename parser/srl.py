@@ -20,7 +20,7 @@ class SRL_module(nn.Module):  # add by kiro
         self.ffnn_depth = ffnn_depth
         self.label_space_size = label_space_size
         self.use_gold_predicates = True
-        self.use_gold_arguments = False
+        self.use_gold_arguments = True
         # self.pred_loss_function = nn.CrossEntropyLoss()
         self.focal_loss_alpha = fl_alpha  # 0.25
         self.focal_loss_gamma = fl_gamma  # 2
@@ -431,9 +431,9 @@ class SRL_module(nn.Module):  # add by kiro
 
         negative_log_likelihood_flat = -torch.gather(output, dim=1, index=srl_labels).view(-1)
         srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
-        # if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
-        #     loss = negative_log_likelihood_flat.mean()
-        #     return loss, srl_mask
+        if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
+            loss = negative_log_likelihood_flat.mean()
+            return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         negative_log_likelihood_flat = negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask / srl_mask.sum()
         loss = negative_log_likelihood_flat.mean()

@@ -436,12 +436,10 @@ class SRL_module(nn.Module):  # add by kiro
         srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
         if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
             loss = negative_log_likelihood_flat.mean()
-            print("srl loss 0", loss.item())
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / srl_mask.sum(1)
         loss = negative_log_likelihood_flat.mean()
-        print("srl loss 1", loss.item())
         return loss, srl_mask
 
     def get_srl_softmax_focal_loss(self, srl_scores, srl_labels, num_predicted_args, num_predicted_preds):

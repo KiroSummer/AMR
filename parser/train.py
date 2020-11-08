@@ -228,7 +228,7 @@ def main(local_rank, args):
             if args.world_size > 1:
                 average_gradients(model)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+            lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
             optimizer.step()  # update the model parameters according to the losses @kiro
             optimizer.zero_grad()
             """SRL process end"""

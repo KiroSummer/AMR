@@ -433,10 +433,10 @@ class SRL_module(nn.Module):  # add by kiro
         negative_log_likelihood_flat = -torch.gather(output, dim=1, index=srl_labels).view(-1)
         negative_log_likelihood_flat = negative_log_likelihood_flat.view(bsz, max_num_arg * max_num_pred)
         srl_mask = srl_mask.view(bsz, max_num_arg * max_num_pred)
-        srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
-        if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
-            loss = negative_log_likelihood_flat.mean()
-            return loss, srl_mask
+        # srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
+        # if int(srl_labels.sum()) == 0 or int(sum(srl_loss_mask)) == 0:
+        #     loss = negative_log_likelihood_flat.mean()
+        #     return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / srl_mask.sum(1)
         loss = negative_log_likelihood_flat.mean()

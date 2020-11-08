@@ -211,8 +211,9 @@ def main(local_rank, args):
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
+    is_start = True
     while epoch < max_training_epochs:  # there is no stop! @kiro
-        while True:
+        while True and is_start is False:
             """SRL process begin"""
             srl_batch = srl_queue.get()
             if isinstance(srl_batch, str):
@@ -228,12 +229,13 @@ def main(local_rank, args):
             if args.world_size > 1:
                 average_gradients(model)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+            # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
             optimizer.step()  # update the model parameters according to the losses @kiro
             optimizer.zero_grad()
             """SRL process end"""
             break
         while True:
+            is_start = False
             batch = queue.get()
             if isinstance(batch, str):
                 epoch += 1

@@ -41,7 +41,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --train_batch_size 4444\
                 --dev_batch_size 4444 \
                 --lr_scale 1. \
-                --weight_decay 1e-6 \
+                --weight_decay 1e-4 \
                 --warmup_steps 2000\
                 --print_every 100 \
                 --eval_every 1000 \

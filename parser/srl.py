@@ -57,6 +57,32 @@ class SRL_module(nn.Module):  # add by kiro
         self.srl_dropout_layers = nn.ModuleList([nn.Dropout(self.dropout) for _ in range(self.ffnn_depth)])
         self.srl_unary_score_projection = nn.Linear(self.ffnn_size, self.label_space_size)
 
+    def reset_parameters(self):
+        # predicate
+        nn.init.normal_(self.pred_reps.weight, std=0.02)
+        nn.init.constant_(self.pred_reps.bias, 0.0)
+        for layer in self.pred_unary_score_layers:
+            nn.init.normal_(layer.weight, std=0.02)
+            nn.init.constant_(layer.bias, 0.0)
+        nn.init.normal_(self.pred_unary_score_projection.weight, std=0.02)
+        nn.init.constant_(self.pred_unary_score_projection.bias, 0.0)
+        # argument
+        nn.init.normal_(self.argu_reps_0.weight, std=0.02)
+        nn.init.constant_(self.argu_reps_0.bias, 0.0)
+        nn.init.normal_(self.argu_reps.weight, std=0.02)
+        nn.init.constant_(self.argu_reps.bias, 0.0)
+        for layer in self.arg_unary_score_layers:
+            nn.init.normal_(layer.weight, std=0.02)
+            nn.init.constant_(layer.bias, 0.0)
+        nn.init.normal_(self.arg_unary_score_projection.weight, std=0.02)
+        nn.init.constant_(self.arg_unary_score_projection.bias, 0.0)
+        # srl
+        for layer in self.srl_unary_score_layers:
+            nn.init.normal_(layer.weight, std=0.02)
+            nn.init.constant_(layer.bias, 0.0)
+        nn.init.normal_(self.srl_unary_score_projection.weight, std=0.02)
+        nn.init.constant_(self.srl_unary_score_projection.bias, 0.0)
+
     def get_pred_unary_scores(self, span_emb):
         input = span_emb
         for i, ffnn in enumerate(self.pred_unary_score_layers):
@@ -155,6 +181,7 @@ class SRL_module(nn.Module):  # add by kiro
         # print(y_hat)
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         # print(loss_flat)
+        print("gold_predicates size", gold_predicates.size())
         losses = loss_flat.view(*gold_predicates.size())
         losses = (losses * mask.float()).sum(1) / mask.sum(1)
         loss = losses.mean()
@@ -266,6 +293,7 @@ class SRL_module(nn.Module):  # add by kiro
         y = y.view(-1, argument_scores.size(2))
         y_hat = gold_argument_index.view(-1, 1)
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
+        print("gold_argument_index size()", gold_argument_index.size())
         losses = loss_flat.view(*gold_argument_index.size())
         losses = (losses * candidate_argu_mask.float()).sum(1) / candidate_argu_mask.sum(1)
         loss = losses.mean()
@@ -431,6 +459,7 @@ class SRL_module(nn.Module):  # add by kiro
         output = F.log_softmax(srl_scores, 1)
 
         negative_log_likelihood_flat = -torch.gather(output, dim=1, index=srl_labels).view(-1)
+        print("srl_mask.size()", srl_mask.size())
         negative_log_likelihood_flat = negative_log_likelihood_flat.view(bsz, max_num_arg * max_num_pred)
         srl_mask = srl_mask.view(bsz, max_num_arg * max_num_pred)
         srl_loss_mask = (srl_mask.view(-1) == 1).nonzero()
@@ -438,6 +467,7 @@ class SRL_module(nn.Module):  # add by kiro
             loss = negative_log_likelihood_flat.mean()
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
+        print("srl_mask.size()", srl_mask.size())
         negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / srl_mask.sum(1)
         loss = negative_log_likelihood_flat.mean()
         return loss, srl_mask
@@ -567,6 +597,8 @@ class SRL_module(nn.Module):  # add by kiro
         srl_labels = self.get_srl_labels(arg_starts, arg_ends, predicates, labels, max_sent_length)
         srl_scores = self.get_srl_scores(arg_emb, pred_emb, self.label_space_size)
         srl_loss, srl_mask = self.get_srl_softmax_loss(srl_scores, srl_labels, num_args, num_preds)
+        print(pred_loss.item(), argument_loss.item(), srl_loss.item())
+        print((pred_loss + argument_loss + srl_loss).item())
         return pred_loss + argument_loss + srl_loss
 
 

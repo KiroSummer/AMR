@@ -29,8 +29,10 @@ def parse_config():
     parser.add_argument('--pretrained_file', type=str, default=None)
     parser.add_argument('--with_bert', dest='with_bert', action='store_true')
     parser.add_argument('--bert_path', type=str, default=None)
+
     parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
+    parser.add_argument('--use_srl', dest='use_srl', action='store_true')
 
     parser.add_argument('--word_char_dim', type=int)
     parser.add_argument('--word_dim', type=int)
@@ -112,7 +114,8 @@ def load_vocabs(args):
     vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
-    vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
+    if args.use_srl:
+        vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
     vocabs['concept'] = Vocab(args.concept_vocab, 5, [DUM, END])
     vocabs['rel'] = Vocab(args.rel_vocab, 50, [NIL])
@@ -147,17 +150,28 @@ def main(local_rank, args):
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
+    print("use srl for MTL?", args.use_srl)
 
-    model = Parser(vocabs,
-                   args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
-                   args.concept_char_dim, args.concept_dim,
-                   args.cnn_filters, args.char2word_dim, args.char2concept_dim,
-                   args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
-                   args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                   args.pretrained_file, bert_encoder,
-                   device,
-                   True, args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
-                   args.ffnn_size, args.ffnn_depth)
+    if args.use_srl is True:
+        model = Parser(vocabs,
+                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
+                       args.concept_char_dim, args.concept_dim,
+                       args.cnn_filters, args.char2word_dim, args.char2concept_dim,
+                       args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
+                       args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
+                       args.pretrained_file, bert_encoder,
+                       device, True,
+                       args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
+                       args.ffnn_size, args.ffnn_depth)
+    else:
+        model = Parser(vocabs,
+                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
+                       args.concept_char_dim, args.concept_dim,
+                       args.cnn_filters, args.char2word_dim, args.char2concept_dim,
+                       args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
+                       args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
+                       args.pretrained_file, bert_encoder,
+                       device, False)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())
@@ -175,10 +189,9 @@ def main(local_rank, args):
             no_weight_decay_params.append(param)
         else:
             weight_decay_params.append(param)
-    grouped_params = [{'params': weight_decay_params, 'weight_decay': 1e-4},
+    grouped_params = [{'params': weight_decay_params, 'weight_decay': args.weight_decay},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
-    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6,
-                                         weight_decay=args.weight_decay)  # "correct" L2 @kiro
+    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
 
     used_batches = 0
     batches_acm = 0
@@ -198,22 +211,23 @@ def main(local_rank, args):
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
     # Load SRL data, for train @kiro TODO
-    srl_train_data = SRLDataLoader(vocabs, args.srl_data, int(args.train_batch_size / 2),
-                                   for_train=True)
-    srl_train_data.set_unk_rate(args.unk_rate)
-    srl_queue = mp.Queue(10)
-    srl_train_data_generator = mp.Process(target=data_proc, args=(srl_train_data, srl_queue))
+    if args.use_srl is True:
+        srl_train_data = SRLDataLoader(vocabs, args.srl_data, int(args.train_batch_size / 2),
+                                       for_train=True)
+        srl_train_data.set_unk_rate(args.unk_rate)
+        srl_queue = mp.Queue(10)
+        srl_train_data_generator = mp.Process(target=data_proc, args=(srl_train_data, srl_queue))
+        srl_train_data_generator.start()
 
     train_data_generator.start()
-    srl_train_data_generator.start()
     model.train()
     epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
     is_start = True
-    while epoch < max_training_epochs:  # there is no stop! @kiro
-        while True and is_start is False:
+    while epoch < max_training_epochs:  # there is no stop! @kiro fixed by me
+        while True and args.use_srl and is_start is False:
             """SRL process begin"""
             srl_batch = srl_queue.get()
             if isinstance(srl_batch, str):
@@ -285,6 +299,9 @@ def main(local_rank, args):
                         eval_task.start()
                         model.train()
                 break
+    train_data_generator.terminate()
+    if args.use_srl:
+        srl_train_data_generator.terminate()
     print("Training process is done.")  # @kiro
 
 

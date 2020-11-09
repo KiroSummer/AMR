@@ -20,8 +20,8 @@ class Parser(nn.Module):
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
                  pretrained_file=None, bert_encoder=None,
-                 device=0,
-                 use_srl=False, pred_size=0, argu_size=0, span_size=0, label_space_size=0,
+                 device=0, use_srl=False,
+                 pred_size=0, argu_size=0, span_size=0, label_space_size=0,
                  ffnn_size=0, ffnn_depth=0):
         super(Parser, self).__init__()
         self.vocabs = vocabs
@@ -51,7 +51,8 @@ class Parser(nn.Module):
         self.bert_encoder = bert_encoder
         if bert_encoder is not None:
             self.bert_adaptor = nn.Linear(768, embed_dim)
-        if use_srl:
+        self.use_srl = use_srl
+        if self.use_srl:
             self.pred_size = pred_size
             self.argu_size = argu_size
             self.span_size = span_size
@@ -215,6 +216,7 @@ class Parser(nn.Module):
         return new_state_dict, results
 
     def srl_forward(self, data, encoder_graph=False):
+        assert self.use_srl is True
         if self.bert_encoder is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],

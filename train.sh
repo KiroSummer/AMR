@@ -11,7 +11,7 @@ python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
                 --concept_char_vocab ${dataset}/concept_char_vocab\
                 --train_data ${dataset}/train.txt.features.preproc \
                 --dev_data ${dataset}/dev.txt.features.preproc  \
-                --srl_data ./data/auto-srl/enwiki-latest-pages-articles_nltk_preprocessed-split.txtaacut.txt.dep.json+.srl.out.json.pruned \
+                --srl_data ./data/auto-srl/train.english.conll05.jsonlines.features \
                 --with_bert \
                 --bert_path bert-base-cased \
                 --word_char_dim 32\

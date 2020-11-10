@@ -182,7 +182,7 @@ class SRL_module(nn.Module):  # add by kiro
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         # print(loss_flat)
         losses = loss_flat.view(*gold_predicates.size())
-        losses = (losses * mask.float()).sum(1) / mask.sum(1)
+        losses = (losses * mask.float()).sum(1) / mask.float().sum(1)
         loss = losses.mean()
         return loss
 

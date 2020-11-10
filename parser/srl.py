@@ -293,7 +293,7 @@ class SRL_module(nn.Module):  # add by kiro
         y_hat = gold_argument_index.view(-1, 1)
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         losses = loss_flat.view(*gold_argument_index.size())
-        losses = (losses * candidate_argu_mask.float()).sum(1) / candidate_argu_mask.sum(1)
+        losses = (losses * candidate_argu_mask.float()).sum(1) / candidate_argu_mask.float().sum(1)
         loss = losses.mean()
         return loss
 

@@ -116,7 +116,7 @@ class Parser(nn.Module):
 
     def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):
         word_repr, word_mask = self.encode_input_layer(tok, lem, pos, ner, word_char)
-        amr_word_repr, amr_word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+        amr_word_repr, word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         if self.soft_mtl:
             srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
             word_repr = torch.mean(torch.stack([amr_word_repr, srl_word_repr]), dim=0)  # average pooling for fusion
@@ -126,7 +126,7 @@ class Parser(nn.Module):
     def encode_step_with_bert(self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index,
                               use_adj=False):
         word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, word_char, bert_token, token_subword_index)
-        amr_word_repr, amr_word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+        amr_word_repr, word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         if self.soft_mtl:
             srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
             word_repr = torch.mean(torch.stack([amr_word_repr, srl_word_repr]), dim=0)  # average pooling for fusion

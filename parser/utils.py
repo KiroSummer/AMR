@@ -20,7 +20,7 @@ class eval:
 
     def eval(self, output_dev_file, saved_model):
         smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file)
-        if smatch >= self.last_smatch:  # early stopping @kiro
+        if smatch > self.last_smatch:  # early stopping @kiro
             self.no_performance_improvement = 0
             self.checkpoint_file.write_checkpoint(
                 "{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro

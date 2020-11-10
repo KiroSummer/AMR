@@ -20,7 +20,7 @@ class Parser(nn.Module):
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
                  pretrained_file=None, bert_encoder=None,
-                 device=0, use_srl=False,
+                 device=0, use_srl=False, soft_mtl=False,
                  pred_size=0, argu_size=0, span_size=0, label_space_size=0,
                  ffnn_size=0, ffnn_depth=0):
         super(Parser, self).__init__()
@@ -52,6 +52,7 @@ class Parser(nn.Module):
         if bert_encoder is not None:
             self.bert_adaptor = nn.Linear(768, embed_dim)
         self.use_srl = use_srl
+        self.soft_mtl = soft_mtl
         if self.use_srl:
             self.pred_size = pred_size
             self.argu_size = argu_size
@@ -60,6 +61,9 @@ class Parser(nn.Module):
             self.ffnn_size = ffnn_size
             self.ffnn_depth = ffnn_depth
             self.dropout = dropout
+            if self.soft_mtl is True:
+                self.srl_sent_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
+                self.srl_probe_generator = nn.Linear(embed_dim, embed_dim)
             self.srl = SRL_module(self.embed_dim, self.pred_size, self.argu_size, self.span_size, self.label_space_size,
                                   self.ffnn_size, self.ffnn_depth, self.dropout)
         self.reset_parameters()
@@ -67,40 +71,92 @@ class Parser(nn.Module):
     def reset_parameters(self):
         nn.init.normal_(self.probe_generator.weight, std=0.02)
         nn.init.constant_(self.probe_generator.bias, 0.)
+        if self.soft_mtl:
+            nn.init.normal_(self.srl_probe_generator.weight, std=0.02)
+            nn.init.constant_(self.srl_probe_generator.bias, 0.)
 
-    def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):
-        word_repr = self.embed_scale * self.word_encoder(word_char, tok, lem, pos, ner) + self.embed_positions(tok)
-        word_repr = self.word_embed_layer_norm(word_repr)
-        word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
-        if use_adj is True:
-            adj, self_adj, undir_adj = generate_adj(edge, num_heads=self.num_heads, device=self.device)  # adj is [batch_size, max_word_num, max_word_num]
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=undir_adj, adj_mask=undir_adj)
+    def cut_input(self, word_repr, word_mask):
+        if self.soft_mtl:
+            probe = torch.tanh(self.srl_probe_generator(word_repr[:1]))
         else:
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
-
-        probe = torch.tanh(self.probe_generator(word_repr[:1]))
+            probe = torch.tanh(self.probe_generator(word_repr[:1]))
         word_repr = word_repr[1:]
         word_mask = word_mask[1:]
         return word_repr, word_mask, probe
 
-    def encode_step_with_bert(self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index,
-                              use_adj=False):
-        bert_embed, _ = self.bert_encoder(bert_token, token_subword_index=token_subword_index)
+    def encode_input_layer(self, tok, lem, pos, ner, word_char):
+        word_repr = self.embed_scale * self.word_encoder(word_char, tok, lem, pos, ner) + self.embed_positions(tok)
+        word_repr = self.word_embed_layer_norm(word_repr)
+        word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
+        return word_repr, word_mask
+
+    def amr_sentence_encoder(self, word_repr, word_mask, edge, use_adj=False):
+        if use_adj is True:
+            adj, self_adj, undir_adj = generate_adj(
+                edge, num_heads=self.num_heads, device=self.device)  # adj is [batch_size, max_word_num, max_word_num]
+        else:
+            undir_adj = None
+        if self.soft_mtl:
+            word_repr = self.srl_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+        else:
+            word_repr = self.sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+
+        word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
+        return word_repr, word_mask, probe
+
+    def encode_bert_input(self, tok, lem, pos, ner, word_char, bert_token, token_subword_index):
         word_repr = self.word_encoder(word_char, tok, lem, pos, ner)
+        bert_embed, _ = self.bert_encoder(bert_token, token_subword_index=token_subword_index)
         bert_embed = bert_embed.transpose(0, 1)
         word_repr = word_repr + self.bert_adaptor(bert_embed)
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)
         word_repr = self.word_embed_layer_norm(word_repr)
         word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
-        if use_adj is True:
-            adj, self_adj, undir_adj = generate_adj(edge, num_heads=self.num_heads, device=self.device) # adj is [batch_size, max_word_num, max_word_num]
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
-        else:
-            word_repr = self.snt_encoder(word_repr, self_padding_mask=word_mask)
+        return word_repr, word_mask
 
-        probe = torch.tanh(self.probe_generator(word_repr[:1]))
-        word_repr = word_repr[1:]
-        word_mask = word_mask[1:]
+    def encode_step(self, tok, lem, pos, ner, edge, word_char, use_adj=False):
+        word_repr, word_mask = self.encode_input_layer(tok, lem, pos, ner, word_char)
+        word_repr, word_mask, probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+        if self.soft_mtl:
+            srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+            word_repr = torch.mean(torch.stack([word_repr, srl_word_repr]), dim=0)  # average pooling for fusion
+            probe = torch.mean(torch.stack([probe, srl_probe]), dim=0)
+        return word_repr, word_mask, probe
+
+    def encode_step_with_bert(self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index,
+                              use_adj=False):
+        word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, word_char, bert_token, token_subword_index)
+        word_repr, word_mask, probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+        if self.soft_mtl:
+            srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+            word_repr = torch.mean(torch.stack([word_repr, srl_word_repr]), dim=0)  # average pooling for fusion
+            probe = torch.mean(torch.stack([probe, srl_probe]), dim=0)
+        return word_repr, word_mask, probe
+
+    def srl_sentence_encoder(self, word_repr, word_mask, edge, use_adj=False):
+        if use_adj is True:
+            adj, self_adj, undir_adj = generate_adj(
+                edge, num_heads=self.num_heads, device=self.device)  # adj is [batch_size, max_word_num, max_word_num]
+        else:
+            undir_adj = None
+        if self.soft_mtl:
+            word_repr = self.srl_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+        else:
+            word_repr = self.sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+
+        word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
+        return word_repr, word_mask, probe
+
+    def encode_step_for_srl_mtl(
+            self, tok, lem, pos, ner, edge, word_char, use_adj=False):
+        word_repr, word_mask = self.encode_input_layer(tok, lem, pos, ner, word_char)
+        word_repr, word_mask, probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
+        return word_repr, word_mask, probe
+
+    def encode_step_with_bert_for_srl_mtl(
+            self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index, use_adj=False):
+        word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, word_char, bert_token, token_subword_index)
+        word_repr, word_mask, probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         return word_repr, word_mask, probe
 
     def work(self, data, beam_size, max_time_step, min_time_step=1, args=None):  # beam size == 8
@@ -218,12 +274,13 @@ class Parser(nn.Module):
     def srl_forward(self, data, encoder_graph=False):
         assert self.use_srl is True
         if self.bert_encoder is not None:
-            word_repr, word_mask, probe = self.encode_step_with_bert(
+            word_repr, word_mask, probe = self.encode_step_with_bert_for_srl_mtl(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
                 data['word_char'], data['bert_token'],
                 data['token_subword_index'], use_adj=encoder_graph
             )
         else:
+            assert self.soft_mtl is True  # not implement for word embeddings without bert
             word_repr, word_mask, probe = self.encode_step(
                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
                 data['word_char'], use_adj=encoder_graph

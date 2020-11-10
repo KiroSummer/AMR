@@ -32,7 +32,9 @@ def parse_config():
 
     parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
+
     parser.add_argument('--use_srl', dest='use_srl', action='store_true')
+    parser.add_argument('--soft_mtl', dest='soft_mtl', action='store_true')
 
     parser.add_argument('--word_char_dim', type=int)
     parser.add_argument('--word_dim', type=int)
@@ -147,10 +149,13 @@ def main(local_rank, args):
     torch.set_num_threads(4)
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
+    print("#"*15)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
     print("use srl for MTL?", args.use_srl)
+    print("soft mtl?", args.soft_mtl)
+    print("#"*15)
 
     if args.use_srl is True:
         model = Parser(vocabs,
@@ -160,7 +165,7 @@ def main(local_rank, args):
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                        args.pretrained_file, bert_encoder,
-                       device, True,
+                       device, True, args.soft_mtl,
                        args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
                        args.ffnn_size, args.ffnn_depth)
     else:
@@ -172,6 +177,7 @@ def main(local_rank, args):
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                        args.pretrained_file, bert_encoder,
                        device, False)
+    print(Parser)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())

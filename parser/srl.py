@@ -245,7 +245,7 @@ class SRL_module(nn.Module):  # add by kiro
         # argu_scores: [batch_size, max_argu_number, 2]
         y = F.softmax(argu_scores, -1)
         y_value, max_indexes = y.max(dim=-1)  #
-        max_indexes = max_indexes.type(torch.cuda.LongTensor) * mask
+        max_indexes = max_indexes.type(torch.cuda.LongTensor) * mask.type(torch.cuda.LongTensor)
         return max_indexes
 
     def get_gold_dense_argu_index(self, gold_labels, max_sentence_length, candidate_argu_mask):

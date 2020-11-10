@@ -564,7 +564,7 @@ class SRL_module(nn.Module):  # add by kiro
         # spans_log_mask = torch.log(candidate_mask.type(torch.Tensor)).cuda()
         # candidate_arg_scores = candidate_arg_scores + spans_log_mask
         spans_mask = candidate_mask.unsqueeze(2).expand(-1, -1, 2)
-        candidate_arg_scores = candidate_arg_scores * spans_mask
+        candidate_arg_scores = candidate_arg_scores * spans_mask.float()
         # print(candidate_arg_scores)
         # print(spans_mask.size(), candidate_arg_scores.size())
 

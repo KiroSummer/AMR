@@ -101,7 +101,7 @@ class Parser(nn.Module):
         if self.soft_mtl:
             word_repr = self.srl_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
-            word_repr = self.amr_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+            word_repr = self.amr_snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
 
         word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
         return word_repr, word_mask, probe
@@ -144,7 +144,7 @@ class Parser(nn.Module):
         if self.soft_mtl:
             word_repr = self.srl_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
-            word_repr = self.amr_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+            word_repr = self.amr_snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
 
         word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
         return word_repr, word_mask, probe

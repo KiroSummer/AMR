@@ -153,7 +153,7 @@ def main(local_rank, args):
     torch.set_num_threads(4)
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
-    print("#"*15)
+    print("#"*25)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
@@ -161,7 +161,8 @@ def main(local_rank, args):
     print("use_gold_predicates?", args.use_gold_predicates)
     print("use_gold_arguments?", args.use_gold_arguments)
     print("soft mtl?", args.soft_mtl)
-    print("#"*15)
+    print("loss_weights?", args.loss_weights)
+    print("#"*25)
 
     if args.use_srl is True:
         model = Parser(vocabs,

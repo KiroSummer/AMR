@@ -1,5 +1,6 @@
 dataset=$1
-python3 -u -m parser.train --tok_vocab ${dataset}/tok_vocab\
+python3 -u -m parser.train --info hard mtl loss weights\
+                --tok_vocab ${dataset}/tok_vocab\
                 --lem_vocab ${dataset}/lem_vocab\
                 --pos_vocab  ${dataset}/pos_vocab\
                 --ner_vocab ${dataset}/ner_vocab\

@@ -16,6 +16,7 @@ from parser.work import parse_data
 
 def parse_config():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--info', type=str)
     parser.add_argument('--tok_vocab', type=str)
     parser.add_argument('--lem_vocab', type=str)
     parser.add_argument('--pos_vocab', type=str)

@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 class SRL_module(nn.Module):  # add by kiro
     def __init__(self, input_size, pred_size, argu_size, span_size, label_space_size,
-                 ffnn_size, ffnn_depth, dropout, fl_alpha=1.0, fl_gamma=0.0):
+                 ffnn_size, ffnn_depth, dropout, gold_predicates=False, gold_arguments=False, fl_alpha=1.0, fl_gamma=0.0):
         super(SRL_module, self).__init__()
         self.dropout = dropout
         self.input_size = input_size
@@ -19,8 +19,8 @@ class SRL_module(nn.Module):  # add by kiro
         self.ffnn_size = ffnn_size
         self.ffnn_depth = ffnn_depth
         self.label_space_size = label_space_size
-        self.use_gold_predicates = True
-        self.use_gold_arguments = True
+        self.use_gold_predicates = gold_predicates
+        self.use_gold_arguments = gold_arguments
         # self.pred_loss_function = nn.CrossEntropyLoss()
         self.focal_loss_alpha = fl_alpha  # 0.25
         self.focal_loss_gamma = fl_gamma  # 2
@@ -182,7 +182,9 @@ class SRL_module(nn.Module):  # add by kiro
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         # print(loss_flat)
         losses = loss_flat.view(*gold_predicates.size())
-        losses = (losses * mask.float()).sum(1) / mask.float().sum(1)
+        tot_pred_num = mask.float().sum(1)
+        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+        losses = (losses * mask.float()).sum(1) / tot_pred_num
         loss = losses.mean()
         return loss
 
@@ -293,7 +295,9 @@ class SRL_module(nn.Module):  # add by kiro
         y_hat = gold_argument_index.view(-1, 1)
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         losses = loss_flat.view(*gold_argument_index.size())
-        losses = (losses * candidate_argu_mask.float()).sum(1) / candidate_argu_mask.float().sum(1)
+        tot_pred_num = candidate_argu_mask.float().sum(1)
+        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+        losses = (losses * candidate_argu_mask.float()).sum(1) / tot_pred_num
         loss = losses.mean()
         return loss
 
@@ -464,7 +468,9 @@ class SRL_module(nn.Module):  # add by kiro
             loss = negative_log_likelihood_flat.mean()
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
-        negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / srl_mask.sum(1)
+        tot_pred_num = srl_mask.float().sum(1)
+        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+        negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / tot_pred_num
         loss = negative_log_likelihood_flat.mean()
         return loss, srl_mask
 

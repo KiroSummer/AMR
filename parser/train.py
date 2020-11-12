@@ -35,6 +35,8 @@ def parse_config():
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
 
     parser.add_argument('--use_srl', dest='use_srl', action='store_true')
+    parser.add_argument('--use_gold_predicates', dest='use_gold_predicates', action='store_true')
+    parser.add_argument('--use_gold_arguments', dest='use_gold_arguments', action='store_true')
     parser.add_argument('--soft_mtl', dest='soft_mtl', action='store_true')
     parser.add_argument('--loss_weights', dest='loss_weights', action='store_true')
 
@@ -156,6 +158,8 @@ def main(local_rank, args):
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
     print("use srl for MTL?", args.use_srl)
+    print("use_gold_predicates?", args.use_gold_predicates)
+    print("use_gold_arguments?", args.use_gold_arguments)
     print("soft mtl?", args.soft_mtl)
     print("#"*15)
 
@@ -169,7 +173,7 @@ def main(local_rank, args):
                        args.pretrained_file, bert_encoder,
                        device, True, args.soft_mtl, args.loss_weights,
                        args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
-                       args.ffnn_size, args.ffnn_depth)
+                       args.ffnn_size, args.ffnn_depth, args.use_gold_predicates, args.use_gold_arguments)
     else:
         model = Parser(vocabs,
                        args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
@@ -292,6 +296,8 @@ def main(local_rank, args):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, srl_loss %.3f' % (
                         epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, srl_loss_avg))
+                        if model.loss_weight:
+                            print('model loss weights', model.loss_weights)
                         model.train()
                     if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                         model.eval()

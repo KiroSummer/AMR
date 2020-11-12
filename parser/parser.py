@@ -22,7 +22,7 @@ class Parser(nn.Module):
                  pretrained_file=None, bert_encoder=None,
                  device=0, use_srl=False, soft_mtl=False, loss_weight=False,
                  pred_size=0, argu_size=0, span_size=0, label_space_size=0,
-                 ffnn_size=0, ffnn_depth=0):
+                 ffnn_size=0, ffnn_depth=0, use_gold_predicates=False, use_gold_arguments=False):
         super(Parser, self).__init__()
         self.vocabs = vocabs
 
@@ -62,11 +62,14 @@ class Parser(nn.Module):
             self.ffnn_size = ffnn_size
             self.ffnn_depth = ffnn_depth
             self.dropout = dropout
+            self.use_gold_predicates = use_gold_predicates
+            self.use_gold_arguments = use_gold_arguments
             if self.soft_mtl is True:
                 self.srl_sent_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
                 self.srl_probe_generator = nn.Linear(embed_dim, embed_dim)
             self.srl = SRL_module(self.embed_dim, self.pred_size, self.argu_size, self.span_size, self.label_space_size,
-                                  self.ffnn_size, self.ffnn_depth, self.dropout)
+                                  self.ffnn_size, self.ffnn_depth, self.dropout,
+                                  self.use_gold_predicates, self.use_gold_arguments)
             self.loss_weights = nn.Parameter(torch.ones(2))  # loss weights for amr and srl
         self.reset_parameters()
 

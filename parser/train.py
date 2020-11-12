@@ -39,6 +39,7 @@ def parse_config():
     parser.add_argument('--use_gold_arguments', dest='use_gold_arguments', action='store_true')
     parser.add_argument('--soft_mtl', dest='soft_mtl', action='store_true')
     parser.add_argument('--loss_weights', dest='loss_weights', action='store_true')
+    parser.add_argument('--sum_loss', dest='sum_loss', action='store_true')
 
     parser.add_argument('--word_char_dim', type=int)
     parser.add_argument('--word_dim', type=int)
@@ -172,7 +173,8 @@ def main(local_rank, args):
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                        args.pretrained_file, bert_encoder,
-                       device, True, args.soft_mtl, args.loss_weights,
+                       device, args.sum_loss,
+                       True, args.soft_mtl, args.loss_weights,
                        args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
                        args.ffnn_size, args.ffnn_depth, args.use_gold_predicates, args.use_gold_arguments)
     else:
@@ -183,7 +185,8 @@ def main(local_rank, args):
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
                        args.pretrained_file, bert_encoder,
-                       device, False)
+                       device, args.sum_loss,
+                       False)
     print(Parser)
 
     if args.world_size > 1:

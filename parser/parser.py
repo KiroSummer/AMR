@@ -20,7 +20,8 @@ class Parser(nn.Module):
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
                  pretrained_file=None, bert_encoder=None,
-                 device=0, use_srl=False, soft_mtl=False, loss_weight=False,
+                 device=0, sum_loss=False,
+                 use_srl=False, soft_mtl=False, loss_weight=False,
                  pred_size=0, argu_size=0, span_size=0, label_space_size=0,
                  ffnn_size=0, ffnn_depth=0, use_gold_predicates=False, use_gold_arguments=False):
         super(Parser, self).__init__()
@@ -49,6 +50,7 @@ class Parser(nn.Module):
         self.probe_generator = nn.Linear(embed_dim, embed_dim)
         self.device = device
         self.bert_encoder = bert_encoder
+        self.sum_loss = sum_loss
         if bert_encoder is not None:
             self.bert_adaptor = nn.Linear(768, embed_dim)
         self.use_srl = use_srl
@@ -345,14 +347,17 @@ class Parser(nn.Module):
                                                         word_mask, concept_mask, attn_mask,
                                                         data['copy_seq'], target=data['concept_out'],
                                                         target_rel=data['rel'][1:])
-
-        concept_tot = concept_mask.size(0) - concept_mask.float().sum(0)
-        concept_loss = concept_loss / concept_tot
-        arc_loss = arc_loss / concept_tot
-        rel_loss = rel_loss / concept_tot
-        graph_arc_loss = graph_arc_loss / concept_tot
-        concept_loss, arc_loss, rel_loss, graph_arc_loss = \
-            concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
+        if self.sum_loss is False:
+            concept_tot = concept_mask.size(0) - concept_mask.float().sum(0)
+            concept_loss = concept_loss / concept_tot
+            arc_loss = arc_loss / concept_tot
+            rel_loss = rel_loss / concept_tot
+            graph_arc_loss = graph_arc_loss / concept_tot
+            concept_loss, arc_loss, rel_loss, graph_arc_loss = \
+                concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
+        else:
+            concept_loss, arc_loss, rel_loss, graph_arc_loss = \
+                concept_loss.sum(), arc_loss.sum(), rel_loss.sum(), graph_arc_loss.sum()
         if self.loss_weight:
             normed_weights = F.softmax(self.loss_weights, dim=0)
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \

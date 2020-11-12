@@ -198,7 +198,6 @@ class RelationGenerator(nn.Module):
 
 
 class DecodeLayer(nn.Module):
-
     def __init__(self, vocabs, inference_layers, embed_dim, ff_embed_dim, num_heads, conc_size, rel_size, dropout):
         super(DecodeLayer, self).__init__()
         self.inference_layers = inference_layers

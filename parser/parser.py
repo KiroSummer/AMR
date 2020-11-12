@@ -33,7 +33,7 @@ class Parser(nn.Module):
         self.concept_encoder = ConceptEncoder(vocabs,
                                               concept_char_dim, concept_dim, embed_dim,
                                               cnn_filters, char2concept_dim, dropout, pretrained_file)
-        self.snt_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
+        self.amr_snt_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
         self.graph_encoder = Transformer(graph_layers, embed_dim, ff_embed_dim, num_heads, dropout, with_external=True,
                                          weights_dropout=False)
         self.embed_dim = embed_dim
@@ -144,7 +144,7 @@ class Parser(nn.Module):
         if self.soft_mtl:
             word_repr = self.srl_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
         else:
-            word_repr = self.sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
+            word_repr = self.amr_sent_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
 
         word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
         return word_repr, word_mask, probe

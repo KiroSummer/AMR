@@ -20,7 +20,7 @@ class Parser(nn.Module):
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
                  pretrained_file=None, bert_encoder=None,
-                 device=0, use_srl=False, soft_mtl=False,
+                 device=0, use_srl=False, soft_mtl=False, loss_weight=False,
                  pred_size=0, argu_size=0, span_size=0, label_space_size=0,
                  ffnn_size=0, ffnn_depth=0):
         super(Parser, self).__init__()
@@ -53,6 +53,7 @@ class Parser(nn.Module):
             self.bert_adaptor = nn.Linear(768, embed_dim)
         self.use_srl = use_srl
         self.soft_mtl = soft_mtl
+        self.loss_weight = loss_weight
         if self.use_srl:
             self.pred_size = pred_size
             self.argu_size = argu_size
@@ -66,6 +67,7 @@ class Parser(nn.Module):
                 self.srl_probe_generator = nn.Linear(embed_dim, embed_dim)
             self.srl = SRL_module(self.embed_dim, self.pred_size, self.argu_size, self.span_size, self.label_space_size,
                                   self.ffnn_size, self.ffnn_depth, self.dropout)
+            self.loss_weights = nn.Parameter(torch.ones(2))  # loss weights for amr and srl
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -286,6 +288,9 @@ class Parser(nn.Module):
                 data['word_char'], use_adj=encoder_graph
             )
         srl_loss = self.srl.forward(word_repr, word_mask, data['gold_preds'][0], data['srl'])
+        if self.loss_weight:
+            normed_weights = F.softmax(self.loss_weights, dim=0)
+            srl_loss = normed_weights[1] * srl_loss
         return srl_loss
 
     def forward(self, data, encoder_graph=False, decoder_graph=False):
@@ -338,8 +343,14 @@ class Parser(nn.Module):
         arc_loss = arc_loss / concept_tot
         rel_loss = rel_loss / concept_tot
         graph_arc_loss = graph_arc_loss / concept_tot
-
-        return concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
+        concept_loss, arc_loss, rel_loss, graph_arc_loss = \
+            concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
+        if self.loss_weight:
+            normed_weights = F.softmax(self.loss_weights, dim=0)
+            concept_loss, arc_loss, rel_loss, graph_arc_loss = \
+                normed_weights[0] * concept_loss, normed_weights[0] * arc_loss, normed_weights[0] * rel_loss, \
+                normed_weights[0] * graph_arc_loss
+        return concept_loss, arc_loss, rel_loss, graph_arc_loss
 
 
 if __name__ == "__main__":

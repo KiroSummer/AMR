@@ -123,6 +123,8 @@ class Parser(nn.Module):
             srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
             word_repr = torch.mean(torch.stack([amr_word_repr, srl_word_repr]), dim=0)  # average pooling for fusion
             probe = torch.mean(torch.stack([amr_probe, srl_probe]), dim=0)
+        else:
+            word_repr, word_mask, probe = amr_word_repr, amr_word_mask, amr_probe
         return word_repr, amr_word_mask, probe
 
     def encode_step_with_bert(self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index,
@@ -134,7 +136,7 @@ class Parser(nn.Module):
             word_repr = torch.mean(torch.stack([amr_word_repr, srl_word_repr]), dim=0)  # average pooling for fusion
             probe = torch.mean(torch.stack([amr_probe, srl_probe]), dim=0)
         else:
-            word_repr, word_mask, prob = amr_word_repr, amr_word_mask, amr_probe
+            word_repr, word_mask, probe = amr_word_repr, amr_word_mask, amr_probe
         return word_repr, word_mask, probe
 
     def srl_sentence_encoder(self, word_repr, word_mask, edge, use_adj=False):

@@ -150,7 +150,7 @@ if __name__ == "__main__":
                        model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
                        None, bert_encoder,
                        device, False,
-                       True, model_args.soft_mtl, model_args.loss_weights,
+                       True, model_args.soft_mtl, False,
                        model_args.pred_size, model_args.argu_size, model_args.span_size, vocabs['srl'].size,
                        model_args.ffnn_size, model_args.ffnn_depth, model_args.use_gold_predicates, model_args.use_gold_arguments)
     else:

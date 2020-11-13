@@ -327,7 +327,7 @@ def main(local_rank, args):
 def init_processes(local_rank, args, backend='nccl'):
     os.environ['MASTER_ADDR'] = args.MASTER_ADDR
     os.environ['MASTER_PORT'] = args.MASTER_PORT
-    dist.init_process_group(backend)  # , rank=args.start_rank + local_rank, world_size=args.world_size)
+    dist.init_process_group(backend, init_method="env://")  # , rank=args.start_rank + local_rank, world_size=args.world_size)
     main(local_rank, args)
 
 

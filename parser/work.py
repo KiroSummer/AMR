@@ -152,7 +152,7 @@ if __name__ == "__main__":
                        device, False,
                        True, model_args.soft_mtl, False,
                        model_args.pred_size, model_args.argu_size, model_args.span_size, vocabs['srl'].size,
-                       model_args.ffnn_size, model_args.ffnn_depth, model_args.use_gold_predicates, model_args.use_gold_arguments)
+                       model_args.ffnn_size, model_args.ffnn_depth, True, True)
     else:
         model = Parser(vocabs,
                        model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,

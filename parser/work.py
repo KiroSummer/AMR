@@ -17,8 +17,17 @@ def parse_config():
     parser.add_argument('--load_path', type=str)
     parser.add_argument('--test_data', type=str)
     parser.add_argument('--test_batch_size', type=int)
+
     parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
+
+    parser.add_argument('--use_srl', dest='use_srl', action='store_true')
+    parser.add_argument('--use_gold_predicates', dest='use_gold_predicates', action='store_true')
+    parser.add_argument('--use_gold_arguments', dest='use_gold_arguments', action='store_true')
+    parser.add_argument('--soft_mtl', dest='soft_mtl', action='store_true')
+    parser.add_argument('--loss_weights', dest='loss_weights', action='store_true')
+    parser.add_argument('--sum_loss', dest='sum_loss', action='store_true')
+
     parser.add_argument('--beam_size', type=int)
     parser.add_argument('--alpha', type=float)
     parser.add_argument('--max_time_step', type=int)
@@ -110,6 +119,8 @@ if __name__ == "__main__":
     vocabs['lem'] = Vocab(model_args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(model_args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(model_args.ner_vocab, 5, [CLS])
+    if args.use_srl:
+        vocabs['srl'] = Vocab(model_args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(model_args.predictable_concept_vocab, 5, [DUM, END])
     vocabs['concept'] = Vocab(model_args.concept_vocab, 5, [DUM, END])
     vocabs['rel'] = Vocab(model_args.rel_vocab, 50, [NIL])
@@ -130,13 +141,36 @@ if __name__ == "__main__":
     else:
         device = torch.device('cuda', args.device)
 
-    model = Parser(vocabs,
-                   model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
-                   model_args.concept_char_dim, model_args.concept_dim,
-                   model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
-                   model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
-                   model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
-                   bert_encoder=bert_encoder, device=device)
+    if model_args.use_srl is True:
+        model = Parser(vocabs,
+                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
+                       model_args.concept_char_dim, model_args.concept_dim,
+                       model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
+                       model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
+                       model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
+                       args.pretrained_file, bert_encoder,
+                       device, model_args.sum_loss,
+                       True, model_args.soft_mtl, model_args.loss_weights,
+                       model_args.pred_size, model_args.argu_size, model_args.span_size, vocabs['srl'].size,
+                       model_args.ffnn_size, model_args.ffnn_depth, model_args.use_gold_predicates, model_args.use_gold_arguments)
+    else:
+        model = Parser(vocabs,
+                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
+                       model_args.concept_char_dim, model_args.concept_dim,
+                       model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
+                       model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
+                       model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
+                       model_args.pretrained_file, bert_encoder,
+                       device, model_args.sum_loss,
+                       False)
+    #
+    # model = Parser(vocabs,
+    #                model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
+    #                model_args.concept_char_dim, model_args.concept_dim,
+    #                model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
+    #                model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
+    #                model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
+    #                bert_encoder=bert_encoder, device=device)
 
     # test_data = DataLoader(vocabs, lexical_mapping, args.test_data, args.test_batch_size, for_train=True)
     another_test_data = DataLoader(vocabs, lexical_mapping, args.test_data, args.test_batch_size, for_train=False)

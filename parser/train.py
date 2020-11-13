@@ -162,6 +162,7 @@ def main(local_rank, args):
     print("use_gold_predicates?", args.use_gold_predicates)
     print("use_gold_arguments?", args.use_gold_arguments)
     print("soft mtl?", args.soft_mtl)
+    print("sum loss?", args.sum_loss)
     print("loss_weights?", args.loss_weights)
     print("#"*25)
 

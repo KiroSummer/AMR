@@ -71,7 +71,7 @@ class Parser(nn.Module):
                 self.srl_probe_generator = nn.Linear(embed_dim, embed_dim)
             self.srl = SRL_module(self.embed_dim, self.pred_size, self.argu_size, self.span_size, self.label_space_size,
                                   self.ffnn_size, self.ffnn_depth, self.dropout,
-                                  self.use_gold_predicates, self.use_gold_arguments)
+                                  self.use_gold_predicates, self.use_gold_arguments, sum_loss=self.sum_loss)
             if self.loss_weight:
                 self.loss_weights = nn.Parameter(torch.ones(2))  # loss weights for amr and srl
         self.reset_parameters()

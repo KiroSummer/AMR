@@ -173,7 +173,7 @@ def main(local_rank, args):
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
+                       None, bert_encoder,
                        device, args.sum_loss,
                        True, args.soft_mtl, args.loss_weights,
                        args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
@@ -185,7 +185,7 @@ def main(local_rank, args):
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
+                       None, bert_encoder,
                        device, args.sum_loss,
                        False)
     print(Parser)

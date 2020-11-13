@@ -9,7 +9,8 @@ from collections import OrderedDict
 
 class SRL_module(nn.Module):  # add by kiro
     def __init__(self, input_size, pred_size, argu_size, span_size, label_space_size,
-                 ffnn_size, ffnn_depth, dropout, gold_predicates=False, gold_arguments=False, fl_alpha=1.0, fl_gamma=0.0):
+                 ffnn_size, ffnn_depth, dropout, gold_predicates=False, gold_arguments=False,
+                 fl_alpha=1.0, fl_gamma=0.0, sum_loss=False):
         super(SRL_module, self).__init__()
         self.dropout = dropout
         self.input_size = input_size
@@ -24,6 +25,7 @@ class SRL_module(nn.Module):  # add by kiro
         # self.pred_loss_function = nn.CrossEntropyLoss()
         self.focal_loss_alpha = fl_alpha  # 0.25
         self.focal_loss_gamma = fl_gamma  # 2
+        self.sum_loss = sum_loss
         # predicate rep
         self.pred_reps = nn.Linear(self.input_size, self.pred_size)
         self.pred_reps_drop = nn.Dropout(self.dropout)
@@ -182,10 +184,13 @@ class SRL_module(nn.Module):  # add by kiro
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         # print(loss_flat)
         losses = loss_flat.view(*gold_predicates.size())
-        tot_pred_num = mask.float().sum(1)
-        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
-        losses = (losses * mask.float()).sum(1) / tot_pred_num
-        loss = losses.mean()
+        if self.sum_loss:
+            loss = (losses * mask.float()).sum()
+        else:
+            tot_pred_num = mask.float().sum(1)
+            tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+            losses = (losses * mask.float()).sum(1) / tot_pred_num
+            loss = losses.mean()
         return loss
 
     def get_pred_focal_loss(self, pred_scores, gold_predicates, mask=None):
@@ -295,10 +300,13 @@ class SRL_module(nn.Module):  # add by kiro
         y_hat = gold_argument_index.view(-1, 1)
         loss_flat = -torch.gather(y, dim=-1, index=y_hat)
         losses = loss_flat.view(*gold_argument_index.size())
-        tot_pred_num = candidate_argu_mask.float().sum(1)
-        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
-        losses = (losses * candidate_argu_mask.float()).sum(1) / tot_pred_num
-        loss = losses.mean()
+        if self.sum_loss:
+            loss = (losses * candidate_argu_mask.float()).sum()
+        else:
+            tot_pred_num = candidate_argu_mask.float().sum(1)
+            tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+            losses = (losses * candidate_argu_mask.float()).sum(1) / tot_pred_num
+            loss = losses.mean()
         return loss
 
     def get_argument_focal_loss(self, argument_scores, gold_argument_index, candidate_argu_mask):
@@ -469,9 +477,12 @@ class SRL_module(nn.Module):  # add by kiro
             return loss, srl_mask
         srl_mask = srl_mask.type(torch.cuda.FloatTensor)
         tot_pred_num = srl_mask.float().sum(1)
-        tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
-        negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / tot_pred_num
-        loss = negative_log_likelihood_flat.mean()
+        if self.sum_loss:
+            loss = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum()
+        else:
+            tot_pred_num = tot_pred_num + torch.zeros_like(tot_pred_num).masked_fill_((tot_pred_num == 0), 1.0)
+            negative_log_likelihood_flat = (negative_log_likelihood_flat.view(srl_mask.size()) * srl_mask).sum(1) / tot_pred_num
+            loss = negative_log_likelihood_flat.mean()
         return loss, srl_mask
 
     def get_srl_softmax_focal_loss(self, srl_scores, srl_labels, num_predicted_args, num_predicted_preds):

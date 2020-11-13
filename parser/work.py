@@ -149,7 +149,7 @@ if __name__ == "__main__":
                        model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
                        model_args.snt_layers, model_args.graph_layers, model_args.inference_layers, model_args.rel_dim,
                        None, bert_encoder,
-                       device, model_args.sum_loss,
+                       device, False,
                        True, model_args.soft_mtl, model_args.loss_weights,
                        model_args.pred_size, model_args.argu_size, model_args.span_size, vocabs['srl'].size,
                        model_args.ffnn_size, model_args.ffnn_depth, model_args.use_gold_predicates, model_args.use_gold_arguments)

@@ -338,6 +338,7 @@ if __name__ == "__main__":
     assert len(args.cnn_filters) % 2 == 0
     args.cnn_filters = list(zip(args.cnn_filters[:-1:2], args.cnn_filters[1::2]))
     gpu_number = torch.cuda.device_count()
+    print("number of available GPUs", gpu_number)
     args.world_size = args.gpus = gpu_number
     if args.world_size == 1:
         main(0, args)

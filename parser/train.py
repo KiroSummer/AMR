@@ -33,6 +33,7 @@ def parse_config():
 
     parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
+    parser.add_argument('--no_post_process', dest='no_post_process', action='store_true')
 
     parser.add_argument('--use_srl', dest='use_srl', action='store_true')
     parser.add_argument('--use_gold_predicates', dest='use_gold_predicates', action='store_true')
@@ -314,7 +315,7 @@ def main(local_rank, args):
                                     'batches_acm': batches_acm,
                                     'optimizer': optimizer.state_dict()},
                                    saved_model)
-                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model,))
+                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
                         eval_task.start()
                         model.train()
                 break

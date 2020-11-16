@@ -18,8 +18,8 @@ class eval:
         self.gold_file = gold_file[:len(gold_file) - len('.features.preproc')]
         self.early_stops = early_stops
 
-    def eval(self, output_dev_file, saved_model):
-        smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file)
+    def eval(self, output_dev_file, saved_model, post_process=True):
+        smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file, post_process=post_process)
         if smatch > self.last_smatch:  # early stopping @kiro
             self.no_performance_improvement = 0
             self.checkpoint_file.write_checkpoint(
@@ -33,12 +33,15 @@ class eval:
             return True
 
 
-def eval_smatch(dev_file, gold_dev_file):
+def eval_smatch(dev_file, gold_dev_file, post_process=True):
     try:
-        print('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file))
-        child = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
-        child.wait()
-        postprocessing_file = dev_file + ".post"
+        if post_process is True:
+            print('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file))
+            child = subprocess.Popen('bash {} {}'.format(POSTPROCESSING2_SCRIPT, dev_file), shell=True)
+            child.wait()
+            postprocessing_file = dev_file + ".post"
+        else:
+            postprocessing_file = dev_file
         print('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file))
         child = subprocess.Popen('bash {} {} {}'.format(EVAL_SCRIPT, postprocessing_file, gold_dev_file),
                                  shell=True, stdout=subprocess.PIPE)

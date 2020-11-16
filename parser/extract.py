@@ -36,6 +36,7 @@ class AMRIO:
                     dependency_edges = json.loads(line[len('# ::dependency_edges '):])
                 elif line.startswith('# ::abstract_map '):
                     abstract_map = json.loads(line[len('# ::abstract_map '):])
+                else:
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)

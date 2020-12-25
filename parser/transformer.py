@@ -33,8 +33,8 @@ class Transformer(nn.Module):
                 self_padding_mask=None, self_attn_mask=None, adj_mask=None,
                 external_memories=None, external_padding_mask=None):
         for idx, layer in enumerate(self.layers):
-            x, _, _ = layer(x, kv, self_padding_mask, self_attn_mask, adj_mask,
-                            external_memories, external_padding_mask)
+            x, _, _, _ = layer(x, kv, self_padding_mask, self_attn_mask, adj_mask,
+                               external_memories, external_padding_mask)
         return x
 
 
@@ -75,11 +75,14 @@ class TransformerLayer(nn.Module):
 
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.attn_layer_norm(residual + x)
+        atten_x = x
 
         if self.with_external:
             residual = x
-            x, external_attn = self.external_attn(query=x, key=external_memories, value=external_memories,
-                                                  key_padding_mask=external_padding_mask, need_weights=need_weights)
+            x, external_attn = self.external_attn(
+                query=x, key=external_memories, value=external_memories,
+                key_padding_mask=external_padding_mask, need_weights='one'
+            )
             x = F.dropout(x, p=self.dropout, training=self.training)
             x = self.external_layer_norm(residual + x)
         else:
@@ -91,7 +94,7 @@ class TransformerLayer(nn.Module):
         x = self.fc2(x)
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.ff_layer_norm(residual + x)
-        return x, self_attn, external_attn
+        return x, self_attn, external_attn, atten_x
 
 
 class MultiheadAttention(nn.Module):
@@ -176,11 +179,12 @@ class MultiheadAttention(nn.Module):
 
         attn_weights = F.softmax(attn_weights, dim=-1)
 
-        if self.weights_dropout:
+        weights_dropout = False if need_weights is not None else True
+        if weights_dropout:
             attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
 
         attn = torch.bmm(attn_weights, v)
-        if not self.weights_dropout:
+        if not weights_dropout:
             attn = F.dropout(attn, p=self.dropout, training=self.training)
 
         # print("attn_weights.size(), v.size()", attn_weights.size(), v.size())

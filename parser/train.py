@@ -310,6 +310,7 @@ def main(local_rank, args):
                         model.eval()
                         output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
                         parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
+
                         saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                         torch.save({'args': args,
                                     'model': model.state_dict(),

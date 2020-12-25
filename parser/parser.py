@@ -5,7 +5,8 @@ import math
 
 
 from parser.encoder import WordEncoder, ConceptEncoder
-from parser.decoder import DecodeLayer
+# from parser.decoder import DecodeLayer
+from parser.pure_decoder import DecodeLayer
 from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfAttentionMask
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
@@ -226,6 +227,7 @@ class Parser(nn.Module):
         adj = state_dict['adj']
         if args.decoder_graph is False:
             adj = None
+        concept_reprs = []
         for idx, layer in enumerate(self.graph_encoder.layers):  # only for encoding concepts @kiro
             name_i = 'concept_repr_%d' % idx
             if name_i in state_dict:
@@ -235,10 +237,12 @@ class Parser(nn.Module):
                 new_concept_repr = concept_repr
 
             new_state_dict[name_i] = new_concept_repr
-            # concept_repr is current token, new_concept_repr is previous tokens + current token
-            concept_repr, _, _ = layer(concept_repr, kv=new_concept_repr, adj_mask=adj,
-                                       external_memories=word_repr, external_padding_mask=word_mask
-                                       )
+            concept_repr, arc_weight, alignment_weight, attn_x_repr = layer(
+                concept_repr, kv=new_concept_repr,
+                external_memories=word_repr, external_padding_mask=word_mask,
+                need_weights='max'
+            )
+            concept_reprs.append(attn_x_repr)
         name = 'graph_state'
         if name in state_dict:
             prev_graph_state = state_dict[name]
@@ -246,9 +250,22 @@ class Parser(nn.Module):
         else:
             new_graph_state = concept_repr
         new_state_dict[name] = new_graph_state
+
+        name = 'graph_repr'  # to store the graph representation for relation identification
+        if name in state_dict:
+            prev_graph_state = state_dict[name]
+            new_graph_state = torch.cat([prev_graph_state, concept_reprs[1]], 0)
+        else:
+            new_graph_state = concept_reprs[1]
+        new_state_dict[name] = new_graph_state
         # Transformer decoder, [set_state, graph_state]
-        conc_ll, arc_ll, rel_ll = self.decoder(probe, snt_state, new_graph_state, snt_padding_mask, None, None,
-                                               copy_seq, work=True)
+        conc_ll, arc_ll, rel_ll = self.decoder(
+            concept_repr, alignment_weight,
+            new_graph_state, arc_weight,
+            copy_seq, work=True
+        )
+        # conc_ll, arc_ll, rel_ll = self.decoder(probe, snt_state, new_graph_state, snt_padding_mask, None, None,
+        #                                        copy_seq, work=True)
         for i in range(offset):  # restore these variables from old state -> new state @kiro
             name = 'arc_ll%d' % i
             new_state_dict[name] = state_dict[name]
@@ -333,20 +350,25 @@ class Parser(nn.Module):
         # concept_repr = self.graph_encoder(concept_repr,
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)
+        concept_reprs = []
         for idx, layer in enumerate(self.graph_encoder.layers):
-            concept_repr, arc_weight, _ = layer(concept_repr,
-                                                self_padding_mask=concept_mask, self_attn_mask=attn_mask,
-                                                adj_mask=graph_arc,
-                                                external_memories=word_repr, external_padding_mask=word_mask,
-                                                need_weights='max')
+            concept_repr, arc_weight, alignment_weight, attn_x_repr\
+                = layer(concept_repr,
+                        self_padding_mask=concept_mask, self_attn_mask=attn_mask,
+                        adj_mask=graph_arc,
+                        external_memories=word_repr, external_padding_mask=word_mask,
+                        need_weights='max'
+                        )
+            concept_reprs.append(attn_x_repr)
         graph_arc_loss = F.binary_cross_entropy(arc_weight, graph_target_arc.float(), reduction='none')
         graph_arc_loss = graph_arc_loss.masked_fill_(graph_arc_mask, 0.).sum((0, 2))
 
-        probe = probe.expand_as(concept_repr)  # tgt_len x bsz x embed_dim
-        concept_loss, arc_loss, rel_loss = self.decoder(probe, word_repr, concept_repr,
-                                                        word_mask, concept_mask, attn_mask,
-                                                        data['copy_seq'], target=data['concept_out'],
-                                                        target_rel=data['rel'][1:])
+        concept_loss, arc_loss, rel_loss, graph_state = \
+            self.decoder(concept_repr, alignment_weight,
+                         concept_reprs[1], arc_weight,
+                         data['copy_seq'],
+                         target=data['concept_out'], target_rel=data['rel'][1:]
+                         )
         if self.sum_loss is False:
             concept_tot = concept_mask.size(0) - concept_mask.float().sum(0)
             concept_loss = concept_loss / concept_tot

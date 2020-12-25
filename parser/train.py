@@ -125,6 +125,7 @@ def load_vocabs(args):
     if args.use_srl:
         vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
+    vocabs['predictable_word'] = Vocab(args.predictable_word_vocab, 5, [DUM, END])  # for AMR-to-Text @kiro
     vocabs['concept'] = Vocab(args.concept_vocab, 5, [DUM, END])
     vocabs['rel'] = Vocab(args.rel_vocab, 50, [NIL])
     vocabs['word_char'] = Vocab(args.word_char_vocab, 100, [CLS, END])

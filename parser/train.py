@@ -24,6 +24,7 @@ def parse_config():
     parser.add_argument('--srl_vocab', type=str)
     parser.add_argument('--concept_vocab', type=str)
     parser.add_argument('--predictable_concept_vocab', type=str)
+    parser.add_argument('--predictable_word_vocab', type=str)
     parser.add_argument('--rel_vocab', type=str)
     parser.add_argument('--word_char_vocab', type=str)
     parser.add_argument('--concept_char_vocab', type=str)

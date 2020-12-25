@@ -307,7 +307,7 @@ def main(local_rank, args):
                         if model.loss_weight:
                             print('model loss weights', model.loss_weights)
                         model.train()
-                    if (batches_acm > 1000 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
+                    if (batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                         model.eval()
                         output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
                         parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)

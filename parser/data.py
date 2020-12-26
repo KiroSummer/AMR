@@ -127,6 +127,7 @@ def ArraysToTensorWithPadding(xs, padding=0):
 
 
 def batchify(data, vocabs, unk_rate=0.):  # batchify the data
+    _seq = [x['tok'] for x in data]
     _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
     _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
     _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
@@ -165,23 +166,17 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
             r = vocabs['rel'].token2idx(r)
             _rel[v + 1, bidx, u + 1] = r
 
-    ret = {'lem': _lem, 'tok': _tok, 'pos': _pos, 'ner': _ner, 'edge': _edges, 'word_char': _word_char, \
+    ret = {'seq': _seq, 'lem': _lem, 'tok': _tok, 'pos': _pos, 'ner': _ner, 'edge': _edges, 'word_char': _word_char, \
            'copy_seq': np.stack([_cp_seq, _mp_seq], -1), \
            'local_token2idx': local_token2idx, 'local_idx2token': local_idx2token, \
            'concept_in': _concept_in, 'concept_char_in': _concept_char_in, \
            'concept_out': _concept_out, 'rel': _rel}
-
-    bert_tokenizer = vocabs.get('bert_tokenizer', None)
-    if bert_tokenizer is not None:
-        ret['bert_token'] = ArraysToTensor([x['bert_token'] for x in data])
-        ret['token_subword_index'] = ArraysToTensor([x['token_subword_index'] for x in data])
     return ret
 
 
 class DataLoader(object):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train):
         self.data = []
-        bert_tokenizer = vocabs.get('bert_tokenizer', None)
         for amr, token, lemma, pos, ner, edge in zip(*read_file(filename)):
             if for_train:
                 _, _, not_ok = amr.root_centered_sort()
@@ -191,10 +186,6 @@ class DataLoader(object):
             datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, \
                      'cp_seq': cp_seq, 'mp_seq': mp_seq, \
                      'token2idx': token2idx, 'idx2token': idx2token}
-            if bert_tokenizer is not None:
-                bert_token, token_subword_index = bert_tokenizer.tokenize(token)
-                datum['bert_token'] = bert_token
-                datum['token_subword_index'] = token_subword_index
 
             self.data.append(datum)
         print("Get %d AMRs from %s" % (len(self.data), filename))

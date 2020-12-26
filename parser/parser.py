@@ -11,6 +11,7 @@ from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfA
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
 from parser.utils import move_to_device, generate_adj, generate_directional_self_loop_adj
+from parser.pre_trained_language_model import BERT_input, BERT_model
 from parser.srl import SRL_module
 
 
@@ -20,7 +21,7 @@ class Parser(nn.Module):
                  cnn_filters, char2word_dim, char2concept_dim,
                  embed_dim, ff_embed_dim, num_heads, dropout,
                  snt_layers, graph_layers, inference_layers, rel_dim,
-                 pretrained_file=None, bert_encoder=None,
+                 pretrained_file=None, bert_path=None, bert_dim=None,
                  device=0, sum_loss=False,
                  use_srl=False, soft_mtl=False, loss_weight=False,
                  pred_size=0, argu_size=0, span_size=0, label_space_size=0,
@@ -50,9 +51,10 @@ class Parser(nn.Module):
         self.dropout = dropout
         self.probe_generator = nn.Linear(embed_dim, embed_dim)
         self.device = device
-        self.bert_encoder = bert_encoder
         self.sum_loss = sum_loss
-        if bert_encoder is not None:
+        self.bert_input = None
+        if bert_path is not None:
+            self.bert_input = BERT_input(bert_path, bert_path, 4, bert_dim)
             self.bert_adaptor = nn.Linear(768, embed_dim)
         self.use_srl = use_srl
         self.soft_mtl = soft_mtl
@@ -113,9 +115,9 @@ class Parser(nn.Module):
         word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
         return word_repr, word_mask, probe
 
-    def encode_bert_input(self, tok, lem, pos, ner, word_char, bert_token, token_subword_index):
+    def encode_bert_input(self, seq, tok, lem, pos, ner, word_char):
         word_repr = self.word_encoder(word_char, tok, lem, pos, ner)
-        bert_embed, _ = self.bert_encoder(bert_token, token_subword_index=token_subword_index)
+        bert_embed = self.bert_input(seq)
         bert_embed = bert_embed.transpose(0, 1)
         word_repr = word_repr + self.bert_adaptor(bert_embed)
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)
@@ -134,9 +136,9 @@ class Parser(nn.Module):
             word_repr, word_mask, probe = amr_word_repr, amr_word_mask, amr_probe
         return word_repr, amr_word_mask, probe
 
-    def encode_step_with_bert(self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index,
+    def encode_step_with_bert(self, seq, tok, lem, pos, ner, edge, word_char,
                               use_adj=False):
-        word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, word_char, bert_token, token_subword_index)
+        word_repr, word_mask = self.encode_bert_input(seq, tok, lem, pos, ner, word_char)
         amr_word_repr, amr_word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         if self.soft_mtl:
             srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
@@ -167,17 +169,17 @@ class Parser(nn.Module):
         return word_repr, word_mask, probe
 
     def encode_step_with_bert_for_srl_mtl(
-            self, tok, lem, pos, ner, edge, word_char, bert_token, token_subword_index, use_adj=False):
-        word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, word_char, bert_token, token_subword_index)
+            self, seq, tok, lem, pos, ner, edge, word_char, use_adj=False):
+        word_repr, word_mask = self.encode_bert_input(seq, tok, lem, pos, ner, word_char)
         word_repr, word_mask, probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         return word_repr, word_mask, probe
 
     def work(self, data, beam_size, max_time_step, min_time_step=1, args=None):  # beam size == 8
         with torch.no_grad():
-            if self.bert_encoder is not None:
+            if self.bert_input is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
-                    data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['word_char'],
-                    data['bert_token'], data['token_subword_index'], use_adj=args.encoder_graph
+                    data['seq'], data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['word_char'],
+                    use_adj=args.encoder_graph
                 )
             else:
                 word_repr, word_mask, probe = self.encode_step(
@@ -302,11 +304,10 @@ class Parser(nn.Module):
 
     def srl_forward(self, data, encoder_graph=False):
         assert self.use_srl is True
-        if self.bert_encoder is not None:
+        if self.bert_input is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert_for_srl_mtl(
-                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                data['word_char'], data['bert_token'],
-                data['token_subword_index'], use_adj=encoder_graph
+                data['seq'], data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
+                data['word_char'], use_adj=encoder_graph
             )
         else:
             assert self.soft_mtl is True  # not implement for word embeddings without bert
@@ -321,11 +322,11 @@ class Parser(nn.Module):
         return srl_loss
 
     def forward(self, data, encoder_graph=False, decoder_graph=False):
-        if self.bert_encoder is not None:
+        if self.bert_input is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
-                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
-                data['word_char'], data['bert_token'],
-                data['token_subword_index'], use_adj=encoder_graph
+                data['seq'], data['tok'], data['lem'], data['pos'], data['ner'], data['edge'],
+                data['word_char'],
+                use_adj=encoder_graph
             )
         else:
             word_repr, word_mask, probe = self.encode_step(

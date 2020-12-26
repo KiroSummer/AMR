@@ -187,7 +187,7 @@ def main(local_rank, args):
                        args.pretrained_file, args.bert_path, args.bert_dim,
                        device, args.sum_loss,
                        False)
-    print(Parser)
+    print(model)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())

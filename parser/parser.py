@@ -55,7 +55,7 @@ class Parser(nn.Module):
         self.bert_input = None
         if bert_path is not None:
             self.bert_input = BERT_input(bert_path, bert_path, 4, bert_dim)
-            self.bert_adaptor = nn.Linear(768, embed_dim)
+            self.bert_adaptor = nn.Linear(bert_dim, embed_dim)
         self.use_srl = use_srl
         self.soft_mtl = soft_mtl
         self.loss_weight = loss_weight

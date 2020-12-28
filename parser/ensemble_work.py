@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 test_models.append(fname)
         model_args = torch.load(fname)['args']
     else:
-        for fname in args.load_path.split(';'):
+        for fname in args.load_path.split('-'):
             test_models.append(fname)
         model_args = torch.load(fname)['args']
 

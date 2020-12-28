@@ -178,16 +178,18 @@ if __name__ == "__main__":
     # test_data = DataLoader(vocabs, lexical_mapping, args.test_data, args.test_batch_size, for_train=True)
     another_test_data = DataLoader(vocabs, lexical_mapping, args.test_data, args.test_batch_size, for_train=False)
     models = [copy.deepcopy(model) for _ in range(len(test_models))]
+    dict_models_params = []
     for i, test_model in enumerate(test_models):
         print("i", test_model)
         # batch = int(re.search(r'batch([0-9])+', test_model)[0][5:])
         # epoch = int(re.search(r'epoch([0-9])+', test_model)[0][5:])
 
         load_ckpt_without_bert(models[i], test_model)
+        dict_models_params.append(dict(models[i].named_parameters()))
     # average
     dict_params = dict(model.named_parameters())
     for name, param in model.named_parameters():
-        dict_params[name].data.copy_(sum([m.named_parameters()[name].data for m in models]) / len(models))
+        dict_params[name].data.copy_(sum([m[name].data for m in dict_models_params]) / len(models))
     model.load_state_dict(dict_params)
     models = []
 

@@ -175,13 +175,75 @@ class RelationGenerator(nn.Module):
         return rel_loss
 
 
+class MLPRelationGenerator(nn.Module):
+
+    def __init__(self, vocabs, embed_dim, rel_size, dropout):
+        super(MLPRelationGenerator, self).__init__()
+        self.vocabs = vocabs
+        self.transfer = nn.Linear(2 * embed_dim, embed_dim)
+        self.proj = nn.Linear(embed_dim, vocabs['rel'].size)
+
+        self.dropout = dropout
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.normal_(self.transfer.weight, std=0.02)
+        nn.init.normal_(self.proj.weight, std=0.02)
+
+        nn.init.constant_(self.transfer.bias, 0.)
+        nn.init.constant_(self.proj.bias, 0.)
+
+    def forward(self, outs, graph_state, target_rel=None, work=False):
+        """
+        outs: dep_num, bsz, dep_dim
+        graph_state (heads): head_num, bsz, head_dim
+        """
+        def get_scores(dep, head):
+            dep_num, bsz, dep_dim = dep.size()
+            head_num, bsz, head_dim = head.size()
+
+            dep = dep.unsqueeze(2)
+            head = head.unsqueeze(0)
+            dep = dep.expand(-1, -1, head_num, -1)
+            head = head.expand(dep_num, -1, -1, -1)
+            pair_representations = torch.cat([dep, head], dim=3)  # dep_num, bsz, head_num, 2 * emb_dim
+            pair_representations = F.relu(self.transfer.forward(pair_representations))
+
+            pair_representations = F.dropout(pair_representations, p=self.dropout, training=self.training)
+            scores = self.proj.forward(pair_representations)  # dep_num, bsz, head_num, rel_size
+            return scores
+
+        # scores = get_scores(outs, graph_state).permute(1, 0, 3, 2).contiguous()
+        scores = get_scores(outs, graph_state)
+        # scores: dep_num, bsz, head_num, vocab_size
+
+        dep_num, bsz, _ = outs.size()
+        head_num = graph_state.size(0)
+        log_probs = F.log_softmax(scores, dim=-1)
+        _, rel = torch.max(log_probs, -1)
+        if work:
+            # dep_num x bsz x head x vocab
+            return log_probs
+
+        rel_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(NIL)) + torch.eq(target_rel,
+                                                                                      self.vocabs['rel'].token2idx(PAD))
+        rel_acc = (torch.eq(rel, target_rel).float().masked_fill_(rel_mask, 0.)).sum().item()
+        rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
+        if not self.training:
+            print('rel acc %.3f' % (rel_acc / rel_tot))
+        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
+            dep_num, bsz, head_num)
+        rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))
+        return rel_loss
+
+
 class DecodeLayer(nn.Module):
 
     def __init__(self, vocabs, inference_layers, embed_dim, ff_embed_dim, num_heads, conc_size, rel_size, dropout):
         super(DecodeLayer, self).__init__()
         self.arc_generator = ArcGenerator(vocabs, embed_dim, ff_embed_dim, num_heads, dropout)
         self.concept_generator = ConceptGenerator(vocabs, embed_dim, ff_embed_dim, conc_size, dropout)
-        self.relation_generator = RelationGenerator(vocabs, embed_dim, rel_size, dropout)
+        self.relation_generator = MLPRelationGenerator(vocabs, embed_dim, rel_size, dropout)
         self.dropout = dropout
         self.vocabs = vocabs
 

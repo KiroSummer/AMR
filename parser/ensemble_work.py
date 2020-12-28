@@ -104,6 +104,7 @@ if __name__ == "__main__":
     args = parse_config()
 
     test_models = []
+    print("args.load_path", args.load_path)
     if os.path.isdir(args.load_path):
         for file in os.listdir(args.load_path):
             fname = os.path.join(args.load_path, file)

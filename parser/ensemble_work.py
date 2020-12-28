@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # average
     dict_params = dict(model.named_parameters())
     for name, param in model.named_parameters():
-        dict_params[name].data.copy_(sum([m[name].data for m in models]) / len(models))
+        dict_params[name].data.copy_(sum([m.named_parameters()[name].data for m in models]) / len(models))
     model.load_state_dict(dict_params)
     models = []
 

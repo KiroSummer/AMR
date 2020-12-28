@@ -203,7 +203,7 @@ class MLPRelationGenerator(nn.Module):
             head_num, bsz, head_dim = head.size()
 
             dep = dep.unsqueeze(2)
-            head = head.unsqueeze(0)
+            head = head.unsqueeze(0).transpose(1, 2)
             dep = dep.expand(-1, -1, head_num, -1)
             head = head.expand(dep_num, -1, -1, -1)
             pair_representations = torch.cat([dep, head], dim=3)  # dep_num, bsz, head_num, 2 * emb_dim

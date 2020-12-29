@@ -369,6 +369,11 @@ class Parser(nn.Module):
                          data['copy_seq'],
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )
+
+        concept_repr_loss = nn.MSELoss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :])
+        print(concept_repr_loss)
+        exit()
+
         if self.sum_loss is False:
             concept_tot = concept_mask.size(0) - concept_mask.float().sum(0)
             concept_loss = concept_loss / concept_tot

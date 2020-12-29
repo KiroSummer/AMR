@@ -290,7 +290,7 @@ def main(local_rank, args):
                 concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
                 arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
                 rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
-                concept_repr_loss_value = concept_repr_loss_value * 0.8 + 0.2 * concept_repr_loss_value
+                concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
                 loss.backward()  # loss backward
                 used_batches += 1
                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
@@ -306,7 +306,7 @@ def main(local_rank, args):
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
-                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_value, srl_loss_avg))
+                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
                         if model.loss_weight:
                             print('model loss weights', model.loss_weights)
                         model.train()

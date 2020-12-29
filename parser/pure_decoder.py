@@ -211,6 +211,8 @@ class MLPRelationGenerator(nn.Module):
 
             pair_representations = F.dropout(pair_representations, p=self.dropout, training=self.training)
             scores = self.proj.forward(pair_representations)  # dep_num, bsz, head_num, rel_size
+            nil_scores = torch.zeros([dep_num, bsz, head_num, 1]).cuda()
+            scores = torch.cat([nil_scores, scores], dim=-1)  # add O to the scores.
             return scores
 
         # scores = get_scores(outs, graph_state).permute(1, 0, 3, 2).contiguous()
@@ -225,13 +227,12 @@ class MLPRelationGenerator(nn.Module):
             # dep_num x bsz x head x vocab
             return log_probs
 
-        rel_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(NIL)) + \
-                   torch.eq(target_rel, self.vocabs['rel'].token2idx(PAD))
+        rel_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(PAD))
         rel_acc = (torch.eq(rel, target_rel).float().masked_fill_(rel_mask, 0.)).sum().item()
         rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
         if not self.training:
             print('rel acc %.3f' % (rel_acc / rel_tot))
-        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
+        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size + 1), target_rel.view(-1), 0.).view(
             dep_num, bsz, head_num)
         rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))  # exclude the NIL ? @kiro
         return rel_loss
@@ -243,7 +244,7 @@ class DecodeLayer(nn.Module):
         super(DecodeLayer, self).__init__()
         self.arc_generator = ArcGenerator(vocabs, embed_dim, ff_embed_dim, num_heads, dropout)
         self.concept_generator = ConceptGenerator(vocabs, embed_dim, ff_embed_dim, conc_size, dropout)
-        self.relation_generator = MLPRelationGenerator(vocabs, embed_dim, rel_size, dropout)
+        self.relation_generator = RelationGenerator(vocabs, embed_dim, rel_size, dropout)
         self.dropout = dropout
         self.vocabs = vocabs
 

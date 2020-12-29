@@ -370,7 +370,7 @@ class Parser(nn.Module):
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )
 
-        concept_repr_loss = nn.MSELoss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :])
+        concept_repr_loss = F.mse_loss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :])
         print(concept_repr_loss)
         exit()
 

@@ -31,6 +31,9 @@ class PostProcessor(object):
 
         grouped_relation = dict()
         for i, j, p, r in res_relation:  # current, head, arc_prob, rel_prob
+            if np.argmax(np.array(r)) == 0:  # r is 'O'
+                continue
+            r = r[1:]
             r = self.rel_vocab.idx2token(np.argmax(np.array(r)))
             grouped_relation[i] = grouped_relation.get(i, []) + [(j, p, r)]
         for i, c in enumerate(res_concept):

@@ -242,7 +242,7 @@ class Parser(nn.Module):
                 external_memories=word_repr, external_padding_mask=word_mask,
                 need_weights='max'
             )
-            concept_reprs.append(attn_x_repr)
+            concept_reprs.append(concept_repr)
         name = 'graph_state'
         if name in state_dict:
             prev_graph_state = state_dict[name]
@@ -359,7 +359,7 @@ class Parser(nn.Module):
                         external_memories=word_repr, external_padding_mask=word_mask,
                         need_weights='max'
                         )
-            concept_reprs.append(attn_x_repr)
+            concept_reprs.append(concept_repr)
         graph_arc_loss = F.binary_cross_entropy(arc_weight, graph_target_arc.float(), reduction='none')
         graph_arc_loss = graph_arc_loss.masked_fill_(graph_arc_mask, 0.).sum((0, 2))
 

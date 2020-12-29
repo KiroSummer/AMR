@@ -225,15 +225,15 @@ class MLPRelationGenerator(nn.Module):
             # dep_num x bsz x head x vocab
             return log_probs
 
-        rel_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(NIL)) + torch.eq(target_rel,
-                                                                                      self.vocabs['rel'].token2idx(PAD))
+        rel_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(NIL)) + \
+                   torch.eq(target_rel, self.vocabs['rel'].token2idx(PAD))
         rel_acc = (torch.eq(rel, target_rel).float().masked_fill_(rel_mask, 0.)).sum().item()
         rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
         if not self.training:
             print('rel acc %.3f' % (rel_acc / rel_tot))
         rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
             dep_num, bsz, head_num)
-        rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))
+        rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))  # exclude the NIL ? @kiro
         return rel_loss
 
 

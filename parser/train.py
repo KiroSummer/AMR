@@ -241,7 +241,8 @@ def main(local_rank, args):
 
     train_data_generator.start()
     model.train()
-    epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg = 0, 0, 0, 0, 0, 0
+    epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg =\
+        0, 0, 0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
@@ -276,18 +277,20 @@ def main(local_rank, args):
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
                 batch = move_to_device(batch, model.device)  # data moved to device
-                concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
+                concept_loss, arc_loss, rel_loss, graph_arc_loss, concept_repr_loss = model.forward(
                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
                 # model forward, please note that graph_arc_loss is not used
-                loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
+                loss = (concept_loss + arc_loss + rel_loss + concept_repr_loss) / args.batches_per_update  # compute
                 loss_value = loss.item()
                 concept_loss_value = concept_loss.item()
                 arc_loss_value = arc_loss.item()
                 rel_loss_value = rel_loss.item()
+                concept_repr_loss_value = concept_repr_loss.item()
                 loss_avg = loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
                 concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
                 arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
                 rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
+                concept_repr_loss_value = concept_repr_loss_value * 0.8 + 0.2 * concept_repr_loss_value
                 loss.backward()  # loss backward
                 used_batches += 1
                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
@@ -302,8 +305,8 @@ def main(local_rank, args):
                 optimizer.zero_grad()
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
-                        print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, srl_loss %.3f' % (
-                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, srl_loss_avg))
+                        print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
+                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_value, srl_loss_avg))
                         if model.loss_weight:
                             print('model loss weights', model.loss_weights)
                         model.train()

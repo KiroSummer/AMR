@@ -151,8 +151,7 @@ class RelationGenerator(nn.Module):
             scores = torch.bmm(dep.view(bsz, dep_num * self.vocabs['rel'].size, -1), head).view(bsz, dep_num,
                                                                                                 self.vocabs['rel'].size,
                                                                                                 head_num)
-            nil_scores = torch.zeros([bsz, dep_num, 1, head_num]).cuda()
-            scores = torch.cat([nil_scores, scores], dim=2)  # add O to the scores.
+            scores[:, :, 2, :] = 0.0  # NIL == 0.0
             return scores
 
         scores = get_scores(outs, graph_state).permute(1, 0, 3, 2).contiguous()
@@ -170,7 +169,7 @@ class RelationGenerator(nn.Module):
         rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
         if not self.training:
             print('rel acc %.3f' % (rel_acc / rel_tot))
-        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size + 1), target_rel.view(-1), 0.).view(
+        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
             dep_num, bsz, head_num)
         rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))
         return rel_loss
@@ -212,8 +211,6 @@ class MLPRelationGenerator(nn.Module):
 
             pair_representations = F.dropout(pair_representations, p=self.dropout, training=self.training)
             scores = self.proj.forward(pair_representations)  # dep_num, bsz, head_num, rel_size
-            nil_scores = torch.zeros([dep_num, bsz, head_num, 1]).cuda()
-            scores = torch.cat([nil_scores, scores], dim=-1)  # add O to the scores.
             return scores
 
         # scores = get_scores(outs, graph_state).permute(1, 0, 3, 2).contiguous()
@@ -233,7 +230,7 @@ class MLPRelationGenerator(nn.Module):
         rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
         if not self.training:
             print('rel acc %.3f' % (rel_acc / rel_tot))
-        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size + 1), target_rel.view(-1), 0.).view(
+        rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
             dep_num, bsz, head_num)
         rel_loss = rel_loss.masked_fill_(rel_mask, 0.).sum((0, 2))  # exclude the NIL ? @kiro
         return rel_loss

@@ -224,6 +224,7 @@ class Parser(nn.Module):
         concept_repr = self.embed_scale * self.concept_encoder(step_concept_char, step_concept) + self.embed_positions(
             step_concept, offset)
         concept_repr = self.concept_embed_layer_norm(concept_repr)
+        concept_repr = concept_repr + probe
         adj = state_dict['adj']
         if args.decoder_graph is False:
             adj = None
@@ -351,6 +352,9 @@ class Parser(nn.Module):
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)
         concept_reprs = []
+        print(probe.size())
+        exit()
+        concept_repr = concept_repr + probe.expand(concept_repr.size(0), -1, -1)
         for idx, layer in enumerate(self.graph_encoder.layers):
             concept_repr, arc_weight, alignment_weight, attn_x_repr\
                 = layer(concept_repr,

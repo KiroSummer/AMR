@@ -352,8 +352,6 @@ class Parser(nn.Module):
         #                          self_padding_mask=concept_mask, self_attn_mask=attn_mask,
         #                          external_memories=word_repr, external_padding_mask=word_mask)
         concept_reprs = []
-        print(probe.size())
-        exit()
         concept_repr = concept_repr + probe.expand(concept_repr.size(0), -1, -1)
         for idx, layer in enumerate(self.graph_encoder.layers):
             concept_repr, arc_weight, alignment_weight, attn_x_repr\

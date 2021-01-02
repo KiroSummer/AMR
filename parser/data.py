@@ -187,7 +187,7 @@ class DataLoader(object):
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:
                     continue
-            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(lemma, token, vocabs['predictable_concept'])
+            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + lemma, ['<CLS>'] + token, vocabs['predictable_concept'])
             datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, \
                      'cp_seq': cp_seq, 'mp_seq': mp_seq, \
                      'token2idx': token2idx, 'idx2token': idx2token}

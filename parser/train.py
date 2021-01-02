@@ -212,8 +212,8 @@ def main(local_rank, args):
             weight_decay_params.append(param)
     grouped_params = [{'params': weight_decay_params, 'weight_decay': args.weight_decay},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
-    optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
-    opt = SWA(optimizer, swa_start=10, swa_freq=5, swa_lr=0.05)
+    optimizer = AdamWeightDecayOptimizer(grouped_params, 1e-3, betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
+    opt = SWA(optimizer, swa_start=4000, swa_freq=5, swa_lr=0.0002)
 
     used_batches = 0
     batches_acm = 0

@@ -110,8 +110,8 @@ class Parser(nn.Module):
         else:
             word_repr = self.amr_snt_encoder(word_repr, self_padding_mask=word_mask, adj_mask=undir_adj)
 
-        # word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
-        return word_repr, word_mask, None
+        word_repr, word_mask, probe = self.cut_input(word_repr, word_mask)
+        return word_repr, word_mask, probe
 
     def encode_bert_input(self, tok, lem, pos, ner, word_char, bert_token, token_subword_index):
         word_repr = self.word_encoder(word_char, tok, lem, pos, ner)

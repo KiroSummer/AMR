@@ -1,6 +1,7 @@
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torchcontrib.optim import SWA
 
 import argparse, os, random
 from parser.data import Vocab, DataLoader, SRLDataLoader, DUM, END, CLS, NIL
@@ -212,6 +213,7 @@ def main(local_rank, args):
     grouped_params = [{'params': weight_decay_params, 'weight_decay': args.weight_decay},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
     optimizer = AdamWeightDecayOptimizer(grouped_params, 1., betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
+    opt = SWA(optimizer, swa_start=10, swa_freq=5, swa_lr=0.05)
 
     used_batches = 0
     batches_acm = 0
@@ -300,17 +302,20 @@ def main(local_rank, args):
                 if args.world_size > 1:
                     average_gradients(model)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
-                optimizer.step()  # update the model parameters according to the losses @kiro
-                optimizer.zero_grad()
+                # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+                # optimizer.step()  # update the model parameters according to the losses @kiro
+                # optimizer.zero_grad()
+                opt.step()
+                opt.zero_grad()
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
-                        epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
+                        epoch, batches_acm, optimizer.state_dict()['param_groups'][0]['lr'], concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
                         if model.loss_weight:
                             print('model loss weights', model.loss_weights)
                         model.train()
                     if (batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
+                        opt.swap_swa_sgd()
                         model.eval()
                         output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
                         parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
@@ -323,6 +328,7 @@ def main(local_rank, args):
                                    saved_model)
                         eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
                         eval_task.start()
+                        opt.swap_swa_sgd()
                         model.train()
                 break
     train_data_generator.terminate()

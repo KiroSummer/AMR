@@ -187,7 +187,7 @@ class Parser(nn.Module):
 
             mem_dict = {'snt_state': word_repr,
                         'snt_padding_mask': word_mask,
-                        'probe': probe,
+                        # 'probe': probe,
                         'local_idx2token': data['local_idx2token'],
                         'copy_seq': data['copy_seq']}
             init_state_dict = {}
@@ -214,7 +214,7 @@ class Parser(nn.Module):
         step_concept, step_concept_char = inp
         word_repr = snt_state = mem_dict['snt_state']
         word_mask = snt_padding_mask = mem_dict['snt_padding_mask']
-        probe = mem_dict['probe']
+        # probe = mem_dict['probe']
         copy_seq = mem_dict['copy_seq']
         local_vocabs = mem_dict['local_idx2token']
         _, bsz, _ = word_repr.size()

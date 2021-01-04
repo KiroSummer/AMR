@@ -242,7 +242,7 @@ class Parser(nn.Module):
                 external_memories=word_repr, external_padding_mask=word_mask,
                 need_weights='max'
             )
-            concept_reprs.append(concept_repr)
+            concept_reprs.append(attn_x_repr)
         name = 'graph_state'
         if name in state_dict:
             prev_graph_state = state_dict[name]

@@ -382,7 +382,7 @@ class Parser(nn.Module):
             graph_arc_loss = graph_arc_loss / concept_tot
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
-            concept_repr_loss = concept_repr_loss / concept_mask.float().sum()
+            concept_repr_loss = concept_repr_loss / concept_mask[1:, :].float().sum()
         else:
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.sum(), arc_loss.sum(), rel_loss.sum(), graph_arc_loss.sum()

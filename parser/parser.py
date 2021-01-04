@@ -370,8 +370,8 @@ class Parser(nn.Module):
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )
 
-        concept_repr = concept_repr[:, :-1, :] * concept_mask[1:, :].unsqueeze(-1)
-        next_concept_repr = concept_reprs[1][:, 1:, :] * concept_mask[1:, :].unsqueeze(-1)
+        concept_repr = concept_repr[:-1, :, :] * concept_mask[1:, :].unsqueeze(-1)
+        next_concept_repr = concept_reprs[1][1:, :, :] * concept_mask[1:, :].unsqueeze(-1)
         concept_repr_loss = F.mse_loss(concept_repr, next_concept_repr, reduction="sum")
 
         if self.sum_loss is False:
@@ -382,7 +382,7 @@ class Parser(nn.Module):
             graph_arc_loss = graph_arc_loss / concept_tot
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
-            concept_repr_loss = concept_repr_loss / concept_tot
+            concept_repr_loss = concept_repr_loss / concept_mask.float().sum()
         else:
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.sum(), arc_loss.sum(), rel_loss.sum(), graph_arc_loss.sum()

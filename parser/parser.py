@@ -370,8 +370,8 @@ class Parser(nn.Module):
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )
 
-        concept_repr = concept_repr[:-1, :, :] * concept_mask[1:, :].unsqueeze(-1)
-        next_concept_repr = concept_reprs[1][1:, :, :] * concept_mask[1:, :].unsqueeze(-1)
+        concept_repr = concept_repr[:-1, :, :] * (concept_mask[1:, :] == 0).unsqueeze(-1).float()
+        next_concept_repr = concept_reprs[1][1:, :, :] * (concept_mask[1:, :] == 0).unsqueeze(-1).float()
         concept_repr_loss = F.mse_loss(concept_repr, next_concept_repr, reduction="mean")
         # concept_repr_loss = F.mse_loss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :])
 

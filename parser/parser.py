@@ -359,7 +359,7 @@ class Parser(nn.Module):
                         external_memories=word_repr, external_padding_mask=word_mask,
                         need_weights='max'
                         )
-            concept_reprs.append(concept_repr)
+            concept_reprs.append(attn_x_repr)
         graph_arc_loss = F.binary_cross_entropy(arc_weight, graph_target_arc.float(), reduction='none')
         graph_arc_loss = graph_arc_loss.masked_fill_(graph_arc_mask, 0.).sum((0, 2))
 
@@ -370,7 +370,9 @@ class Parser(nn.Module):
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )
 
-        concept_repr_loss = F.mse_loss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :])
+        print(concept_mask.size())
+        exit()
+        concept_repr_loss = F.mse_loss(concept_repr[:, :-1, :], concept_reprs[1][:, 1:, :], reduction="sum")
 
         if self.sum_loss is False:
             concept_tot = concept_mask.size(0) - concept_mask.float().sum(0)
@@ -380,6 +382,7 @@ class Parser(nn.Module):
             graph_arc_loss = graph_arc_loss / concept_tot
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.mean(), arc_loss.mean(), rel_loss.mean(), graph_arc_loss.mean()
+            concept_repr_loss = concept_repr_loss / concept_tot
         else:
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 concept_loss.sum(), arc_loss.sum(), rel_loss.sum(), graph_arc_loss.sum()

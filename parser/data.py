@@ -211,7 +211,7 @@ class DataLoader(object):
 
         if self.train:
             random.shuffle(idx)
-            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))  # fixed idx? @kiro check TODO
+            idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr'])) 
 
         batches = []
         num_tokens, data = 0, []

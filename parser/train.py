@@ -21,6 +21,7 @@ def parse_config():
     parser.add_argument('--lem_vocab', type=str)
     parser.add_argument('--pos_vocab', type=str)
     parser.add_argument('--ner_vocab', type=str)
+    parser.add_argument('--dep_rel_vocab', type=str)
     parser.add_argument('--srl_vocab', type=str)
     parser.add_argument('--concept_vocab', type=str)
     parser.add_argument('--predictable_concept_vocab', type=str)

@@ -4,6 +4,7 @@ python3 -u -m parser.train --info-hard-mtl-loss-weights\
                 --lem_vocab ${dataset}/lem_vocab\
                 --pos_vocab  ${dataset}/pos_vocab\
                 --ner_vocab ${dataset}/ner_vocab\
+                --dep_rel_vocab ${dataset}/dep_rel_vocab\
                 --srl_vocab ${dataset}/srl_vocab\
                 --concept_vocab ${dataset}/concept_vocab\
                 --predictable_concept_vocab ${dataset}/predictable_concept_vocab\
@@ -19,6 +20,7 @@ python3 -u -m parser.train --info-hard-mtl-loss-weights\
                 --word_dim 300\
                 --pos_dim 32\
                 --ner_dim 16\
+                --dep_rel_dim 64\
                 --concept_char_dim 32\
                 --concept_dim 300 \
                 --rel_dim 100 \

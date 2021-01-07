@@ -73,7 +73,7 @@ def AMREmbedding(vocab, embedding_dim, pretrained_file=None, amr=False, dump_fil
 
 
 class WordEncoder(nn.Module):
-    def __init__(self, vocabs, char_dim, word_dim, pos_dim, ner_dim,
+    def __init__(self, vocabs, char_dim, word_dim, pos_dim, ner_dim, dep_rel_dim,
                  embed_dim, filters, char2word_dim, dropout, pretrained_file=None):
         super(WordEncoder, self).__init__()
         self.char_embed = AMREmbedding(vocabs['word_char'], char_dim)  # initialize a random embedding @kiro
@@ -88,8 +88,12 @@ class WordEncoder(nn.Module):
             self.ner_embed = AMREmbedding(vocabs['ner'], ner_dim)
         else:
             self.ner_embed = None
+        if dep_rel_dim > 0:
+            self.dep_rel_embed = AMREmbedding(vocabs['dep_rel'], dep_rel_dim)
+        else:
+            self.dep_rel_embed = None
 
-        tot_dim = word_dim + pos_dim + ner_dim + char2word_dim
+        tot_dim = word_dim + pos_dim + ner_dim + dep_rel_dim + char2word_dim
 
         self.out_proj = nn.Linear(tot_dim, embed_dim)
         self.dropout = dropout
@@ -99,7 +103,7 @@ class WordEncoder(nn.Module):
         nn.init.normal_(self.out_proj.weight, std=0.02)
         nn.init.constant_(self.out_proj.bias, 0.)
 
-    def forward(self, char_input, tok_input, lem_input, pos_input, ner_input):
+    def forward(self, char_input, tok_input, lem_input, pos_input, ner_input, dep_rel_input):
         # char: seq_len x bsz x word_len
         # word, pos, ner: seq_len x bsz
         seq_len, bsz, _ = char_input.size()
@@ -116,6 +120,10 @@ class WordEncoder(nn.Module):
         if self.ner_embed is not None:
             ner_repr = self.ner_embed(ner_input)
             reprs.append(ner_repr)
+
+        if self.dep_rel_embed is not None:
+            dep_rel_repr = self.dep_rel_embed(dep_rel_input)
+            reprs.append(dep_rel_repr)
 
         word = F.dropout(torch.cat(reprs, -1), p=self.dropout, training=self.training)
         word = self.out_proj(word)

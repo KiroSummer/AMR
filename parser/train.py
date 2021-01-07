@@ -47,6 +47,7 @@ def parse_config():
     parser.add_argument('--word_dim', type=int)
     parser.add_argument('--pos_dim', type=int)
     parser.add_argument('--ner_dim', type=int)
+    parser.add_argument('--dep_rel_dim', type=int)
     parser.add_argument('--concept_char_dim', type=int)
     parser.add_argument('--concept_dim', type=int)
     parser.add_argument('--rel_dim', type=int)
@@ -123,6 +124,7 @@ def load_vocabs(args):
     vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
+    vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
@@ -171,7 +173,7 @@ def main(local_rank, args):
 
     if args.use_srl is True:
         model = Parser(vocabs,
-                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
+                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
                        args.concept_char_dim, args.concept_dim,
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
@@ -183,7 +185,7 @@ def main(local_rank, args):
                        args.ffnn_size, args.ffnn_depth, args.use_gold_predicates, args.use_gold_arguments)
     else:
         model = Parser(vocabs,
-                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim,
+                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
                        args.concept_char_dim, args.concept_dim,
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,

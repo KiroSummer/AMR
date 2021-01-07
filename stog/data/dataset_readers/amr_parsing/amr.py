@@ -36,6 +36,7 @@ class AMR:
                  pos_tags=None,
                  ner_tags=None,
                  dependency_edges=None,
+                 dependency_rels=None,
                  abstract_map=None,
                  misc=None):
         self.id = id
@@ -46,6 +47,7 @@ class AMR:
         self.pos_tags = pos_tags
         self.ner_tags = ner_tags
         self.dependency_edges = dependency_edges  # add by kiro
+        self.dependency_rels = dependency_rels  # add by kiro
         self.abstract_map = abstract_map
         self.misc = misc
 
@@ -98,6 +100,7 @@ class AMR:
             pos_tags=self.pos_tags,
             ner_tags=self.ner_tags,
             dependency_edges=self.dependency_edges,
+            dependency_rels=self.dependency_rels,
             abstract_map=self.abstract_map,
             misc=self.misc,
             graph=self.graph

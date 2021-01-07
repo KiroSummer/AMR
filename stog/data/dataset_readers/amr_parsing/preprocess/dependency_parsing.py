@@ -25,6 +25,7 @@ class DependencyParser:
         tokens = amr.tokens
         result = self.parser.predict([tokens], verbose=False, tree=True, proj=True)
         amr.dependency_edges = result.arcs[0]
+        amr.dependency_rels = result.rels[0]
 
 
 if __name__ == '__main__':

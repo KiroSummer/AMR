@@ -39,6 +39,8 @@ class AMRIO:
                         amr.ner_tags = json.loads(line[len('# ::ner_tags '):])
                     elif line.startswith('# ::dependency_edges '):
                         amr.dependency_edges = json.loads(line[len('# ::dependency_edges '):])
+                    elif line.startswith('# ::dependency_rels '):
+                        amr.dependency_edges = json.loads(line[len('# ::dependency_rels '):])
                     elif line.startswith('# ::abstract_map '):
                         amr.abstract_map = json.loads(line[len('# ::abstract_map '):])
                     else:

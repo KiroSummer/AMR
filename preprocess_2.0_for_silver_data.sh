@@ -7,42 +7,34 @@ set -e
 util_dir=data/AMR/amr_2.0_utils
 
 # AMR data with **features**
-silver_data=/data2/qrxia/data/AMR/silver_data/2m_silver_amr/2m_silver.txt
+data_dir=/data2/qrxia/data/AMR/silver_data/2m_silver_amr/
+silver_data=data_dir/2m_silver.txt.12w.features
 
 # ========== Set the above variables correctly ==========
 
 printf "Cleaning inputs...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.input_cleaner \
-    --amr_files ${train_data} ${dev_data} ${test_data}
+    --amr_files $silver_data
 printf "Done.`date`\n\n"
 
 printf "Recategorizing subgraphs...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.recategorizer \
     --dump_dir ${util_dir} \
-    --amr_files ${train_data}.input_clean ${dev_data}.input_clean
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.text_anonymizor \
-    --amr_file ${test_data}.input_clean \
-    --util_dir ${util_dir}
+    --amr_files ${silver_data}.input_clean
 printf "Done.`date`\n\n"
 
 printf "Removing senses...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.sense_remover \
     --util_dir ${util_dir} \
-    --amr_files ${train_data}.input_clean.recategorize \
-    ${dev_data}.input_clean.recategorize \
-    ${test_data}.input_clean.recategorize
+    --amr_files ${silver_data}.input_clean.recategorize
 printf "Done.`date`\n\n"
 
 printf "Dependency parsing...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.dependency_parsing \
     --util_dir ${util_dir} \
-    --amr_files ${train_data}.input_clean.recategorize.nosense \
-    ${dev_data}.input_clean.recategorize.nosense \
-    ${test_data}.input_clean.recategorize.nosense
+    --amr_files ${silver_data}.input_clean.recategorize.nosense \
 printf "Done.`date`\n\n"
 
 printf "Renaming preprocessed files...`date`\n"
-mv ${test_data}.input_clean.recategorize.nosense.dep ${test_data}.preproc
-mv ${train_data}.input_clean.recategorize.nosense.dep ${train_data}.preproc
-mv ${dev_data}.input_clean.recategorize.nosense.dep ${dev_data}.preproc
+mv ${silver_data}.input_clean.recategorize.nosense.dep ${silver_data}.preproc
 rm ${data_dir}/*.input_clean*

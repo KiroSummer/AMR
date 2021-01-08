@@ -13,7 +13,7 @@ def read_snt(filepath):
 
 def merge_snts_and_amrs(snts, amrs, outfilepath):
     outputfile = open(outfilepath, 'w')
-    for idx, snt, amr in enumerate(zip(snts, amrs)):
+    for idx, (snt, amr) in enumerate(zip(snts, amrs)):
         outputfile.write("# ::id " + "2m_silver_data " + str(idx) + '\n')
         outputfile.write("# ::snt " + snt + '\n')
         outputfile.write("# ::save-data " + time.strftime("%a %b %d %H:%M:%S %Y", time.localtime()) + '\n')

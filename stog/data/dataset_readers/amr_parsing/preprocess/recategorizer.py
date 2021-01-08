@@ -162,7 +162,10 @@ class Recategorizer:
 
     def recategorize_file(self, file_path):
         for i, amr in enumerate(AMRIO.read(file_path), 1):
-            self.recategorize_graph(amr)
+            try:
+                self.recategorize_graph(amr)
+            except:
+                continue
             yield amr
             if i % 1000 == 0:
                 logger.info('Processed {} examples.'.format(i))

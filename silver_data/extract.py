@@ -3,10 +3,12 @@
 from collections import Counter
 import json, re
 
-from ..parser.amr import AMR
-from ..parser.AMRGraph import AMRGraph, number_regexp
-from ..parser.AMRGraph import _is_abs_form
-from ..parser.srl import read_srl_file
+import sys
+sys.path.append("..")  # Adds higher directory to python modules path.
+from parser.amr import AMR
+from parser.AMRGraph import AMRGraph, number_regexp
+from parser.AMRGraph import _is_abs_form
+from parser.srl import read_srl_file
 
 
 class AMRIO:

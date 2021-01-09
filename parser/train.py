@@ -75,6 +75,7 @@ def parse_config():
 
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--train_data', type=str)
+    parser.add_argument('--silver_train_data', type=str)
     parser.add_argument('--dev_data', type=str)
     parser.add_argument('--srl_data', type=str)
     parser.add_argument('--train_batch_size', type=int)
@@ -233,6 +234,11 @@ def main(local_rank, args):
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
+    silver_train_data = DataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
+    silver_train_data.set_unk_rate(args.unk_rate)
+    silver_queue = mp.Queue(10)
+    silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
+
     # Load SRL data, for train @kiro TODO
     if args.use_srl is True:
         srl_train_data = SRLDataLoader(vocabs, args.srl_data, int(args.train_batch_size / 2),
@@ -243,9 +249,12 @@ def main(local_rank, args):
         srl_train_data_generator.start()
 
     train_data_generator.start()
+    silver_train_data_generator.start()
     model.train()
     epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg =\
         0, 0, 0, 0, 0, 0, 0
+    silver_loss_avg, silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg, silver_concept_repr_loss_avg = \
+        0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")
@@ -274,6 +283,27 @@ def main(local_rank, args):
             break
         while True:
             is_start = False
+            batch = silver_queue.get()
+            if isinstance(batch, str):
+                continue
+            else:
+                batch = move_to_device(batch, model.device)  # data moved to device
+                silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
+                    batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
+                # model forward, please note that graph_arc_loss is not used
+                loss = (silver_concept_loss + silver_arc_loss + silver_rel_loss) / args.batches_per_update  # compute
+                loss_value = loss.item()
+                silver_concept_loss_value = silver_concept_loss.item()
+                silver_arc_loss_value = silver_arc_loss.item()
+                silver_rel_loss_value = silver_rel_loss.item()
+                # concept_repr_loss_value = concept_repr_loss.item()
+                silver_loss_avg = silver_loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
+                silver_concept_loss_avg = silver_concept_loss_avg * 0.8 + 0.2 * silver_concept_loss_value
+                silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
+                silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
+                # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
+                loss.backward()  # loss backward
+            # gold amr data
             batch = queue.get()
             if isinstance(batch, str):
                 epoch += 1
@@ -310,6 +340,9 @@ def main(local_rank, args):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
                         epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
+                        print('==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
+                                silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
+                              )
                         if model.loss_weight:
                             print('model loss weights', model.loss_weights)
                         model.train()

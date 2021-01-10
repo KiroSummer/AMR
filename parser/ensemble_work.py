@@ -122,6 +122,7 @@ if __name__ == "__main__":
     vocabs['lem'] = Vocab(model_args.lem_vocab, 5, [CLS])
     vocabs['pos'] = Vocab(model_args.pos_vocab, 5, [CLS])
     vocabs['ner'] = Vocab(model_args.ner_vocab, 5, [CLS])
+    vocabs['dep_rel'] = Vocab(model_args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(model_args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(model_args.predictable_concept_vocab, 5, [DUM, END])
@@ -146,7 +147,7 @@ if __name__ == "__main__":
 
     if model_args.use_srl is True:
         model = Parser(vocabs,
-                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
+                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim, model_args.dep_rel_dim,
                        model_args.concept_char_dim, model_args.concept_dim,
                        model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
                        model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,
@@ -158,7 +159,7 @@ if __name__ == "__main__":
                        model_args.ffnn_size, model_args.ffnn_depth, model_args.use_gold_predicates, model_args.use_gold_arguments)
     else:
         model = Parser(vocabs,
-                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim,
+                       model_args.word_char_dim, model_args.word_dim, model_args.pos_dim, model_args.ner_dim, model_args.dep_rel_dim,
                        model_args.concept_char_dim, model_args.concept_dim,
                        model_args.cnn_filters, model_args.char2word_dim, model_args.char2concept_dim,
                        model_args.embed_dim, model_args.ff_embed_dim, model_args.num_heads, model_args.dropout,

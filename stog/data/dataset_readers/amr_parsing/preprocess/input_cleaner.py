@@ -626,6 +626,9 @@ if __name__ == '__main__':
     for file_path in args.amr_files:
         with open(file_path + '.input_clean', 'w', encoding='utf-8') as f:
             for amr in AMRIO.read(file_path):
-                clean(amr)
-                f.write(str(amr) + '\n\n')
+                try:
+                    clean(amr)
+                    f.write(str(amr) + '\n\n')
+                except:
+                    continue
 

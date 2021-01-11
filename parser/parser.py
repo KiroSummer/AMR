@@ -11,7 +11,7 @@ from parser.transformer import Transformer, SinusoidalPositionalEmbedding, SelfA
 from parser.data import ListsToTensor, ListsofStringToTensor, DUM, NIL, PAD
 from parser.search import Hypothesis, Beam, search_by_batch
 from parser.utils import move_to_device, generate_adj, generate_directional_self_loop_adj
-from parser.pre_trained_language_model import BERT_input, BERT_model
+from parser.pre_trained_language_model import RoBERTa_input, RoBERTa_model
 from parser.srl import SRL_module
 
 
@@ -54,7 +54,7 @@ class Parser(nn.Module):
         self.sum_loss = sum_loss
         self.bert_input = None
         if bert_path is not None:
-            self.bert_input = BERT_input(bert_path, bert_path, 4, bert_dim)
+            self.bert_input = RoBERTa_input(bert_path, bert_path, 4, bert_dim)
             self.bert_adaptor = nn.Linear(bert_dim, embed_dim)
         self.use_srl = use_srl
         self.soft_mtl = soft_mtl

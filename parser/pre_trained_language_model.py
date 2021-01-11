@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 from torch.nn.utils.rnn import pad_sequence
-from transformers import BertModel
-from transformers import BertTokenizer
+from transformers import RobertaModel
+from transformers import RobertaTokenizer
 
 
 class ScalarMix(torch.nn.Module):
@@ -21,11 +21,11 @@ class ScalarMix(torch.nn.Module):
         )
 
 
-class Bert_Embedding(nn.Module):
+class RoBERTa_Embedding(nn.Module):
     def __init__(self, bert_path, bert_layer, bert_dim, freeze=True):
-        super(Bert_Embedding, self).__init__()
+        super(RoBERTa_Embedding, self).__init__()
         self.bert_layer = bert_layer
-        self.bert = BertModel.from_pretrained(bert_path, output_hidden_states=True)
+        self.bert = RobertaModel.from_pretrained(bert_path, output_hidden_states=True)
         print(self.bert.config)
         self.scalar_mix = ScalarMix(bert_layer)
 
@@ -55,10 +55,10 @@ class Bert_Embedding(nn.Module):
             para.requires_grad = False
 
 
-class Bert_Encoder(nn.Module):
+class RoBERTa_Encoder(nn.Module):
     def __init__(self, bert_path, bert_layer, freeze=False, fix_layer_number=None):
-        super(Bert_Encoder, self).__init__()
-        self.bert = BertModel.from_pretrained(bert_path, output_hidden_states=True)
+        super(RoBERTa_Encoder, self).__init__()
+        self.bert = RobertaModel.from_pretrained(bert_path, output_hidden_states=True)
         self.bert_layer = bert_layer
 
         if freeze:
@@ -101,7 +101,7 @@ class Bert_Encoder(nn.Module):
 
 class Vocab(object):
     def __init__(self, bert_vocab_path):
-        self.tokenizer = BertTokenizer.from_pretrained(
+        self.tokenizer = RobertaTokenizer.from_pretrained(
             bert_vocab_path, do_lower_case=False
         )
 
@@ -111,8 +111,8 @@ class Vocab(object):
 
         for seq in seqs:
             seq = [self.tokenizer.tokenize(token) for token in seq]
-            seq = [piece if piece else ["[PAD]"] for piece in seq]
-            seq = [["[CLS]"]] + seq + [["[SEP]"]]
+            seq = [piece if piece else ["<pad>"] for piece in seq]
+            seq = [["<s>"]] + seq + [["</s>"]]
             lengths = [0] + [len(piece) for piece in seq]
             # flatten the word pieces
             tokens = sum(seq, [])
@@ -148,11 +148,11 @@ class Vocab(object):
         return subwords, masks, starts, text_masks, subwords_mask
 
 
-class BERT_input(nn.Module):
+class RoBERTa_input(nn.Module):
     def __init__(self, bert_vocab_path, bert_path, bert_layer, bert_dim):
-        super(BERT_input, self).__init__()
+        super(RoBERTa_input, self).__init__()
         self.vocab = Vocab(bert_vocab_path)
-        self.bert_input = Bert_Embedding(bert_path, bert_layer, bert_dim)
+        self.bert_input = RoBERTa_Embedding(bert_path, bert_layer, bert_dim)
 
     def forward(self, seqs):
         subwords, masks, starts, text_masks, subwords_mask = self.vocab.numericalize(seqs)
@@ -165,11 +165,11 @@ class BERT_input(nn.Module):
         return bert_outs
 
 
-class BERT_model(nn.Module):
+class RoBERTa_model(nn.Module):
     def __init__(self, bert_vocab_path, bert_path, bert_layer, bert_dim, fix_layer_number=None):
-        super(BERT_model, self).__init__()
+        super(RoBERTa_model, self).__init__()
         self.vocab = Vocab(bert_vocab_path)
-        self.bert_encoder = Bert_Encoder(bert_path, bert_layer,
+        self.bert_encoder = RoBERTa_Encoder(bert_path, bert_layer,
                                          freeze=False, fix_layer_number=fix_layer_number)
 
     def forward(self, seqs):

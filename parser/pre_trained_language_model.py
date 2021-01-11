@@ -39,8 +39,8 @@ class Bert_Embedding(nn.Module):
             subword_idxs,
             attention_mask=subword_masks
         )  # tuple([Batch_size, max_sentence_length, dim])
-        bert_outs = bert_outs[-self.bert_layer:]
-        bert_outs = self.scalar_mix(bert_outs)
+        bert_outs = bert_outs[-1]  # only need the last one
+        # bert_outs = self.scalar_mix(bert_outs)
         # bert_outs = torch.split(bert_outs[token_starts_masks], sen_lens.tolist())
         # bert_outs = pad_sequence(bert_outs, batch_first=True)
         zeros = bert_outs.new_zeros(*subwords_mask.size(), bert_outs.size(-1))

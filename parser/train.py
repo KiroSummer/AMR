@@ -76,6 +76,7 @@ def parse_config():
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--train_data', type=str)
     parser.add_argument('--silver_train_data', type=str)
+    parser.add_argument('--silver_data_loss_weight', type=float)
     parser.add_argument('--dev_data', type=str)
     parser.add_argument('--srl_data', type=str)
     parser.add_argument('--train_batch_size', type=int)
@@ -171,6 +172,7 @@ def main(local_rank, args):
     print("soft mtl?", args.soft_mtl)
     print("sum loss?", args.sum_loss)
     print("loss_weights?", args.loss_weights)
+    print("silver_data_loss_weight", args.silver_data_loss_weight)
     print("#"*25)
 
     if args.use_srl is True:
@@ -238,6 +240,7 @@ def main(local_rank, args):
     silver_train_data.set_unk_rate(args.unk_rate)
     silver_queue = mp.Queue(10)
     silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
+    silver_data_loss_weight = 1.0 if args.silver_data_loss_weight is None else args.silver_data_loss_weight
 
     # Load SRL data, for train @kiro TODO
     if args.use_srl is True:
@@ -302,6 +305,7 @@ def main(local_rank, args):
                 silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
                 silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
                 # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
+                loss = silver_data_loss_weight * loss
                 loss.backward()  # loss backward
             # gold amr data
             batch = queue.get()

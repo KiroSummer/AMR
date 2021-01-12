@@ -217,6 +217,7 @@ def main(local_rank, args):
         del ckpt
 
     silver_file = open(args.silver_train_data, 'r')
+    print("read silver file from {}".format(args.silver_train_data))
     silver_train_data = DynamicDataLoader(
         vocabs, lexical_mapping, silver_file, args.train_batch_size, for_train=True
     )

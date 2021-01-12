@@ -75,6 +75,56 @@ class LexicalMap(object):
         return cp_seq, mp_seq, token2idx, idx2token
 
 
+def dynamically_read_file(f, max_sentence_length=50000):
+    """
+    dynamically read a big amr file
+    """
+    if isinstance(f, str):
+        f = open(f, 'r')
+    if hasattr(f, 'readline') and not f:
+        f.seek(0)  # move the file pointer to the file head
+    sample_count = 0
+    token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
+    for line in f.readline():
+        line = line.rstrip()
+        if line.startswith('# ::id '):
+            amr_id = line[len('# ::id '):]
+        elif line.startswith('# ::snt '):
+            sentence = line[len('# ::snt '):]
+        elif line.startswith('# ::tokens '):
+            tokens = json.loads(line[len('# ::tokens '):])
+        elif line.startswith('# ::lemmas '):
+            lemmas = json.loads(line[len('# ::lemmas '):])
+            lemmas = [le if _is_abs_form(le) else le.lower() for le in lemmas]
+        elif line.startswith('# ::pos_tags '):
+            pos_tags = json.loads(line[len('# ::pos_tags '):])
+        elif line.startswith('# ::ner_tags '):
+            ner_tags = json.loads(line[len('# ::ner_tags '):])
+        elif line.startswith('# ::dependency_edges '):
+            dependency_edges = json.loads(line[len('# ::dependency_edges '):])
+        elif line.startswith('# ::dependency_rels '):
+            dependency_rels = json.loads(line[len('# ::dependency_rels '):])
+        elif line.startswith('# ::abstract_map '):
+            abstract_map = json.loads(line[len('# ::abstract_map '):])
+        else:
+            graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
+            amr = AMR.parse_AMR_line(graph_line)
+            myamr = AMRGraph(amr)
+
+            sample_count += 1
+            token.append(tokens)
+            lemma.append(lemmas)
+            pos.append(pos_tags)
+            ner.append(ner_tags)
+            edges.append(dependency_edges)
+            dep_rels.append(dependency_rels)
+            amrs.append(myamr)
+            if sample_count >= max_sentence_length:
+                break
+    return amrs, token, lemma, pos, ner, edges, dep_rels
+            # yield tokens, lemmas, pos_tags, ner_tags, dependency_edges, dependency_rels, myamr
+
+
 def read_file(filename):
     # read preprocessed amr file
     token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []

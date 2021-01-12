@@ -83,7 +83,8 @@ def dynamically_read_file(f, max_sentence_length=50000):
         f.seek(0)  # move the file pointer to the file head
     sample_count = 0
     token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
-    for line in f.readline():
+    while not f:
+        line = f.readline()
         line = line.rstrip()
         if line.startswith('# ::id '):
             amr_id = line[len('# ::id '):]

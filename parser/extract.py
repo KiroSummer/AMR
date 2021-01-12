@@ -79,8 +79,6 @@ def dynamically_read_file(f, max_sentence_length=50000):
     """
     dynamically read a big amr file
     """
-    if isinstance(f, str):
-        f = open(f, 'r')
     if hasattr(f, 'readline') and not f:
         f.seek(0)  # move the file pointer to the file head
     sample_count = 0

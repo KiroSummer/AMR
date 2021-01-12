@@ -263,7 +263,9 @@ def main(local_rank, args):
                 eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
                 eval_task.start()
                 model.train()
-                continue
+
+                epoch += 1
+                print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
                 batch = move_to_device(batch, model.device)  # data moved to device
                 silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(

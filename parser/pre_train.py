@@ -252,7 +252,7 @@ def main(local_rank, args):
                 silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
                 silver_train_data_generator.start()
 
-                if len(silver_train_data.data) < 50000:
+                if len(silver_train_data.data) < 20000:
                     epoch += 1
                     model.eval()
                     output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)

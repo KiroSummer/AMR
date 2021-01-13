@@ -240,7 +240,9 @@ def main(local_rank, args):
         while True:
             batch = silver_queue.get()
             if isinstance(batch, str):
-                silver_queue.close()
+                silver_train_data_generator.terminate()
+                silver_train_data_generator.join()
+
                 # read the next sample batches
                 silver_train_data = DynamicDataLoader(
                     vocabs, lexical_mapping, silver_file, args.train_batch_size, for_train=True
@@ -306,7 +308,8 @@ def main(local_rank, args):
                         model.train()
                     # if (batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                 break
-    silver_queue.close()
+    silver_train_data_generator.terminate()
+    silver_train_data_generator.join()
     print("Training process is done.")  # @kiro
 
 

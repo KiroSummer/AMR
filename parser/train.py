@@ -231,8 +231,9 @@ def main(local_rank, args):
     if args.resume_ckpt:  # false, not supported @kiro
         ckpt = torch.load(args.resume_ckpt)
         model.load_state_dict(ckpt['model'])
-        optimizer.load_state_dict(ckpt['optimizer'])
-        batches_acm = ckpt['batches_acm']
+        if args.fine_tuning_lr is None:
+            optimizer.load_state_dict(ckpt['optimizer'])
+            batches_acm = ckpt['batches_acm']
         del ckpt
 
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)

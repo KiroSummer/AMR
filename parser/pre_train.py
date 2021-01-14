@@ -252,23 +252,25 @@ def main(local_rank, args):
                 silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
                 silver_train_data_generator.start()
 
-                if len(silver_train_data.data) < 20000:
-                    epoch += 1
-                    model.eval()
-                    output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
-                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
+                if args.world_size == 1 or (dist.get_rank() == 0):
+                    if len(silver_train_data.data) < 20000:
+                        epoch += 1
+                        model.eval()
+                        output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
+                        parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
 
-                    saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
-                    torch.save({'args': args,
-                                'model': model.state_dict(),
-                                'batches_acm': batches_acm,
-                                'optimizer': optimizer.state_dict()},
-                               saved_model)
+                        saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
+                        torch.save({'args': args,
+                                    'model': model.state_dict(),
+                                    'batches_acm': batches_acm,
+                                    'optimizer': optimizer.state_dict()},
+                                   saved_model)
 
-                    eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
-                    eval_task.start()
-                    model.train()
-                print('epoch', epoch, 'done', 'batches', batches_acm)
+                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
+                        eval_task.start()
+                        model.train()
+                        print('epoch', epoch, 'done', 'batches', batches_acm)
+                print('batches', batches_acm)
             else:
                 batch = move_to_device(batch, model.device)  # data moved to device
                 silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(

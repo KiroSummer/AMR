@@ -107,8 +107,9 @@ def average_gradients(model):
             param.grad.data /= size
 
 
-def update_lr(optimizer, lr_scale, embed_size, steps, warmup_steps):
+def update_lr(optimizer, lr_scale, embed_size, steps, warmup_steps, fine_tuning_lr=None):
     lr = lr_scale * embed_size ** -0.5 * min(steps ** -0.5, steps * (warmup_steps ** -1.5))
+    lr = lr if fine_tuning_lr is None else fine_tuning_lr
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
@@ -162,6 +163,7 @@ def main(local_rank, args):
     torch.set_num_threads(4)
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
+    _fine_tuning = False if args.fine_tuning_lr is None else True
     print("#"*25)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
@@ -173,6 +175,7 @@ def main(local_rank, args):
     print("sum loss?", args.sum_loss)
     print("loss_weights?", args.loss_weights)
     print("silver_data_loss_weight", args.silver_data_loss_weight)
+    print("Fine tuning?", _fine_tuning)
     print("#"*25)
 
     if args.use_srl is True:
@@ -236,11 +239,12 @@ def main(local_rank, args):
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
-    silver_train_data = DataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
-    silver_train_data.set_unk_rate(args.unk_rate)
-    silver_queue = mp.Queue(10)
-    silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
-    silver_data_loss_weight = 1.0 if args.silver_data_loss_weight is None else args.silver_data_loss_weight
+    if not _fine_tuning:
+        silver_train_data = DataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
+        silver_train_data.set_unk_rate(args.unk_rate)
+        silver_queue = mp.Queue(10)
+        silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
+        silver_data_loss_weight = 1.0 if args.silver_data_loss_weight is None else args.silver_data_loss_weight
 
     # Load SRL data, for train @kiro TODO
     if args.use_srl is True:
@@ -252,7 +256,8 @@ def main(local_rank, args):
         srl_train_data_generator.start()
 
     train_data_generator.start()
-    silver_train_data_generator.start()
+    if not _fine_tuning:
+        silver_train_data_generator.start()
     model.train()
     epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg =\
         0, 0, 0, 0, 0, 0, 0
@@ -286,27 +291,28 @@ def main(local_rank, args):
             break
         while True:
             is_start = False
-            batch = silver_queue.get()
-            if isinstance(batch, str):
-                continue
-            else:
-                batch = move_to_device(batch, model.device)  # data moved to device
-                silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
-                    batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
-                # model forward, please note that graph_arc_loss is not used
-                loss = (silver_concept_loss + silver_arc_loss + silver_rel_loss) / args.batches_per_update  # compute
-                loss_value = loss.item()
-                silver_concept_loss_value = silver_concept_loss.item()
-                silver_arc_loss_value = silver_arc_loss.item()
-                silver_rel_loss_value = silver_rel_loss.item()
-                # concept_repr_loss_value = concept_repr_loss.item()
-                silver_loss_avg = silver_loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
-                silver_concept_loss_avg = silver_concept_loss_avg * 0.8 + 0.2 * silver_concept_loss_value
-                silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
-                silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
-                # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
-                loss = silver_data_loss_weight * loss
-                loss.backward()  # loss backward
+            if not _fine_tuning:
+                batch = silver_queue.get()
+                if isinstance(batch, str):
+                    continue
+                else:
+                    batch = move_to_device(batch, model.device)  # data moved to device
+                    silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
+                        batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
+                    # model forward, please note that graph_arc_loss is not used
+                    loss = (silver_concept_loss + silver_arc_loss + silver_rel_loss) / args.batches_per_update  # compute
+                    loss_value = loss.item()
+                    silver_concept_loss_value = silver_concept_loss.item()
+                    silver_arc_loss_value = silver_arc_loss.item()
+                    silver_rel_loss_value = silver_rel_loss.item()
+                    # concept_repr_loss_value = concept_repr_loss.item()
+                    silver_loss_avg = silver_loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
+                    silver_concept_loss_avg = silver_concept_loss_avg * 0.8 + 0.2 * silver_concept_loss_value
+                    silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
+                    silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
+                    # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
+                    loss = silver_data_loss_weight * loss
+                    loss.backward()  # loss backward
             # gold amr data
             batch = queue.get()
             if isinstance(batch, str):
@@ -337,7 +343,7 @@ def main(local_rank, args):
                 if args.world_size > 1:
                     average_gradients(model)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps)
+                lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps, args.fine_tuning_lr)
                 optimizer.step()  # update the model parameters according to the losses @kiro
                 optimizer.zero_grad()
                 if args.world_size == 1 or (dist.get_rank() == 0):

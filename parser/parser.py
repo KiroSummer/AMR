@@ -39,6 +39,8 @@ class Parser(nn.Module):
         self.amr_snt_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
         self.graph_encoder = Transformer(graph_layers, embed_dim, ff_embed_dim, num_heads, dropout, with_external=True,
                                          weights_dropout=False)
+        self.middle_graph_layer = int(graph_layers / 2) - 1
+        print("middle graph layer is", self.middle_graph_layer)
         self.embed_dim = embed_dim
         self.embed_scale = math.sqrt(embed_dim)
         self.embed_positions = SinusoidalPositionalEmbedding(embed_dim, device=device)
@@ -258,7 +260,7 @@ class Parser(nn.Module):
             prev_graph_state = state_dict[name]
             new_graph_state = torch.cat([prev_graph_state, concept_reprs[1]], 0)
         else:
-            new_graph_state = concept_reprs[1]
+            new_graph_state = concept_reprs[self.middle_graph_layer]
         new_state_dict[name] = new_graph_state
         # Transformer decoder, [set_state, graph_state]
         conc_ll, arc_ll, rel_ll = self.decoder(
@@ -365,7 +367,7 @@ class Parser(nn.Module):
 
         concept_loss, arc_loss, rel_loss, graph_state = \
             self.decoder(concept_repr, alignment_weight,
-                         concept_reprs[1], arc_weight,
+                         concept_reprs[self.middle_graph_layer], arc_weight,
                          data['copy_seq'],
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )

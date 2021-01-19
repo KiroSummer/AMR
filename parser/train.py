@@ -165,6 +165,7 @@ def main(local_rank, args):
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
     _fine_tuning = False if args.fine_tuning_lr is None else True
+    
     print("#"*25)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)

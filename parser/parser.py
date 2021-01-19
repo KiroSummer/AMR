@@ -117,7 +117,7 @@ class Parser(nn.Module):
 
     def encode_bert_input(self, seq, tok, lem, pos, ner, dep_rel, word_char):
         word_repr = self.word_encoder(word_char, tok, lem, pos, ner, dep_rel)
-        bert_embed = self.bert_input(seq)
+        bert_embed = F.dropout(self.bert_input(seq), p=self.dropout, training=self.training)  # add dropout, very important @kiro
         bert_embed = bert_embed.transpose(0, 1)
         word_repr = word_repr + self.bert_adaptor(bert_embed)
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)

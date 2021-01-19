@@ -34,20 +34,21 @@ class RoBERTa_Embedding(nn.Module):
 
     def forward(self, subword_idxs, subword_masks, token_starts_masks, text_masks, subwords_mask):
         self.eval()
-        sen_lens = token_starts_masks.sum(dim=1)
-        _, _, bert_outs = self.bert(
-            subword_idxs,
-            attention_mask=subword_masks
-        )  # tuple([Batch_size, max_sentence_length, dim])
-        bert_outs = torch.mean(torch.stack(bert_outs[-4:]), dim=0)  # only need the last one
-        # bert_outs = self.scalar_mix(bert_outs)
-        # bert_outs = torch.split(bert_outs[token_starts_masks], sen_lens.tolist())
-        # bert_outs = pad_sequence(bert_outs, batch_first=True)
-        zeros = bert_outs.new_zeros(*subwords_mask.size(), bert_outs.size(-1))
-        zeros.masked_scatter_(subwords_mask.unsqueeze(-1), bert_outs[text_masks])  # get the @kiro
-        subwords_lens = subwords_mask.sum(-1)
-        subwords_lens += (subwords_lens == 0).type(subwords_lens.type())  # 0.0 / 0 -> 0.0 / 1
-        bert_outs = zeros.sum(2) / subwords_lens.unsqueeze(-1)
+        with torch.no_grad():
+            sen_lens = token_starts_masks.sum(dim=1)
+            _, _, bert_outs = self.bert(
+                subword_idxs,
+                attention_mask=subword_masks
+            )  # tuple([Batch_size, max_sentence_length, dim])
+            bert_outs = torch.mean(torch.stack(bert_outs[-4:]), dim=0)  # only need the last one
+            # bert_outs = self.scalar_mix(bert_outs)
+            # bert_outs = torch.split(bert_outs[token_starts_masks], sen_lens.tolist())
+            # bert_outs = pad_sequence(bert_outs, batch_first=True)
+            zeros = bert_outs.new_zeros(*subwords_mask.size(), bert_outs.size(-1))
+            zeros.masked_scatter_(subwords_mask.unsqueeze(-1), bert_outs[text_masks])  # get the @kiro
+            subwords_lens = subwords_mask.sum(-1)
+            subwords_lens += (subwords_lens == 0).type(subwords_lens.type())  # 0.0 / 0 -> 0.0 / 1
+            bert_outs = zeros.sum(2) / subwords_lens.unsqueeze(-1)
         return bert_outs
 
     def freeze(self):

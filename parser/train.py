@@ -32,6 +32,7 @@ def parse_config():
     parser.add_argument('--pretrained_file', type=str, default=None)
     parser.add_argument('--with_bert', dest='with_bert', action='store_true')
     parser.add_argument('--bert_path', type=str, default=None)
+    parser.add_argument('--bert_dim', type=int, default=None)
 
     parser.add_argument('--encoder_graph', dest='encoder_graph', action='store_true')
     parser.add_argument('--decoder_graph', dest='decoder_graph', action='store_true')
@@ -139,10 +140,10 @@ def load_vocabs(args):
     vocabs['word_char'] = Vocab(args.word_char_vocab, 100, [CLS, END])
     vocabs['concept_char'] = Vocab(args.concept_char_vocab, 100, [CLS, END])
     lexical_mapping = LexicalMap()
-    bert_encoder = None
-    if args.with_bert:
-        bert_tokenizer = BertEncoderTokenizer.from_pretrained(args.bert_path, do_lower_case=False)
-        vocabs['bert_tokenizer'] = bert_tokenizer
+    # bert_encoder = None
+    # if args.with_bert:
+    #     bert_tokenizer = BertEncoderTokenizer.from_pretrained(args.bert_path, do_lower_case=False)
+    #     vocabs['bert_tokenizer'] = bert_tokenizer
     for name in vocabs:
         if name == 'bert_tokenizer':
             continue
@@ -152,11 +153,6 @@ def load_vocabs(args):
 
 def main(local_rank, args):
     vocabs, lexical_mapping = load_vocabs(args)
-    bert_encoder = None
-    if args.with_bert:
-        bert_encoder = BertEncoder.from_pretrained(args.bert_path)
-        for p in bert_encoder.parameters():  # fix bert @kiro
-            p.requires_grad = False
 
     torch.manual_seed(19940117)
     torch.cuda.manual_seed_all(19940117)
@@ -187,7 +183,7 @@ def main(local_rank, args):
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
+                       args.pretrained_file, args.bert_path, args.bert_dim,
                        device, args.sum_loss,
                        True, args.soft_mtl, args.loss_weights,
                        args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
@@ -199,10 +195,10 @@ def main(local_rank, args):
                        args.cnn_filters, args.char2word_dim, args.char2concept_dim,
                        args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
                        args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
+                       args.pretrained_file, args.bert_path, args.bert_dim,
                        device, args.sum_loss,
                        False)
-    print(Parser)
+    print(model)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())

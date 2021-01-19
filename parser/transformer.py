@@ -200,7 +200,7 @@ class MultiheadAttention(nn.Module):
             # maximum attention weight over heads
             attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len)
             if need_weights == 'max':
-                attn_weights, _ = attn_weights.max(dim=1)
+                attn_weights, _ = attn_weights[:, :4, :, :].max(dim=1)  # use the first 4th head for arc prediction @kiro
             elif need_weights == "one":
                 attn_weights = attn_weights[:, 0, :, :]
             else:

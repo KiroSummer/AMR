@@ -48,7 +48,7 @@ class RoBERTa_Embedding(nn.Module):
             zeros.masked_scatter_(subwords_mask.unsqueeze(-1), bert_outs[text_masks])  # get the @kiro
             subwords_lens = subwords_mask.sum(-1)
             subwords_lens += (subwords_lens == 0).type(subwords_lens.type())  # 0.0 / 0 -> 0.0 / 1
-            bert_outs = zeros.sum(2) / subwords_lens.unsqueeze(-1)
+            bert_outs = zeros.sum(2) / subwords_lens.unsqueeze(-1).float()
         return bert_outs
 
     def freeze(self):

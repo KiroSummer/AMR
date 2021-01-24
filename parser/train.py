@@ -178,6 +178,7 @@ def main(local_rank, args):
     print("loss_weights?", args.loss_weights)
     print("args.silver_train_data?", args.silver_train_data)
     print("silver_data_loss_weight", args.silver_data_loss_weight)
+    print("_pre_training", _pre_training)
     print("Fine tuning?", _fine_tuning)
     print("#"*25)
 

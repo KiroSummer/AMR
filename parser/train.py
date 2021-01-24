@@ -165,6 +165,7 @@ def main(local_rank, args):
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
     _fine_tuning = False if args.fine_tuning_lr is None else True
+    _pre_training = True if args.silver_train_data is not None else False
     print("#"*25)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
@@ -175,6 +176,7 @@ def main(local_rank, args):
     print("soft mtl?", args.soft_mtl)
     print("sum loss?", args.sum_loss)
     print("loss_weights?", args.loss_weights)
+    print("args.silver_train_data?", args.silver_train_data)
     print("silver_data_loss_weight", args.silver_data_loss_weight)
     print("Fine tuning?", _fine_tuning)
     print("#"*25)
@@ -241,7 +243,7 @@ def main(local_rank, args):
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
-    if not _fine_tuning:
+    if not _fine_tuning and _pre_training:
         silver_train_data = DataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
         silver_train_data.set_unk_rate(args.unk_rate)
         silver_queue = mp.Queue(10)

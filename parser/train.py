@@ -261,7 +261,7 @@ def main(local_rank, args):
         srl_train_data_generator.start()
 
     train_data_generator.start()
-    if not _fine_tuning:
+    if not _fine_tuning and _pre_training:
         silver_train_data_generator.start()
     model.train()
     epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg =\
@@ -296,7 +296,7 @@ def main(local_rank, args):
             break
         while True:
             is_start = False
-            if not _fine_tuning:
+            if not _fine_tuning and _pre_training:
                 batch = silver_queue.get()
                 if isinstance(batch, str):
                     continue

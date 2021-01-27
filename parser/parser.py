@@ -47,6 +47,7 @@ class Parser(nn.Module):
         self.num_heads = num_heads
         self.decoder = DecodeLayer(vocabs, inference_layers, embed_dim, ff_embed_dim, num_heads, concept_dim, rel_dim,
                                    dropout)
+        self.middle_decoder_repr_index = int(inference_layers / 2) - 1
         self.dropout = dropout
         self.probe_generator = nn.Linear(embed_dim, embed_dim)
         self.device = device
@@ -255,9 +256,9 @@ class Parser(nn.Module):
         name = 'graph_repr'  # to store the graph representation for relation identification
         if name in state_dict:
             prev_graph_state = state_dict[name]
-            new_graph_state = torch.cat([prev_graph_state, concept_reprs[1]], 0)
+            new_graph_state = torch.cat([prev_graph_state, concept_reprs[self.middle_decoder_repr_index]], 0)
         else:
-            new_graph_state = concept_reprs[1]
+            new_graph_state = concept_reprs[self.middle_decoder_repr_index]
         new_state_dict[name] = new_graph_state
         # Transformer decoder, [set_state, graph_state]
         conc_ll, arc_ll, rel_ll = self.decoder(
@@ -366,7 +367,7 @@ class Parser(nn.Module):
 
         concept_loss, arc_loss, rel_loss, graph_state = \
             self.decoder(concept_repr, alignment_weight,
-                         concept_reprs[1], arc_weight,
+                         concept_reprs[self.middle_decoder_repr_index], arc_weight,
                          data['copy_seq'],
                          target=data['concept_out'], target_rel=data['rel'][1:]
                          )

@@ -38,6 +38,7 @@ class Parser(nn.Module):
         self.amr_snt_encoder = Transformer(snt_layers, embed_dim, ff_embed_dim, num_heads, dropout)
         self.graph_encoder = Transformer(graph_layers, embed_dim, ff_embed_dim, num_heads, dropout, with_external=True,
                                          weights_dropout=False)
+        self.middle_decoder_repr_index = int(graph_layers / 2) - 1
         self.embed_dim = embed_dim
         self.embed_scale = math.sqrt(embed_dim)
         self.embed_positions = SinusoidalPositionalEmbedding(embed_dim, device=device)
@@ -47,7 +48,6 @@ class Parser(nn.Module):
         self.num_heads = num_heads
         self.decoder = DecodeLayer(vocabs, inference_layers, embed_dim, ff_embed_dim, num_heads, concept_dim, rel_dim,
                                    dropout)
-        self.middle_decoder_repr_index = int(inference_layers / 2) - 1
         self.dropout = dropout
         self.probe_generator = nn.Linear(embed_dim, embed_dim)
         self.device = device

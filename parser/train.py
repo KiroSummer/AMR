@@ -165,8 +165,9 @@ def main(local_rank, args):
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
     _fine_tuning = False if args.fine_tuning_lr is None else True
-    _pre_training = True if args.silver_train_data is not None else False
-    print("#"*25)
+    _pre_training = False if args.silver_train_data is None else True
+
+    print("#"*30)
     print("Concerned important config details")
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
@@ -180,7 +181,7 @@ def main(local_rank, args):
     print("silver_data_loss_weight", args.silver_data_loss_weight)
     print("_pre_training", _pre_training)
     print("Fine tuning?", _fine_tuning)
-    print("#"*25)
+    print("#"*30)
 
     if args.use_srl is True:
         model = Parser(vocabs,
@@ -204,7 +205,7 @@ def main(local_rank, args):
                        args.pretrained_file, bert_encoder,
                        device, args.sum_loss,
                        False)
-    print(Parser)
+    print(model)
 
     if args.world_size > 1:
         torch.manual_seed(19940117 + dist.get_rank())

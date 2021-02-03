@@ -44,6 +44,12 @@ python -u -m stog.data.dataset_readers.amr_parsing.preprocess.sense_remover \
     --amr_files ${test_data}.input_clean.recategorize
 printf "Done.`date`\n\n"
 
+printf "Dependency parsing...`date`\n"
+python -u -m stog.data.dataset_readers.amr_parsing.preprocess.dependency_parsing \
+    --util_dir ${util_dir} \
+    --amr_files ${test_data}.input_clean.recategorize.nosense
+printf "Done.`date`\n\n"
+
 printf "Renaming preprocessed files...`date`\n"
-mv ${test_data}.input_clean.recategorize.nosense ${test_data}.preproc
+mv ${test_data}.input_clean.recategorize.nosense.dep ${test_data}.preproc
 rm ${test_data}*.input_clean*

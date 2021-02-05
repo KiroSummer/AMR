@@ -10,12 +10,12 @@ set -e
 compound_file=data/AMR/amr_2.0_utils/joints.txt
 raw_file=$1
 
-python prepare_raw.py ${raw_file}
-
-
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.feature_annotator \
-    ${raw_file}.raw \
-    --compound_file ${compound_file}
+#python prepare_raw.py ${raw_file}
+#
+#
+#python -u -m stog.data.dataset_readers.amr_parsing.preprocess.feature_annotator \
+#    ${raw_file}.raw \
+#    --compound_file ${compound_file}
 
 
 # ############### AMR v2.0 ################
@@ -27,10 +27,10 @@ test_data=${raw_file}.raw.features
 
 # ========== Set the above variables correctly ==========
 
-printf "Cleaning inputs...`date`\n"
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.input_cleaner \
-    --amr_files ${test_data}
-printf "Done.`date`\n\n"
+#printf "Cleaning inputs...`date`\n"
+#python -u -m stog.data.dataset_readers.amr_parsing.preprocess.input_cleaner \
+#    --amr_files ${test_data}
+#printf "Done.`date`\n\n"
 
 printf "Recategorizing subgraphs...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.text_anonymizor \

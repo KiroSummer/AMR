@@ -32,17 +32,17 @@ test_data=${raw_file}.raw.features
 #    --amr_files ${test_data}
 #printf "Done.`date`\n\n"
 
-printf "Recategorizing subgraphs...`date`\n"
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.text_anonymizor \
-    --amr_file ${test_data}.input_clean \
-    --util_dir ${util_dir}
-printf "Done.`date`\n\n"
-
-printf "Removing senses...`date`\n"
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.sense_remover \
-    --util_dir ${util_dir} \
-    --amr_files ${test_data}.input_clean.recategorize
-printf "Done.`date`\n\n"
+#printf "Recategorizing subgraphs...`date`\n"
+#python -u -m stog.data.dataset_readers.amr_parsing.preprocess.text_anonymizor \
+#    --amr_file ${test_data}.input_clean \
+#    --util_dir ${util_dir}
+#printf "Done.`date`\n\n"
+#
+#printf "Removing senses...`date`\n"
+#python -u -m stog.data.dataset_readers.amr_parsing.preprocess.sense_remover \
+#    --util_dir ${util_dir} \
+#    --amr_files ${test_data}.input_clean.recategorize
+#printf "Done.`date`\n\n"
 
 printf "Dependency parsing...`date`\n"
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.dependency_parsing \

@@ -387,6 +387,7 @@ def main(local_rank, args):
 def init_processes(local_rank, args, backend='nccl'):
     os.environ['MASTER_ADDR'] = args.MASTER_ADDR
     os.environ['MASTER_PORT'] = args.MASTER_PORT
+    print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)
     main(local_rank, args)
 
@@ -400,6 +401,7 @@ if __name__ == "__main__":
     gpu_number = torch.cuda.device_count()
     print("number of available GPUs", gpu_number)
     args.world_size = args.gpus = gpu_number
+    print("world_size {}, gpus {}".format(args.world_size, args.gpus))
     if args.world_size == 1:
         main(0, args)
         exit(0)

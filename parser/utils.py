@@ -28,6 +28,9 @@ class eval:
                 self.checkpoint_file.write_checkpoint(
                     "{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro
                 self.last_smatch = smatch
+            else:
+                self.checkpoint_file.write_checkpoint(
+                    "{}\t{}\t".format(saved_model, smatch))  # write to checkpoint @kiro
             if self.checkpoints_queue.qsize() < self.checkpoints_queue.maxsize:
                 self.checkpoints_queue.put(saved_model)
             else:

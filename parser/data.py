@@ -221,6 +221,7 @@ class DataLoader(object):
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
                 sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+                print(sz, GPU_SIZE)
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
                     batches.append(data[:len(data) // 2])
@@ -237,7 +238,7 @@ class DataLoader(object):
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)
-            print("Total {} training batches. the max GPU_SIZE is".format(len(batches), GPU_SIZE))
+            print("Total {} training batches. the max GPU_SIZE is {}".format(len(batches), GPU_SIZE))
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)

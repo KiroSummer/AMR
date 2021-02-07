@@ -381,6 +381,7 @@ def main(local_rank, args):
     if args.use_srl:
         srl_train_data_generator.terminate()
     print("Training process is done.")  # @kiro
+    exit(0)
 
 
 def init_processes(local_rank, args, backend='nccl'):

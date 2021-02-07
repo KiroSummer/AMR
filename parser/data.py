@@ -237,7 +237,7 @@ class DataLoader(object):
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)
-            print("Total {} training batches.".format(len(batches)))
+            print("Total {} training batches. the max GPU_SIZE is".format(len(batches), GPU_SIZE))
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)

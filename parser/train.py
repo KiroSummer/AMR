@@ -270,7 +270,10 @@ def main(local_rank, args):
     silver_loss_avg, silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg, silver_concept_repr_loss_avg = \
         0, 0, 0, 0, 0
     max_training_epochs = int(args.epochs)  # @kiro
-    eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
+
+    if args.world_size == 1 or (dist.get_rank() == 0):
+        eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
+    
     print("Start training...")
     is_start = True
     while epoch < max_training_epochs:  # there is no stop! @kiro fixed by me

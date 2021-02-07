@@ -7,7 +7,7 @@ from parser.extract import read_file, dynamically_read_file
 from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 12000  # okay for 8G memory
+GPU_SIZE = 8000  # okay for 8G memory
 
 
 class Vocab(object):
@@ -221,7 +221,7 @@ class DataLoader(object):
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
                 sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
-                print(sz, GPU_SIZE)
+                # print(sz, GPU_SIZE)
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
                     batches.append(data[:len(data) // 2])

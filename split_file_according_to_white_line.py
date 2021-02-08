@@ -1,5 +1,6 @@
 import sys
 import itertools
+import os
 
 
 def permutation_with_repeats(seq, key):
@@ -20,8 +21,8 @@ key = 2
 a = permutation_with_repeats(seq, key)
 
 
-def write_to_new_file(instances):
-    output_file_name = next(a)
+def write_to_new_file(instances, out_dir):
+    output_file_name = os.path.join(out_dir, next(a))
     output_file = open(output_file_name, 'w')
     # for line in instances:
     #     output_file.write(line)
@@ -31,6 +32,12 @@ def write_to_new_file(instances):
 if __name__ == "__main__":
     instance_number = int(sys.argv[2])
     file_name = sys.argv[1]
+    out_dir = sys.argv[3]
+
+    if os.path.exists(out_dir):
+        pass
+    else:
+        os.mkdir(out_dir)
 
     instance_count = 0
     input_file = open(file_name, 'r')
@@ -40,12 +47,12 @@ if __name__ == "__main__":
         if line.strip() == '':
             instance_count += 1
             if instance_count >= instance_number:
-                write_to_new_file(instances)
+                write_to_new_file(instances, out_dir)
                 instance_count = 0
                 instances = []
         else:
             pass
-    write_to_new_file(instances)
+    write_to_new_file(instances, out_dir)
     instance_count = 0
     instances = []
 

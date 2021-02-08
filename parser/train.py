@@ -282,7 +282,7 @@ def main(local_rank, args):
             srl_batch = srl_queue.get()
             if isinstance(srl_batch, str):
                 srl_batch = srl_queue.get()
-            srl_batch = move_to_device(srl_batch, model.device)
+            srl_batch = move_to_device(srl_batch, local_rank)
             srl_loss = model.srl_forward(srl_batch, encoder_graph=args.encoder_graph)
             srl_loss = srl_loss / args.batches_per_update
             srl_loss_avg = srl_loss_avg * 0.8 + srl_loss.item() * 0.2
@@ -305,7 +305,7 @@ def main(local_rank, args):
                 if isinstance(batch, str):
                     continue
                 else:
-                    batch = move_to_device(batch, model.device)  # data moved to device
+                    batch = move_to_device(batch, local_rank)  # data moved to device
                     silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
                         batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
                     # model forward, please note that graph_arc_loss is not used
@@ -328,7 +328,7 @@ def main(local_rank, args):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
-                batch = move_to_device(batch, model.device)  # data moved to device
+                batch = move_to_device(batch, local_rank)  # data moved to device
                 concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
                 # model forward, please note that graph_arc_loss is not used

@@ -232,14 +232,6 @@ def main(local_rank, args):
 
     used_srl_batches = 0
 
-    if args.resume_ckpt:  # false, not supported @kiro
-        ckpt = torch.load(args.resume_ckpt)
-        model.load_state_dict(ckpt['model'])
-        if args.fine_tuning_lr is None:
-            optimizer.load_state_dict(ckpt['optimizer'])
-            batches_acm = ckpt['batches_acm']
-        del ckpt
-
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
     train_data.set_unk_rate(args.unk_rate)
     queue = mp.Queue(10)
@@ -269,6 +261,17 @@ def main(local_rank, args):
         0, 0, 0, 0, 0, 0, 0
     silver_loss_avg, silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg, silver_concept_repr_loss_avg = \
         0, 0, 0, 0, 0
+
+    if args.resume_ckpt:  # false, not supported @kiro
+        ckpt = torch.load(args.resume_ckpt)
+        model.load_state_dict(ckpt['model'])
+        if args.fine_tuning_lr is None:
+            optimizer.load_state_dict(ckpt['optimizer'])
+            batches_acm = ckpt['batches_acm']
+            # epoch = ckpt['epoch']
+        model = model.cuda(local_rank)
+        del ckpt
+
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")

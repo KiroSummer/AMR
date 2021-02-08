@@ -24,8 +24,8 @@ a = permutation_with_repeats(seq, key)
 def write_to_new_file(instances, out_dir):
     output_file_name = os.path.join(out_dir, next(a))
     output_file = open(output_file_name, 'w')
-    # for line in instances:
-    #     output_file.write(line)
+    for line in instances:
+        output_file.write(line)
     output_file.close()
 
 

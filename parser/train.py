@@ -262,6 +262,7 @@ def main(local_rank, args):
     silver_loss_avg, silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg, silver_concept_repr_loss_avg = \
         0, 0, 0, 0, 0
 
+    print("sleeping...")
     time.sleep(10)
     if args.resume_ckpt:  # false, not supported @kiro
         ckpt = torch.load(args.resume_ckpt)
@@ -272,6 +273,7 @@ def main(local_rank, args):
             # epoch = ckpt['epoch']
         model = model.cuda(local_rank)
         del ckpt
+    print("sleeping done...")
 
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )

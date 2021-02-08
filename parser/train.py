@@ -275,6 +275,10 @@ def main(local_rank, args):
         del ckpt
     print("sleeping done...")
 
+    print("training sleeping...")
+    time.sleep(10)
+    print("training sleeping done...")
+
     max_training_epochs = int(args.epochs)  # @kiro
     eval_tool = eval('%s/%s' % (args.ckpt, "checkpoint.txt"), args.dev_data, )
     print("Start training...")

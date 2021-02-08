@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-import argparse, os, random
+import argparse, os, random, time
 from parser.data import Vocab, DataLoader, SRLDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
 from parser.work import show_progress
@@ -262,6 +262,7 @@ def main(local_rank, args):
     silver_loss_avg, silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg, silver_concept_repr_loss_avg = \
         0, 0, 0, 0, 0
 
+    time.sleep(10)
     if args.resume_ckpt:  # false, not supported @kiro
         ckpt = torch.load(args.resume_ckpt)
         model.load_state_dict(ckpt['model'])

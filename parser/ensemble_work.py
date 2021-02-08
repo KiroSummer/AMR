@@ -8,6 +8,7 @@ from parser.extract import LexicalMap
 from parser.utils import move_to_device
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.match import match
+from tqdm import tqdm
 
 import argparse, os, re
 
@@ -79,7 +80,7 @@ def parse_batch(model, batch, beam_size, alpha, max_time_step, args=None):
 def parse_data(model, pp, data, input_file, output_file, args, beam_size=8, alpha=0.6, max_time_step=100):
     tot = 0
     with open(output_file, 'w') as fo:
-        for batch in data:
+        for batch in tqdm(data):
             batch = move_to_device(batch, model.device)
             res = parse_batch(model, batch, beam_size, alpha, max_time_step, args=args)
             for concept, relation, score in zip(res['concept'], res['relation'], res['score']):

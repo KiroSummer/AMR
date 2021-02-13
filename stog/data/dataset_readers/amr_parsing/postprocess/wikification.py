@@ -47,8 +47,11 @@ class Wikification:
 
     def wikify_file(self, file_path):
         for i, amr in enumerate(AMRIO.read(file_path)):
-            self.wikify_graph(amr)
-            yield amr
+            try:
+                self.wikify_graph(amr)
+                yield amr
+            except:
+                pass
 
     def wikify_graph(self, amr):
         graph = amr.graph

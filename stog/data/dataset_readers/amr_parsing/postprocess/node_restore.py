@@ -17,8 +17,11 @@ class NodeRestore:
 
     def restore_file(self, file_path):
         for amr in AMRIO.read(file_path):
-            self.restore_instance(amr)
-            yield amr
+            try:
+                self.restore_instance(amr)
+                yield amr
+            except:
+                pass
 
 
 if __name__ == '__main__':

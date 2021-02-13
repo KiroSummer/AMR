@@ -65,8 +65,11 @@ class Expander:
 
     def expand_file(self, file_path):
         for i, amr in enumerate(AMRIO.read(file_path)):
-            self.expand_graph(amr)
-            yield amr
+            try:
+                self.expand_graph(amr)
+                yield amr
+            except:
+                pass
         self.print_stats()
 
     def expand_graph(self, amr):

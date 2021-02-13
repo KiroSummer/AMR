@@ -17,13 +17,13 @@ class AMRIO:
                 line = line.rstrip()
                 if line == '':
                     if len(graph_lines) != 0:
-                        # try:
-                        amr.graph = AMRGraph.decode(' '.join(graph_lines))
-                        # except:
-                        #     amr = AMR()
-                        #     graph_lines = []
-                        #     misc_lines = []
-                        #     continue
+                        try:
+                            amr.graph = AMRGraph.decode(' '.join(graph_lines))
+                        except:
+                            amr = AMR()
+                            graph_lines = []
+                            misc_lines = []
+                            continue
                         amr.graph.set_src_tokens(amr.get_src_tokens())
                         amr.misc = misc_lines
                         yield amr
@@ -55,10 +55,13 @@ class AMRIO:
                     graph_lines.append(line)
 
             if len(graph_lines) != 0:
-                amr.graph = AMRGraph.decode(' '.join(graph_lines))
-                amr.graph.set_src_tokens(amr.get_src_tokens())
-                amr.misc = misc_lines
-                yield amr
+                try:
+                    amr.graph = AMRGraph.decode(' '.join(graph_lines))
+                    amr.graph.set_src_tokens(amr.get_src_tokens())
+                    amr.misc = misc_lines
+                    yield amr
+                except:
+                    pass
 
     @staticmethod
     def dump(amr_instances, f):

@@ -8,7 +8,7 @@ set -e
 # The compound file is downloaded from
 # https://github.com/ChunchuanLv/AMR_AS_GRAPH_PREDICTION/blob/master/data/joints.txt
 compound_file=data/AMR/amr_2.0_utils/joints.txt
-silver_amr=/data2/qrxia/data/AMR/silver_data/2m_silver_amr/2m_silver.txt
+silver_amr=/data2/qrxia/AMR-research/kamr-gr-2.0/data/silver_data_from_kiro/spring/bllip.ber5.sents.txt.spring
 
 python -u -m stog.data.dataset_readers.amr_parsing.preprocess.feature_annotator \
     $silver_amr \

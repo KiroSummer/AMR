@@ -7,8 +7,8 @@ set -e
 util_dir=data/AMR/amr_2.0_utils
 
 # AMR data with **features**
-data_dir=/data2/qrxia/data/AMR/silver_data/2m_silver_amr/
-silver_data=$data_dir/2m_silver.txt.features
+data_dir=/data2/qrxia/AMR-research/kamr-gr-2.0/data/silver_data_from_kiro/spring/
+silver_data=$data_dir/bllip.ber5.sents.txt.spring
 
 # ========== Set the above variables correctly ==========
 

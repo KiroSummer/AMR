@@ -214,26 +214,34 @@ class DataLoader(object):
             random.shuffle(idx)
             idx.sort(key=lambda x: len(self.data[x]['tok']) + len(self.data[x]['amr']))  # fixed idx? @kiro check TODO
 
+        def get_size(data):
+            return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+
         batches = []
         num_tokens, data = 0, []
         for i in idx:
             num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])  # tokens_num = len(toks) + len(concepts)
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
-                sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
-                # print(sz, GPU_SIZE)
+                sz = get_size(data)
+                print("no split:", sz)
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
                     batches.append(data[:len(data) // 2])
                     data = data[len(data) // 2:]
+                    print("split 1:", get_size(data[:len(data) // 2]))
+                    print("split 2:", get_size(data[:len(data) // 2]))
                 batches.append(data)
                 num_tokens, data = 0, []
         if data:
             sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+            print("no split:", sz)
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
                 batches.append(data[:len(data) // 2])
                 data = data[len(data) // 2:]
+                print("split 1:", get_size(data[:len(data) // 2]))
+                print("split 2:", get_size(data[:len(data) // 2]))
             batches.append(data)
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO

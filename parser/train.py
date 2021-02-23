@@ -242,7 +242,7 @@ def main(local_rank, args):
 
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
     train_data.set_unk_rate(args.unk_rate)
-    queue = mp.Queue(10)
+    queue = mp.Queue(1)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
     if not _fine_tuning and _pre_training:

@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from queue import Queue
+from datetime import datetime
 import numpy as np
 import math
 import os, sys, subprocess, threading, time
@@ -22,15 +23,17 @@ class eval:
 
     def eval(self, output_dev_file, saved_model, post_process=True):
         smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file, post_process=post_process)
+        now_time = datetime.now()
+        time_str = now_time.strftime("%d/%m/%Y %H:%M:%S")
         if smatch >= self.last_smatch:  # early stopping @kiro
             if smatch > self.last_smatch:
                 self.no_performance_improvement = 0
                 self.checkpoint_file.write_checkpoint(
-                    "{}\t{}\tmodel saved".format(saved_model, smatch))  # write to checkpoint @kiro
+                    "{}\t{}\tmodel saved\t{}".format(saved_model, smatch, time_str))  # write to checkpoint @kiro
                 self.last_smatch = smatch
             else:
                 self.checkpoint_file.write_checkpoint(
-                    "{}\t{}\t".format(saved_model, smatch))  # write to checkpoint @kiro
+                    "{}\t{}\t{}\t".format(saved_model, smatch, time_str))  # write to checkpoint @kiro
             if self.checkpoints_queue.qsize() < self.checkpoints_queue.maxsize:
                 self.checkpoints_queue.put(saved_model)
             else:
@@ -40,7 +43,7 @@ class eval:
         else:
             self.no_performance_improvement += 1
             remove_files(saved_model + '*')  # remove low performance models. @kiro
-            self.checkpoint_file.write_checkpoint("{}\t{}\t".format(saved_model, smatch))  # write to checkpoint @kiro
+            self.checkpoint_file.write_checkpoint("{}\t{}\t{}\t".format(saved_model, smatch, time_str))  # write to checkpoint @kiro
         if self.no_performance_improvement > self.early_stops:  # if no better performance happens for 30 evaluation, break @kiro
             return True
 

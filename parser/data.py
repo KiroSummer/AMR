@@ -7,7 +7,7 @@ from parser.extract import read_file, dynamically_read_file
 from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 8000  # okay for 8G memory
+GPU_SIZE = 7000
 
 
 class Vocab(object):
@@ -224,24 +224,24 @@ class DataLoader(object):
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
                 sz = get_size(data)
-                print("no split:", sz)
+                print("no split:", sz, len(data))
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
                     batches.append(data[:len(data) // 2])
                     data = data[len(data) // 2:]
-                    print("split 1:", get_size(data[:len(data) // 2]))
-                    print("split 2:", get_size(data[:len(data) // 2]))
+                    print("split 1:", get_size(data[:len(data) // 2]), len(data[:len(data) // 2]))
+                    print("split 2:", get_size(data[len(data) // 2:]), len(data[len(data) // 2:]))
                 batches.append(data)
                 num_tokens, data = 0, []
         if data:
             sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
-            print("no split:", sz)
+            print("no split:", sz, len(data))
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
                 batches.append(data[:len(data) // 2])
                 data = data[len(data) // 2:]
-                print("split 1:", get_size(data[:len(data) // 2]))
-                print("split 2:", get_size(data[:len(data) // 2]))
+                print("split 1:", get_size(data[:len(data) // 2]), len(data[:len(data) // 2]))
+                print("split 2:", get_size(data[len(data) // 2:]), len(data[len(data) // 2:]))
             batches.append(data)
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO

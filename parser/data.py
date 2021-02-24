@@ -7,7 +7,7 @@ from parser.extract import read_file, dynamically_read_file
 from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 7000
+GPU_SIZE = 8000
 
 
 class Vocab(object):
@@ -217,6 +217,22 @@ class DataLoader(object):
         def get_size(data):
             return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
 
+        def recursive_split_data(data, batches):
+            half_data_1 = data[:len(data) // 2]
+            half_data_2 = data[len(data) // 2:]
+            half_data_1_sz = get_size(half_data_1)
+            half_data_2_sz = get_size(half_data_2)
+            if half_data_1_sz > GPU_SIZE:
+                recursive_split_data(half_data_1, batches)
+            else:
+                print("split:", half_data_1_sz, len(half_data_1))
+                batches.append(half_data_1)
+            if half_data_2_sz > GPU_SIZE:
+                recursive_split_data(half_data_2, batches)
+            else:
+                print("split:", half_data_2_sz, len(half_data_2))
+                batches.append(half_data_2)
+
         batches = []
         num_tokens, data = 0, []
         for i in idx:
@@ -224,25 +240,22 @@ class DataLoader(object):
             data.append(self.data[i])
             if num_tokens >= self.batch_size:
                 sz = get_size(data)
-                print("no split:", sz, len(data))
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
-                    batches.append(data[:len(data) // 2])
-                    data = data[len(data) // 2:]
-                    print("split 1:", get_size(data[:len(data) // 2]), len(data[:len(data) // 2]))
-                    print("split 2:", get_size(data[len(data) // 2:]), len(data[len(data) // 2:]))
-                batches.append(data)
+                    recursive_split_data(data, batches)
+                else:
+                    print("no split:", sz, len(data))
+                    batches.append(data)
                 num_tokens, data = 0, []
         if data:
             sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
             print("no split:", sz, len(data))
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
-                batches.append(data[:len(data) // 2])
-                data = data[len(data) // 2:]
-                print("split 1:", get_size(data[:len(data) // 2]), len(data[:len(data) // 2]))
-                print("split 2:", get_size(data[len(data) // 2:]), len(data[len(data) // 2:]))
-            batches.append(data)
+                recursive_split_data(data, batches)
+            else:
+                print("no split:", sz, len(data))
+                batches.append(data)
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)

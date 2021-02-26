@@ -7,7 +7,7 @@ from parser.extract import read_file, dynamically_read_file
 from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 8000
+GPU_SIZE = 7500
 
 
 class Vocab(object):
@@ -242,6 +242,7 @@ class DataLoader(object):
                 sz = get_size(data)
                 if sz > GPU_SIZE:
                     # because we only have limited GPU memory
+                    print("no split:", sz, len(data))
                     recursive_split_data(data, batches)
                 else:
                     print("no split:", sz, len(data))
@@ -252,6 +253,7 @@ class DataLoader(object):
             print("no split:", sz, len(data))
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
+                print("no split:", sz, len(data))
                 recursive_split_data(data, batches)
             else:
                 print("no split:", sz, len(data))

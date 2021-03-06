@@ -7,7 +7,7 @@ from parser.extract import read_file, dynamically_read_file
 from parser.srl import read_srl_file
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 7000
+GPU_SIZE = 8000
 
 
 class Vocab(object):

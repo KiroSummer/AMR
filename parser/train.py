@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-import argparse, os, random
+import argparse, os, random, sys
 from parser.data import Vocab, DataLoader, SRLDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
 from parser.work import show_progress
@@ -328,6 +328,10 @@ def main(local_rank, args):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
+                def get_size(data):
+                    return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+
+                print("training batch, len batch {}, size {}".format(len(batch), get_size(batch)), flush=True)
                 batch = move_to_device(batch, model.device)  # data moved to device
                 concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
@@ -344,6 +348,8 @@ def main(local_rank, args):
                 rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
                 # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
                 loss.backward()  # loss backward
+                print("training batch done", flush=True)
+
                 used_batches += 1
                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
                     continue

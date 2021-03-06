@@ -328,10 +328,6 @@ def main(local_rank, args):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
-                def get_size(data):
-                    return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
-
-                print("training batch, len batch {}, size {}".format(len(batch), get_size(batch)), flush=True)
                 batch = move_to_device(batch, model.device)  # data moved to device
                 concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)

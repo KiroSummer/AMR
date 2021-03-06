@@ -347,7 +347,7 @@ def main(local_rank, args):
                     loss.backward()  # loss backward
                     print("training batch done", flush=True)
                 except:
-                    print("I find it! the OOM problem")
+                    print("I find it! the OOM problem", flush=True)
 
                 used_batches += 1
                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):

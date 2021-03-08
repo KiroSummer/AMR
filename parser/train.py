@@ -233,7 +233,7 @@ def main(local_rank, args):
     used_srl_batches = 0
 
     if args.resume_ckpt:  # false, not supported @kiro
-        ckpt = torch.load(args.resume_ckpt)
+        ckpt = torch.load(args.resume_ckpt, map_location=lambda storage, loc: storage)
         model.load_state_dict(ckpt['model'])
         if args.fine_tuning_lr is None:
             optimizer.load_state_dict(ckpt['optimizer'])

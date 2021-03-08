@@ -345,7 +345,7 @@ def main(local_rank, args):
                     rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
                     # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
                     loss.backward()  # loss backward
-                    print("training batch done", flush=True)
+                    print("dist {}, training batch done".format(dist.get_rank()), flush=True)
                 except:
                     print("I find it! the OOM problem", flush=True)
 

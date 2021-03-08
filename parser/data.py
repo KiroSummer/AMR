@@ -1,6 +1,7 @@
 import random
 import torch
 from torch import nn
+import torch.distributed as dist
 import numpy as np
 from parser.AMRGraph import AMRGraph
 from parser.extract import read_file, dynamically_read_file
@@ -265,7 +266,7 @@ class DataLoader(object):
             print("Total {} training batches. the max GPU_SIZE is {}".format(len(batches), GPU_SIZE))
 
         for batch in batches:
-            print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
+            print("dist rank {}, training batch, len data {}, sz {}".format(dist.get_rank(), len(batch), get_size(batch)), flush=True)
             yield batchify(batch, self.vocabs, self.unk_rate)
 
 

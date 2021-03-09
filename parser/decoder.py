@@ -234,6 +234,7 @@ class DecodeLayer(nn.Module):
                                                         work=False)
             arc_losses.append(arc_loss)
             concept_losses.append(concept_loss)
+        # del arc_loss, concept_loss  # delete the intermediate variable
         rel_loss = self.relation_generator(outs, graph_state, target_rel=target_rel, work=False)
         arc_loss = arc_losses[-1]  # torch.stack(arc_losses).mean(0)
         concept_loss = concept_losses[-1]  # torch.stack(concept_losses).mean(0)

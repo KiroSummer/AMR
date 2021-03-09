@@ -330,7 +330,7 @@ def main(local_rank, args):
             else:
                 try:
                     batch = move_to_device(batch, model.device)  # data moved to device
-                    print("batch token size", batch['tok'].size(), flush=True)
+                    print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
                     concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                         batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
                     # model forward, please note that graph_arc_loss is not used

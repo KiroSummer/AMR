@@ -310,6 +310,7 @@ def main(local_rank, args):
 
                     batches_acm += 1
                     if args.world_size > 1:
+                        del silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss  # can this help?
                         average_gradients(model)
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                     lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps,

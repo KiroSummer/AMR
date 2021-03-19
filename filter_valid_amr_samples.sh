@@ -36,7 +36,7 @@ silver_data=$data_dir/bllip.tamr.pred
 #printf "Done.`date`\n\n"
 
 printf "Dependency parsing...`date`\n"
-python -u -m stog.data.dataset_readers.amr_parsing.preprocess.dependency_parsing \
+python -u -m stog.data.dataset_readers.amr_parsing.preprocess.filter_valid_amr_graphs \
     --util_dir ${util_dir} \
     --amr_files ${silver_data}
 printf "Done.`date`\n\n"

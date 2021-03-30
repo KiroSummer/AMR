@@ -275,7 +275,7 @@ class DynamicDataLoader(object):
         self.data = []
         self.vocabs = vocabs
         self.lex_map = lex_map
-        self.file = file
+        self.file = open(file, 'r')
         self.batch_size = batch_size
         self.train = for_train
         self.unk_rate = 0.

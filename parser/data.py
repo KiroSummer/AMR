@@ -273,15 +273,24 @@ class DataLoader(object):
 class DynamicDataLoader(object):
     def __init__(self, vocabs, lex_map, file, batch_size, for_train):
         self.data = []
-        bert_tokenizer = vocabs.get('bert_tokenizer', None)
-        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*dynamically_read_file(file)):
-            if for_train:
+        self.vocabs = vocabs
+        self.lex_map = lex_map
+        self.file = file
+        self.batch_size = batch_size
+        self.train = for_train
+        self.unk_rate = 0.
+
+    def read_a_part_data(self, num_sentences=50000):
+        self.data = []
+        bert_tokenizer = self.vocabs.get('bert_tokenizer', None)
+        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*dynamically_read_file(self.file, max_sentence_length=num_sentences)):
+            if self.train:
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:
                     continue
-            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + lemma, ['<CLS>'] + token, vocabs['predictable_concept'])
-            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, 'dep_rel': dep_rel,\
-                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
+            cp_seq, mp_seq, token2idx, idx2token = self.lex_map.get_concepts(['<CLS>'] + lemma, ['<CLS>'] + token, self.vocabs['predictable_concept'])
+            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, 'dep_rel': dep_rel,
+                     'cp_seq': cp_seq, 'mp_seq': mp_seq,
                      'token2idx': token2idx, 'idx2token': idx2token}
             if bert_tokenizer is not None:
                 bert_token, token_subword_index = bert_tokenizer.tokenize(token)
@@ -290,15 +299,12 @@ class DynamicDataLoader(object):
 
             self.data.append(datum)
         print("Get %d AMRs from" % (len(self.data)))
-        self.vocabs = vocabs
-        self.batch_size = batch_size
-        self.train = for_train
-        self.unk_rate = 0.
 
     def set_unk_rate(self, x):
         self.unk_rate = x
 
     def __iter__(self):
+        self.read_a_part_data(num_sentences=50000)
         idx = list(range(len(self.data)))
 
         if self.train:

@@ -79,8 +79,9 @@ def dynamically_read_file(f, max_sentence_length=50000):
     dynamically read a big amr file
     """
     line = f.readline()
-    if line == '':
+    if not line:
         f.seek(0)  # move the file pointer to the file head
+        line = f.readline()
     sample_count = 0
     token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
     while True:
@@ -106,7 +107,7 @@ def dynamically_read_file(f, max_sentence_length=50000):
             dependency_rels = json.loads(line[len('# ::dependency_rels '):])
         elif line.startswith('# ::abstract_map '):
             abstract_map = json.loads(line[len('# ::abstract_map '):])
-        else:
+        # else:
             graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
             amr = AMR.parse_AMR_line(graph_line)
             myamr = AMRGraph(amr)
@@ -123,7 +124,6 @@ def dynamically_read_file(f, max_sentence_length=50000):
                 break
         line = f.readline()
     return amrs, token, lemma, pos, ner, edges, dep_rels
-            # yield tokens, lemmas, pos_tags, ner_tags, dependency_edges, dependency_rels, myamr
 
 
 def read_file(filename):

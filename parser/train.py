@@ -3,7 +3,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 import argparse, os, random, sys
-from parser.data import Vocab, DataLoader, SRLDataLoader, DUM, END, CLS, NIL
+from parser.data import Vocab, DataLoader, SRLDataLoader, DynamicDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
@@ -121,6 +121,13 @@ def data_proc(data, queue):
         for x in data:
             queue.put(x)
         queue.put('EPOCHDONE')
+
+
+def dynamic_data_proc(data, queue):
+    while True:
+        for x in data:
+            queue.put(x)
+        queue.put("EPOCHDONE")
 
 
 def load_vocabs(args):
@@ -242,13 +249,13 @@ def main(local_rank, args):
 
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
     train_data.set_unk_rate(args.unk_rate)
-    queue = mp.Queue(5)
+    queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
     if _fine_tuning and _pre_training:
-        silver_train_data = DataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
+        silver_train_data = DynamicDataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
         silver_train_data.set_unk_rate(args.unk_rate)
-        silver_queue = mp.Queue(5)
+        silver_queue = mp.Queue(10)
         silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
         silver_data_loss_weight = 1.0 if args.silver_data_loss_weight is None else args.silver_data_loss_weight
 
@@ -277,6 +284,7 @@ def main(local_rank, args):
     print("Start training...")
     is_start = True
 
+    # pre_training = not _fine_tuning and _pre_training and not args.fine_tuning_lr
     # if not _fine_tuning and _pre_training:  # if the training process is to train a pre-trained model
     #     while epoch < max_training_epochs:
     #         while True:

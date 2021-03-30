@@ -270,7 +270,9 @@ def main(local_rank, args):
 
     train_data_generator.start()
     if _fine_tuning and _pre_training:
+        print("silver_train_data_generator start ")
         silver_train_data_generator.start()
+        print("silver_train_data_generator start done! ")
     model.train()
     epoch, loss_avg, srl_loss_avg, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg =\
         0, 0, 0, 0, 0, 0, 0

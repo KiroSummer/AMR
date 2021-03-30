@@ -305,7 +305,9 @@ class DynamicDataLoader(object):
         self.unk_rate = x
 
     def __iter__(self):
+        print("read data from silver file")
         self.read_a_part_data(num_sentences=50000)
+        print("read data from silver file done")
         idx = list(range(len(self.data)))
 
         if self.train:

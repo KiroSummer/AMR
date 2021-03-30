@@ -256,7 +256,7 @@ def main(local_rank, args):
         silver_train_data = DynamicDataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
         silver_train_data.set_unk_rate(args.unk_rate)
         silver_queue = mp.Queue(10)
-        silver_train_data_generator = mp.Process(target=data_proc, args=(silver_train_data, silver_queue))
+        silver_train_data_generator = mp.Process(target=dynamic_data_proc, args=(silver_train_data, silver_queue))
         silver_data_loss_weight = 1.0 if args.silver_data_loss_weight is None else args.silver_data_loss_weight
 
     # Load SRL data, for train @kiro TODO

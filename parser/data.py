@@ -275,6 +275,7 @@ class DynamicDataLoader(object):
         self.data = []
         self.vocabs = vocabs
         self.lex_map = lex_map
+        self.filename = file
         self.file = open(file, 'r')
         self.batch_size = batch_size
         self.train = for_train
@@ -298,7 +299,7 @@ class DynamicDataLoader(object):
                 datum['token_subword_index'] = token_subword_index
 
             self.data.append(datum)
-        print("Get %d AMRs from" % (len(self.data)))
+        print("Get %d AMRs from %s" % (len(self.data), self.filename))
 
     def set_unk_rate(self, x):
         self.unk_rate = x

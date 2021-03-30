@@ -276,7 +276,7 @@ class DynamicDataLoader(object):
         self.vocabs = vocabs
         self.lex_map = lex_map
         self.filename = file
-        self.file = open(file, 'r')
+        self.large_file = open(self.filename, 'r')
         self.batch_size = batch_size
         self.train = for_train
         self.unk_rate = 0.
@@ -284,7 +284,7 @@ class DynamicDataLoader(object):
     def read_a_part_data(self, num_sentences=50000):
         self.data = []
         bert_tokenizer = self.vocabs.get('bert_tokenizer', None)
-        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*dynamically_read_file(self.file, max_sentence_length=num_sentences)):
+        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*dynamically_read_file(self.large_file, max_sentence_length=num_sentences)):
             if self.train:
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:

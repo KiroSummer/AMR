@@ -276,10 +276,11 @@ class DynamicDataLoader(object):
         self.vocabs = vocabs
         self.lex_map = lex_map
         self.filename = file
-        self.__large_file = open(self.filename, 'r')
+        self.__large_file = None
         self.batch_size = batch_size
         self.train = for_train
         self.unk_rate = 0.
+        self.count = 0
 
     def read_a_part_data(self, num_sentences=50000):
         self.data = []
@@ -306,6 +307,9 @@ class DynamicDataLoader(object):
 
     def __iter__(self):
         print("read data from silver file")
+        if self.count == 0:
+            self.__large_file = open(self.filename, 'r')
+        self.count += 1
         self.read_a_part_data(num_sentences=50000)
         print("read data from silver file done")
         idx = list(range(len(self.data)))

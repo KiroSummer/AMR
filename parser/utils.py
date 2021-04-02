@@ -12,9 +12,7 @@ POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
 EVAL_SCRIPT = "compute_smatch.sh"
 
 
-def __init_global_variable():
-    global stop_flag
-    stop_flag = False
+stop_flag = False
 
 
 class eval:

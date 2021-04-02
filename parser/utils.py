@@ -12,6 +12,11 @@ POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
 EVAL_SCRIPT = "compute_smatch.sh"
 
 
+def __init_global_variable():
+    global stop_flag
+    stop_flag = False
+
+
 class eval:
     def __init__(self, checkpoint_file, gold_file, early_stops=30):
         self.checkpoint_file = checkpoint(checkpoint_file)
@@ -80,8 +85,9 @@ class MyThread(threading.Thread):
     def run(self):
         self.result = self.func(*self.args)
         if self.result is True:
+            global stop_flag
+            stop_flag = True
             print("No performance improvement happens! exit!")
-            os._exit(0)
 
 
 def remove_files(filename):

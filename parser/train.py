@@ -8,7 +8,7 @@ from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
 from parser.adam import AdamWeightDecayOptimizer
-from parser.utils import move_to_device, MyThread, eval
+from parser.utils import move_to_device, MyThread, eval, __init_global_variable
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
@@ -361,6 +361,11 @@ def main(local_rank, args):
     #     print("Training process is done.")  # @kiro
     #     exit(0)
 
+    def stop_data_generator():
+        train_data_generator.terminate()
+        if args.use_srl:
+            srl_train_data_generator.terminate()
+
     while epoch < max_training_epochs:  # there is no stop! @kiro fixed by me
         while True and args.use_srl and is_start is False:
             """SRL process begin"""
@@ -409,6 +414,10 @@ def main(local_rank, args):
                     loss.backward()  # loss backward
             # gold amr data
             batch = queue.get()
+            global stop_flag
+            if stop_flag is True:  # need to stop the process
+                stop_data_generator()
+                sys.exit(0)
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
@@ -472,9 +481,7 @@ def main(local_rank, args):
                         eval_task.start()
                         model.train()
                 break
-    train_data_generator.terminate()
-    if args.use_srl:
-        srl_train_data_generator.terminate()
+    stop_data_generator()
     print("Training process is done.")  # @kiro
     exit(0)
 
@@ -500,4 +507,5 @@ if __name__ == "__main__":
     if args.world_size == 1:
         main(0, args)
         exit(0)
+    __init_global_variable()
     mp.spawn(init_processes, args=(args,), nprocs=args.gpus)

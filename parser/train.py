@@ -8,7 +8,7 @@ from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
 from parser.adam import AdamWeightDecayOptimizer
-from parser.utils import move_to_device, MyThread, eval
+from parser.utils import move_to_device, MyThread, eval, stop_flag
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data

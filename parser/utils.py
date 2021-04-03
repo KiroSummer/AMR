@@ -48,6 +48,7 @@ class eval:
             remove_files(saved_model + '*')  # remove low performance models. @kiro
             self.checkpoint_file.write_checkpoint("{}\t{}\t{}\t".format(saved_model, smatch, time_str))  # write to checkpoint @kiro
         if self.no_performance_improvement > self.early_stops:  # if no better performance happens for 30 evaluation, break @kiro
+            print('='*10, "no performance improvement happens")
             return True
 
 
@@ -83,6 +84,7 @@ class MyThread(threading.Thread):
     def run(self):
         self.result = self.func(*self.args)
         if self.result is True:
+            print('=' * 10, "no performance improvement happens, set stop_flag to False", flush=True)
             global stop_flag
             stop_flag = True
             print("No performance improvement happens! exit!")

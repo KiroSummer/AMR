@@ -9,10 +9,14 @@ from parser.work import show_progress
 from parser.extract import LexicalMap
 from parser.adam import AdamWeightDecayOptimizer
 from parser.utils import move_to_device, MyThread, eval
-from parser.global_variables import value
+# from parser.global_variables import value
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
+
+
+manager = torch.multiprocessing.Manager()
+value = manager.Value(bool, False)
 
 
 def parse_config():

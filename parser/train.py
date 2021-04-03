@@ -417,7 +417,7 @@ def main(local_rank, args):
             global stop_flag
             if stop_flag is True:  # need to stop the process
                 stop_data_generator()
-                sys.exit(0)
+                exit(0)
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)

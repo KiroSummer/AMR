@@ -16,7 +16,7 @@ stop_flag = False
 
 
 class eval:
-    def __init__(self, checkpoint_file, gold_file, early_stops=30):
+    def __init__(self, checkpoint_file, gold_file, early_stops=1):
         self.checkpoint_file = checkpoint(checkpoint_file)
         self.no_performance_improvement = 0
         self.last_smatch = 0.0

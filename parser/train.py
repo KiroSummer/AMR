@@ -14,7 +14,7 @@ from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
-
+torch.multiprocessing.freeze_support()
 manager = torch.multiprocessing.Manager()
 value = manager.Value(bool, False)
 

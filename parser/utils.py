@@ -6,13 +6,11 @@ from datetime import datetime
 import numpy as np
 import math
 import os, sys, subprocess, threading, time
+import parser.global_variables as global_variables
 
 POSTPROCESSING1_SCRIPT = "postprocess_1.0.sh"  # TODO for amr 1.0 @kiro
 POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
 EVAL_SCRIPT = "compute_smatch.sh"
-
-
-stop_flag = False
 
 
 class eval:
@@ -86,9 +84,11 @@ class MyThread(threading.Thread):
         self.result = self.func(*self.args)
         if self.result is True:
             print('=' * 10, "no performance improvement happens, set stop_flag to False", flush=True)
-            global stop_flag
-            stop_flag = True
-            print("stop_flag", id(stop_flag), stop_flag, flush=True)
+            # global stop_flag
+            # stop_flag = True
+            # print("stop_flag", id(stop_flag), stop_flag, flush=True)
+            global_variables.stop_flag = True
+            print("stop_flag", id(global_variables.stop_flag), global_variables.stop_flag, flush=True)
             print("No performance improvement happens! exit!")
 
 

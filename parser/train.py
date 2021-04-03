@@ -8,7 +8,8 @@ from parser.parser import Parser
 from parser.work import show_progress
 from parser.extract import LexicalMap
 from parser.adam import AdamWeightDecayOptimizer
-from parser.utils import move_to_device, MyThread, eval, stop_flag
+from parser.utils import move_to_device, MyThread, eval
+import parser.global_variables as global_variables
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
@@ -414,11 +415,15 @@ def main(local_rank, args):
                     loss.backward()  # loss backward
             # gold amr data
             batch = queue.get()
-            global stop_flag
-            print("stop_flag", id(stop_flag), stop_flag, flush=True)
-            if stop_flag is True:  # need to stop the process
+            print("stop_flag", id(global_variables.stop_flag), global_variables.stop_flag, flush=True)
+            if global_variables.stop_flag is True:  # need to stop the process
                 stop_data_generator()
                 exit(0)
+            # global stop_flag
+            # print("stop_flag", id(stop_flag), stop_flag, flush=True)
+            # if stop_flag is True:  # need to stop the process
+            #     stop_data_generator()
+            #     exit(0)
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
@@ -505,6 +510,7 @@ if __name__ == "__main__":
     print("number of available GPUs", gpu_number)
     args.world_size = args.gpus = gpu_number
     print("world_size {}, gpus {}".format(args.world_size, args.gpus))
+    global_variables.init_global_variables()
     if args.world_size == 1:
         main(0, args)
         exit(0)

@@ -501,7 +501,6 @@ def init_processes(local_rank, args, backend='nccl'):
 
 
 if __name__ == "__main__":
-    torch.multiprocessing.freeze_support()
     args = parse_config()
     if not os.path.exists(args.ckpt):  # create the ckpt dir @kiro
         os.mkdir(args.ckpt)

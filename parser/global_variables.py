@@ -8,5 +8,7 @@ def init_global_variables():
     mylist = []
 
 
+multiprocessing.freeze_support()
+
 manager = multiprocessing.Manager()
 value = manager.Value(bool, False)

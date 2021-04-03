@@ -28,7 +28,7 @@ class eval:
         smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file, post_process=post_process)
         now_time = datetime.now()
         time_str = now_time.strftime("%d/%m/%Y %H:%M:%S")
-        if smatch > self.last_smatch:  # early stopping @kiro
+        if smatch >= self.last_smatch:  # early stopping @kiro
             if smatch > self.last_smatch:
                 self.no_performance_improvement = 0
                 self.checkpoint_file.write_checkpoint(
@@ -44,9 +44,10 @@ class eval:
                 remove_files(ckpt_to_remove + '*')  # remove low performance models. @kiro
                 self.checkpoints_queue.put(saved_model)
         else:
-            self.no_performance_improvement += 1
             remove_files(saved_model + '*')  # remove low performance models. @kiro
             self.checkpoint_file.write_checkpoint("{}\t{}\t{}\t".format(saved_model, smatch, time_str))  # write to checkpoint @kiro
+        if smatch <= self.last_smatch:
+            self.no_performance_improvement += 1
         if self.no_performance_improvement > self.early_stops:  # if no better performance happens for 30 evaluation, break @kiro
             print('='*10, "no performance improvement happens")
             return True

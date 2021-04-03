@@ -28,7 +28,7 @@ class eval:
         smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file, post_process=post_process)
         now_time = datetime.now()
         time_str = now_time.strftime("%d/%m/%Y %H:%M:%S")
-        if smatch >= self.last_smatch:  # early stopping @kiro
+        if smatch > self.last_smatch:  # early stopping @kiro
             if smatch > self.last_smatch:
                 self.no_performance_improvement = 0
                 self.checkpoint_file.write_checkpoint(

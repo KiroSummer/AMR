@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 import math
 import os, sys, subprocess, threading, time
-import parser.global_variables as global_variables
+from parser.global_variables import value
 
 POSTPROCESSING1_SCRIPT = "postprocess_1.0.sh"  # TODO for amr 1.0 @kiro
 POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro
@@ -87,8 +87,8 @@ class MyThread(threading.Thread):
             # global stop_flag
             # stop_flag = True
             # print("stop_flag", id(stop_flag), stop_flag, flush=True)
-            global_variables.stop_flag = True
-            print("stop_flag", id(global_variables.stop_flag), global_variables.stop_flag, flush=True)
+            value = True
+            print("stop_flag", id(value), value, flush=True)
             print("No performance improvement happens! exit!")
 
 

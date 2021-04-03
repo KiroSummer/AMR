@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 import math
 import os, sys, subprocess, threading, time
-from parser.global_variables import value
+
 
 POSTPROCESSING1_SCRIPT = "postprocess_1.0.sh"  # TODO for amr 1.0 @kiro
 POSTPROCESSING2_SCRIPT = "postprocess_2.0.sh"  # TODO for amr 1.0 @kiro

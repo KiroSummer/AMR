@@ -88,7 +88,7 @@ class MyThread(threading.Thread):
             print('=' * 10, "no performance improvement happens, set stop_flag to False", flush=True)
             global stop_flag
             stop_flag = True
-            print("stop_flag", stop_flag, flush=True)
+            print("stop_flag", id(stop_flag), stop_flag, flush=True)
             print("No performance improvement happens! exit!")
 
 

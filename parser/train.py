@@ -415,7 +415,7 @@ def main(local_rank, args):
             # gold amr data
             batch = queue.get()
             global stop_flag
-            print("stop_flag", stop_flag)
+            print("stop_flag", stop_flag, flush=True)
             if stop_flag is True:  # need to stop the process
                 stop_data_generator()
                 exit(0)

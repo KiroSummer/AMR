@@ -16,7 +16,7 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
-stop_flag = mp.Value(c_bool, 'False')
+stop_flag = mp.Manager().Value(c_bool, 'False')
 
 
 def parse_config():

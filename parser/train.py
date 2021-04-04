@@ -3,6 +3,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 import argparse, os, random, sys
+from ctypes import c_bool
 from parser.data import Vocab, DataLoader, SRLDataLoader, DynamicDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
 from parser.work import show_progress
@@ -15,7 +16,7 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
-stop_flag = False
+stop_flag = mp.Value(c_bool, False)
 
 
 def parse_config():
@@ -417,7 +418,7 @@ def main(local_rank, args):
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
             # gold amr data
-            global stop_flag
+            # global stop_flag
             print("stop_flag", id(stop_flag), stop_flag, flush=True)
             if stop_flag is True:  # need to stop the process
                 stop_data_generator()

@@ -15,8 +15,7 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
-manager = torch.multiprocessing.Manager()
-value = manager.Value(bool, False)
+stop_flag = False
 
 
 def parse_config():
@@ -418,16 +417,11 @@ def main(local_rank, args):
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
             # gold amr data
-            batch = queue.get()
-            print("stop_flag", id(value), value, flush=True)
-            if value is True:  # need to stop the process
+            global stop_flag
+            print("stop_flag", id(stop_flag), stop_flag, flush=True)
+            if stop_flag is True:  # need to stop the process
                 stop_data_generator()
                 exit(0)
-            # global stop_flag
-            # print("stop_flag", id(stop_flag), stop_flag, flush=True)
-            # if stop_flag is True:  # need to stop the process
-            #     stop_data_generator()
-            #     exit(0)
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)

@@ -510,7 +510,8 @@ if __name__ == "__main__":
     print("world_size {}, gpus {}".format(args.world_size, args.gpus))
     # global_variables.init_global_variables()
     stop_flag = mp.Manager().Value(c_bool, 'False')
+    print(id(stop_flag), stop_flag)
     if args.world_size == 1:
         main(0, args)
         exit(0)
-    mp.spawn(init_processes, args=(args,stop_flag,), nprocs=args.gpus)
+    mp.spawn(init_processes, args=(args, stop_flag,), nprocs=args.gpus)

@@ -426,9 +426,6 @@ def main(local_rank, args, global_value=None):
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
                 try:
-                    if args.world_size > 1:
-                        if dist.get_rank() == 0:
-                            global_value['stop_flag'] = True
                     batch = move_to_device(batch, model.device)  # data moved to device
                     # print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
                     concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(

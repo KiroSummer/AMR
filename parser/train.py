@@ -513,6 +513,6 @@ if __name__ == "__main__":
     global_dict['stop_flag'] = False
     print(id(global_dict), global_dict)
     if args.world_size == 1:
-        main(0, args)
+        main(0, args, global_dict)
         exit(0)
     mp.spawn(init_processes, args=(args, global_dict,), nprocs=args.gpus)

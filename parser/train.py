@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-import argparse, os, random, sys
+import argparse, os, random, sys, time
 from ctypes import c_bool
 from parser.data import Vocab, DataLoader, SRLDataLoader, DynamicDataLoader, DUM, END, CLS, NIL
 from parser.parser import Parser
@@ -495,6 +495,8 @@ def init_processes(local_rank, args, mp_value, backend='nccl'):
     print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
     if local_rank == 0:
         mp_value['stop_flag'] = True
+    if local_rank == 1:
+        time.sleep(5)
     print("local_rank", local_rank, id(mp_value), mp_value)
     exit(0)
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)

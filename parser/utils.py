@@ -75,20 +75,17 @@ def eval_smatch(dev_file, gold_dev_file, post_process=True):
 
 
 class MyThread(threading.Thread):
-    def __init__(self, func, args=()):
+    def __init__(self, func, args, global_dict=None):
         super(MyThread, self).__init__()
         self.func = func
         self.args = args
+        self.global_dict = global_dict
 
     def run(self):
         self.result = self.func(*self.args)
         if self.result is True:
             print('=' * 10, "no performance improvement happens, set stop_flag to False", flush=True)
-            # global stop_flag
-            # stop_flag = True
-            # print("stop_flag", id(stop_flag), stop_flag, flush=True)
-            # value = True
-            # print("stop_flag", id(value), value, flush=True)
+            self.global_dict['stop_flag'] = True
             print("No performance improvement happens! exit!")
 
 

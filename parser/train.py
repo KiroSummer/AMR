@@ -418,9 +418,9 @@ def main(local_rank, args, global_value=None):
             # global stop_flag
             print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
             if global_value['stop_flag'] is True:  # need to stop the process
-                # stop_data_generator()
-                # exit(0)
-                pass
+                stop_data_generator()
+                exit(0)
+                # pass
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
@@ -483,7 +483,8 @@ def main(local_rank, args, global_value=None):
                                     'batches_acm': batches_acm,
                                     'optimizer': optimizer.state_dict()},
                                    saved_model)
-                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process))
+                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process),
+                                             global_dict=global_dict)
                         eval_task.start()
                         model.train()
                 break

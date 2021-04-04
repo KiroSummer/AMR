@@ -16,6 +16,9 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
+stop_flag = mp.Value(c_bool, 'False')
+
+
 def parse_config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--info', type=str)
@@ -415,7 +418,7 @@ def main(local_rank, args):
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
             # gold amr data
-            # global stop_flag
+            global stop_flag
             print("stop_flag", id(stop_flag), stop_flag, flush=True)
             if stop_flag is True:  # need to stop the process
                 stop_data_generator()
@@ -497,7 +500,6 @@ def init_processes(local_rank, args, backend='nccl'):
 
 
 if __name__ == "__main__":
-    stop_flag = mp.Value(c_bool, 'False')
     args = parse_config()
     if not os.path.exists(args.ckpt):  # create the ckpt dir @kiro
         os.mkdir(args.ckpt)

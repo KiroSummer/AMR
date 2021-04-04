@@ -481,7 +481,7 @@ def main(local_rank, args, global_value=None):
                                     'optimizer': optimizer.state_dict()},
                                    saved_model)
                         eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process),
-                                             global_dict=global_dict)
+                                             global_dict=global_value)
                         eval_task.start()
                         model.train()
                 break

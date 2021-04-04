@@ -49,6 +49,8 @@ class eval:
         if self.no_performance_improvement > self.early_stops:  # if no better performance happens for 30 evaluation, break @kiro
             print('='*10, "no performance improvement happens")
             return True
+        else:
+            return False
 
 
 def eval_smatch(dev_file, gold_dev_file, post_process=True):

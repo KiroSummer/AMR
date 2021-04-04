@@ -159,7 +159,7 @@ def load_vocabs(args):
     return vocabs, lexical_mapping
 
 
-def main(local_rank, args, stop_flag):
+def main(local_rank, args):
     vocabs, lexical_mapping = load_vocabs(args)
     bert_encoder = None
     if args.with_bert:
@@ -488,12 +488,14 @@ def main(local_rank, args, stop_flag):
     exit(0)
 
 
-def init_processes(local_rank, args, stop_flag, backend='nccl'):
+def init_processes(local_rank, args, mp_value, backend='nccl'):
     os.environ['MASTER_ADDR'] = args.MASTER_ADDR
     os.environ['MASTER_PORT'] = args.MASTER_PORT
+    print("local_rank", local_rank, id(mp_value), mp_value)
     print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
+    exit(0)
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)
-    main(local_rank, args, stop_flag)
+    main(local_rank, args)
 
 
 if __name__ == "__main__":
@@ -509,6 +511,6 @@ if __name__ == "__main__":
     # global_variables.init_global_variables()
     stop_flag = mp.Manager().Value(c_bool, 'False')
     if args.world_size == 1:
-        main(0, args, stop_flag)
+        main(0, args)
         exit(0)
-    mp.spawn(init_processes, args=(args, stop_flag,), nprocs=args.gpus)
+    mp.spawn(init_processes, args=(args,stop_flag,), nprocs=args.gpus)

@@ -419,7 +419,7 @@ def main(local_rank, args, global_value=None):
             print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
             if global_value['stop_flag'] is True:  # need to stop the process
                 stop_data_generator()
-                exit(0)
+                sys.exit(0)
                 # pass
             if isinstance(batch, str):
                 epoch += 1

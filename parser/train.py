@@ -509,7 +509,8 @@ if __name__ == "__main__":
     args.world_size = args.gpus = gpu_number
     print("world_size {}, gpus {}".format(args.world_size, args.gpus))
     # global_variables.init_global_variables()
-    stop_flag = mp.Manager().Value(c_bool, 'False')
+    stop_flag = mp.Manager().dict()
+    stop_flag['stop_flag'] = False
     print(id(stop_flag), stop_flag)
     if args.world_size == 1:
         main(0, args)

@@ -16,9 +16,6 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
-stop_flag = mp.Value(c_bool, False)
-
-
 def parse_config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--info', type=str)
@@ -500,7 +497,7 @@ def init_processes(local_rank, args, backend='nccl'):
 
 
 if __name__ == "__main__":
-    torch.multiprocessing.freeze_support()
+    stop_flag = mp.Value(c_bool, 'False')
     args = parse_config()
     if not os.path.exists(args.ckpt):  # create the ckpt dir @kiro
         os.mkdir(args.ckpt)

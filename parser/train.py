@@ -416,8 +416,8 @@ def main(local_rank, args, global_value=None):
                     loss.backward()  # loss backward
             # gold amr data
             # global stop_flag
-            print("local rank", local_rank, "stop_flag", global_dict['stop_flag'], flush=True)
-            if global_dict['stop_flag'] is True:  # need to stop the process
+            print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
+            if global_value['stop_flag'] is True:  # need to stop the process
                 stop_data_generator()
                 exit(0)
             if isinstance(batch, str):
@@ -427,7 +427,7 @@ def main(local_rank, args, global_value=None):
                 try:
                     if args.world_size > 1:
                         if dist.get_rank() == 0:
-                            global_dict['stop_flag'] = True
+                            global_value['stop_flag'] = True
                     batch = move_to_device(batch, model.device)  # data moved to device
                     # print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
                     concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(

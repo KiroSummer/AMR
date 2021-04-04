@@ -513,4 +513,5 @@ if __name__ == "__main__":
     if args.world_size == 1:
         main(0, args)
         exit(0)
+    mp.freeze_support()
     mp.spawn(init_processes, args=(args,), nprocs=args.gpus)

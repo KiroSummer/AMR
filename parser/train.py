@@ -493,6 +493,8 @@ def init_processes(local_rank, args, mp_value, backend='nccl'):
     os.environ['MASTER_PORT'] = args.MASTER_PORT
     print("local_rank", local_rank, id(mp_value), mp_value)
     print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
+    mp_value['stop_flag'] = True
+    print("local_rank", local_rank, id(mp_value), mp_value)
     exit(0)
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)
     main(local_rank, args)

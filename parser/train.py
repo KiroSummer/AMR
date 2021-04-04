@@ -418,7 +418,7 @@ def main(local_rank, args):
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
             # gold amr data
-            global stop_flag
+            # global stop_flag
             print("stop_flag", id(stop_flag), stop_flag, flush=True)
             if stop_flag is True:  # need to stop the process
                 stop_data_generator()

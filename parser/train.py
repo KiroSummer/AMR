@@ -16,9 +16,6 @@ from parser.postprocess import PostProcessor
 from parser.work import parse_data
 
 
-stop_flag = mp.Manager().Value(c_bool, 'False')
-
-
 def parse_config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--info', type=str)
@@ -162,7 +159,7 @@ def load_vocabs(args):
     return vocabs, lexical_mapping
 
 
-def main(local_rank, args):
+def main(local_rank, args, stop_flag):
     vocabs, lexical_mapping = load_vocabs(args)
     bert_encoder = None
     if args.with_bert:
@@ -491,12 +488,12 @@ def main(local_rank, args):
     exit(0)
 
 
-def init_processes(local_rank, args, backend='nccl'):
+def init_processes(local_rank, args, stop_flag, backend='nccl'):
     os.environ['MASTER_ADDR'] = args.MASTER_ADDR
     os.environ['MASTER_PORT'] = args.MASTER_PORT
     print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)
-    main(local_rank, args)
+    main(local_rank, args, stop_flag)
 
 
 if __name__ == "__main__":
@@ -510,8 +507,8 @@ if __name__ == "__main__":
     args.world_size = args.gpus = gpu_number
     print("world_size {}, gpus {}".format(args.world_size, args.gpus))
     # global_variables.init_global_variables()
+    stop_flag = mp.Manager().Value(c_bool, 'False')
     if args.world_size == 1:
-        main(0, args)
+        main(0, args, stop_flag)
         exit(0)
-    mp.freeze_support()
-    mp.spawn(init_processes, args=(args,), nprocs=args.gpus)
+    mp.spawn(init_processes, args=(args, stop_flag,), nprocs=args.gpus)

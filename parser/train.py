@@ -159,7 +159,7 @@ def load_vocabs(args):
     return vocabs, lexical_mapping
 
 
-def main(local_rank, args):
+def main(local_rank, args, global_value=None):
     vocabs, lexical_mapping = load_vocabs(args)
     bert_encoder = None
     if args.with_bert:
@@ -416,8 +416,8 @@ def main(local_rank, args):
                     loss.backward()  # loss backward
             # gold amr data
             # global stop_flag
-            print("stop_flag", id(stop_flag), stop_flag, flush=True)
-            if stop_flag is True:  # need to stop the process
+            print("local rank", local_rank, "stop_flag", global_dict['stop_flag'], flush=True)
+            if global_dict['stop_flag'] is True:  # need to stop the process
                 stop_data_generator()
                 exit(0)
             if isinstance(batch, str):
@@ -425,6 +425,9 @@ def main(local_rank, args):
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
                 try:
+                    if args.world_size > 1:
+                        if dist.get_rank() == 0:
+                            global_dict['stop_flag'] = True
                     batch = move_to_device(batch, model.device)  # data moved to device
                     # print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
                     concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
@@ -491,16 +494,9 @@ def main(local_rank, args):
 def init_processes(local_rank, args, mp_value, backend='nccl'):
     os.environ['MASTER_ADDR'] = args.MASTER_ADDR
     os.environ['MASTER_PORT'] = args.MASTER_PORT
-    print("local_rank", local_rank, id(mp_value), mp_value)
     print("init process rank {}, word_size {}".format(args.start_rank + local_rank, args.world_size))
-    if local_rank == 0:
-        mp_value['stop_flag'] = True
-    if local_rank == 1:
-        time.sleep(5)
-    print("local_rank", local_rank, id(mp_value), mp_value)
-    exit(0)
     dist.init_process_group(backend, rank=args.start_rank + local_rank, world_size=args.world_size)
-    main(local_rank, args)
+    main(local_rank, args, mp_value)
 
 
 if __name__ == "__main__":
@@ -514,10 +510,10 @@ if __name__ == "__main__":
     args.world_size = args.gpus = gpu_number
     print("world_size {}, gpus {}".format(args.world_size, args.gpus))
     # global_variables.init_global_variables()
-    stop_flag = mp.Manager().dict()
-    stop_flag['stop_flag'] = False
-    print(id(stop_flag), stop_flag)
+    global_dict = mp.Manager().dict()
+    global_dict['stop_flag'] = False
+    print(id(global_dict), global_dict)
     if args.world_size == 1:
         main(0, args)
         exit(0)
-    mp.spawn(init_processes, args=(args, stop_flag,), nprocs=args.gpus)
+    mp.spawn(init_processes, args=(args, global_dict,), nprocs=args.gpus)

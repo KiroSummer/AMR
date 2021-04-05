@@ -414,13 +414,14 @@ def main(local_rank, args, global_value=None):
                     # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
-            # gold amr data
             # global stop_flag
             print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
             if global_value['stop_flag'] is True:  # need to stop the process
                 stop_data_generator()
                 os._exit(0)
                 # pass
+            # gold amr data
+            batch = queue.get()
             if isinstance(batch, str):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)

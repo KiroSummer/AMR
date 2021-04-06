@@ -129,7 +129,6 @@ def dynamic_data_proc(data, queue):
     while True:
         for x in data:
             queue.put(x)
-        queue.put("EPOCHDONE")
 
 
 def load_vocabs(args):
@@ -173,8 +172,10 @@ def main(local_rank, args, global_value=None):
     torch.set_num_threads(4)
     torch.cuda.set_device(local_rank)
     device = torch.device('cuda', local_rank)  # totally read @kiro
-    _fine_tuning = False if args.fine_tuning_lr is None else True
-    _pre_training = False if args.silver_train_data is None else True
+
+    _pre_training = True if args.silver_train_data is not None and args.fine_tuning_lr is None else False
+    _fine_tuning = True if args.fine_tuning_lr is not None else False
+    _mtl_fine_tuning = True if args.silver_train_data is not None and args.fine_tuning_lr is not None else False
 
     print("#"*30)
     print("Concerned important config details")
@@ -288,80 +289,79 @@ def main(local_rank, args, global_value=None):
     print("Start training...")
     is_start = True
 
-    # pre_training = not _fine_tuning and _pre_training and not args.fine_tuning_lr
-    # if not _fine_tuning and _pre_training:  # if the training process is to train a pre-trained model
-    #     while epoch < max_training_epochs:
-    #         while True:
-    #             batch = silver_queue.get()
-    #             if isinstance(batch, str):
-    #                 epoch += 1
-    #                 continue
-    #             else:
-    #                 batch = move_to_device(batch, model.device)  # data moved to device
-    #                 silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
-    #                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
-    #                 # model forward, please note that graph_arc_loss is not used
-    #                 loss = (
-    #                                    silver_concept_loss + silver_arc_loss + silver_rel_loss) / args.batches_per_update  # compute
-    #                 loss_value = loss.item()
-    #                 silver_concept_loss_value = silver_concept_loss.item()
-    #                 silver_arc_loss_value = silver_arc_loss.item()
-    #                 silver_rel_loss_value = silver_rel_loss.item()
-    #                 # concept_repr_loss_value = concept_repr_loss.item()
-    #                 silver_loss_avg = silver_loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
-    #                 silver_concept_loss_avg = silver_concept_loss_avg * 0.8 + 0.2 * silver_concept_loss_value
-    #                 silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
-    #                 silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
-    #                 # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
-    #                 loss = silver_data_loss_weight * loss
-    #                 loss.backward()  # loss backward
-    #
-    #                 used_batches += 1
-    #                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
-    #                     continue
-    #
-    #                 batches_acm += 1
-    #                 if args.world_size > 1:
-    #                     del silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss  # can this help reduce OOM?
-    #                     average_gradients(model)
-    #                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-    #                 lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps,
-    #                                args.fine_tuning_lr)
-    #                 optimizer.step()  # update the model parameters according to the losses @kiro
-    #                 optimizer.zero_grad()
-    #                 if args.world_size == 1 or (dist.get_rank() == 0):
-    #                     if batches_acm % args.print_every == -1 % args.print_every:
-    #                         print(
-    #                             'Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
-    #                                 epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg,
-    #                                 concept_repr_loss_avg, srl_loss_avg))
-    #                         print(
-    #                             '==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
-    #                                 silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
-    #                             )
-    #                         if model.loss_weight:
-    #                             print('model loss weights', model.loss_weights)
-    #                         model.train()
-    #                     if (
-    #                             batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
-    #                         model.eval()
-    #                         output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
-    #                         parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
-    #                         torch.cuda.empty_cache()
-    #
-    #                         saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
-    #                         torch.save({'args': args,
-    #                                     'model': model.state_dict(),
-    #                                     'batches_acm': batches_acm,
-    #                                     'optimizer': optimizer.state_dict()},
-    #                                    saved_model)
-    #                         eval_task = MyThread(eval_tool.eval,
-    #                                              (output_dev_file, saved_model, not args.no_post_process))
-    #                         eval_task.start()
-    #                         model.train()
-    #                 break
-    #     print("Training process is done.")  # @kiro
-    #     exit(0)
+    if _pre_training:  # if the training process is to train a pre-trained model
+        while epoch < max_training_epochs:
+            while True:
+                batch = silver_queue.get()
+                if isinstance(batch, str):
+                    epoch += 1
+                    continue
+                else:
+                    batch = move_to_device(batch, model.device)  # data moved to device
+                    silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss = model.forward(
+                        batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
+                    # model forward, please note that graph_arc_loss is not used
+                    loss = (
+                                       silver_concept_loss + silver_arc_loss + silver_rel_loss) / args.batches_per_update  # compute
+                    loss_value = loss.item()
+                    silver_concept_loss_value = silver_concept_loss.item()
+                    silver_arc_loss_value = silver_arc_loss.item()
+                    silver_rel_loss_value = silver_rel_loss.item()
+                    # concept_repr_loss_value = concept_repr_loss.item()
+                    silver_loss_avg = silver_loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
+                    silver_concept_loss_avg = silver_concept_loss_avg * 0.8 + 0.2 * silver_concept_loss_value
+                    silver_arc_loss_avg = silver_arc_loss_avg * 0.8 + 0.2 * silver_arc_loss_value
+                    silver_rel_loss_avg = silver_rel_loss_avg * 0.8 + 0.2 * silver_rel_loss_value
+                    # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
+                    loss = silver_data_loss_weight * loss
+                    loss.backward()  # loss backward
+
+                    used_batches += 1
+                    if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
+                        continue
+
+                    batches_acm += 1
+                    if args.world_size > 1:
+                        del silver_concept_loss, silver_arc_loss, silver_rel_loss, silver_graph_arc_loss  # can this help reduce OOM?
+                        average_gradients(model)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                    lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps,
+                                   args.fine_tuning_lr)
+                    optimizer.step()  # update the model parameters according to the losses @kiro
+                    optimizer.zero_grad()
+                    if args.world_size == 1 or (dist.get_rank() == 0):
+                        if batches_acm % args.print_every == -1 % args.print_every:
+                            print(
+                                'Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
+                                    epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg,
+                                    concept_repr_loss_avg, srl_loss_avg))
+                            print(
+                                '==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
+                                    silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
+                                )
+                            if model.loss_weight:
+                                print('model loss weights', model.loss_weights)
+                            model.train()
+                        if (
+                                batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
+                            model.eval()
+                            output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
+                            parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
+                            torch.cuda.empty_cache()
+
+                            saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
+                            torch.save({'args': args,
+                                        'model': model.state_dict(),
+                                        'batches_acm': batches_acm,
+                                        'optimizer': optimizer.state_dict()},
+                                       saved_model)
+                            eval_task = MyThread(eval_tool.eval,
+                                                 (output_dev_file, saved_model, not args.no_post_process))
+                            eval_task.start()
+                            model.train()
+                    break
+        print("Training process is done.")  # @kiro
+        exit(0)
 
     def stop_data_generator():
         train_data_generator.terminate()
@@ -392,7 +392,7 @@ def main(local_rank, args, global_value=None):
             break
         while True:
             is_start = False
-            if _fine_tuning and _pre_training:
+            if _mtl_fine_tuning:
                 batch = silver_queue.get()
                 if isinstance(batch, str):
                     continue

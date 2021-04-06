@@ -281,6 +281,7 @@ class DynamicDataLoader(object):
         self.train = for_train
         self.unk_rate = 0.
         self.count = 0
+        self.num_sentences=50000
 
     def read_a_part_data(self, num_sentences=50000):
         self.data = []
@@ -345,6 +346,8 @@ class DynamicDataLoader(object):
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)
+        if batches < self.num_sentences:  # TODO, must assure the total silver data number % self.num_sentences != 0
+            yield 'EPOCHDONE'
 
 
 

@@ -255,7 +255,7 @@ def main(local_rank, args, global_value=None):
     queue = mp.Queue(10)
     train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
 
-    if _fine_tuning and _pre_training:
+    if _mtl_fine_tuning or _pre_training:
         silver_train_data = DynamicDataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)
         silver_train_data.set_unk_rate(args.unk_rate)
         silver_queue = mp.Queue(10)
@@ -272,7 +272,7 @@ def main(local_rank, args, global_value=None):
         srl_train_data_generator.start()
 
     train_data_generator.start()
-    if _fine_tuning and _pre_training:
+    if _mtl_fine_tuning or _pre_training:
         print("silver_train_data_generator start ")
         silver_train_data_generator.start()
         print("silver_train_data_generator start done! ")

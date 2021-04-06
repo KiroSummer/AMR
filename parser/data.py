@@ -346,7 +346,7 @@ class DynamicDataLoader(object):
 
         for batch in batches:
             yield batchify(batch, self.vocabs, self.unk_rate)
-        if batches < self.num_sentences:  # TODO, must assure the total silver data number % self.num_sentences != 0
+        if len(batches) < self.num_sentences:  # TODO, must assure the total silver data number % self.num_sentences != 0
             yield 'EPOCHDONE'
 
 

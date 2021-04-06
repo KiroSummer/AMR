@@ -191,6 +191,7 @@ def main(local_rank, args, global_value=None):
     print("silver_data_loss_weight", args.silver_data_loss_weight)
     print("_pre_training", _pre_training)
     print("Fine tuning?", _fine_tuning)
+    print("MTL Fine tuning?", _mtl_fine_tuning)
     print("#"*30)
 
     if args.use_srl is True:

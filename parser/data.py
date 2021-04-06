@@ -342,13 +342,16 @@ class DynamicDataLoader(object):
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
             random.shuffle(batches)
-            print("Total {} training batches.".format(len(batches)))
+            print("Total {} training batches.".format(len(batches)), flush=True)
+
+        def get_size(data):
+            return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
 
         for batch in batches:
+            print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
             yield batchify(batch, self.vocabs, self.unk_rate)
-        if len(batches) < self.num_sentences:  # TODO, must assure the total silver data number % self.num_sentences != 0
+        if len(idx) < self.num_sentences:  # TODO, must assure the total silver data number % self.num_sentences != 0
             yield 'EPOCHDONE'
-
 
 
 def get_all_gold_predicates(srl):

@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, math
 
 from ..parser.data import DUM, END, CLS, NIL, PAD, UNK
 
@@ -21,8 +21,8 @@ class Vocab(object):
         with open(filename, 'w') as output_file:
             sorted_p = sorted(self._priority.items(), key=lambda item: item[1], reverse=True)
             for x in sorted_p:
-                output_file.write(x[0] + '\t' + str(x[1]) + '\n')
-                
+                output_file.write(x[0] + '\t' + str(math.ceil(x[1] / 3.0)) + '\n')
+
 
 if __name__ == "__main__":
     folder1 = sys.argv[1]

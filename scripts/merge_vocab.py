@@ -1,7 +1,5 @@
 import os, sys, math
 
-from ..parser.data import DUM, END, CLS, NIL, PAD, UNK
-
 
 class Vocab(object):
     def __init__(self, name):

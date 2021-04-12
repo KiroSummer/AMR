@@ -51,7 +51,7 @@ if __name__ == "__main__":
             if file.endswith('_vocab'):
                 file_prefix = file[:-6]
                 print('read from {}, prefix'.format(os.path.join(dir_path, file)), file_prefix)
-                vocabs[file_prefix].read_from_file(file)
+                vocabs[file_prefix].read_from_file(os.path.join(dir_path, file))
 
     read_from_dir(folder1)
     read_from_dir(folder2)

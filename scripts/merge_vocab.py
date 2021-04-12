@@ -50,7 +50,7 @@ if __name__ == "__main__":
         for file in os.listdir(dir_path):
             if file.endswith('_vocab'):
                 file_prefix = file[:-6]
-                print('read from {} / {}'.format(dir_path, file_prefix))
+                print('read from {}, prefix'.format(os.path.join(dir_path, file)), file_prefix)
                 vocabs[file_prefix].read_from_file(file)
 
     read_from_dir(folder1)

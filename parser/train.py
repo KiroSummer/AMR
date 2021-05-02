@@ -86,6 +86,7 @@ def parse_config():
     parser.add_argument('--dev_batch_size', type=int)
     parser.add_argument('--lr_scale', type=float)
     parser.add_argument('--fine_tuning_lr', type=float)
+    parser.add_argument('--fixed_lr', type=float)
     parser.add_argument('--weight_decay', type=float)
     parser.add_argument('--warmup_steps', type=int)
     parser.add_argument('--resume_ckpt', type=str, default=None)
@@ -176,6 +177,10 @@ def main(local_rank, args, global_value=None):
     _pre_training = True if args.silver_train_data is not None and args.fine_tuning_lr is None else False
     _fine_tuning = True if args.fine_tuning_lr is not None else False
     _mtl_fine_tuning = True if args.silver_train_data is not None and args.fine_tuning_lr is not None else False
+
+    if args.fixed_lr is not None:
+        print("using fixed lr ", args.fixed_lr)
+        args.fine_tuning_lr = args.fixed_lr
 
     print("#"*30)
     print("Concerned important config details")

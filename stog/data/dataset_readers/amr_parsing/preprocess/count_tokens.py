@@ -20,6 +20,7 @@ class DependencyParser:
             if i % 1000 == 0:
                 logger.info('Processed {} examples.'.format(i))
             # self.parser_sentence(amr)
+            print(amr.tokens)
             total_tokens += len(amr.tokens)
             total_concepts += 0
             yield amr

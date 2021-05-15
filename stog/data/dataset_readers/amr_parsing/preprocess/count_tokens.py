@@ -21,10 +21,13 @@ class DependencyParser:
                 logger.info('Processed {} examples.'.format(i))
             # self.parser_sentence(amr)
             print(amr.tokens)
+            print(amr.graph.get_list_node())
             total_tokens += len(amr.tokens)
-            total_concepts += 0
+            total_concepts += len(amr.graph.get_list_node())
             yield amr
         print("total tokens", total_tokens)
+        print("total concepts", total_concepts)
+        print("total", total_tokens + total_concepts)
 
     def parser_sentence(self, amr):
         tokens = amr.tokens

@@ -86,7 +86,7 @@ class avg_matrixes():
         self.res_con_LL = sum([x[0] for x in self.matrixes]) / self.num
         self.res_arc_LL = sum([x[1] for x in self.matrixes]) / self.num
         self.res_rel_LL = sum([x[2] for x in self.matrixes]) / self.num
-        self.next_time = time.time() + 3.0
+        self.next_time = time.time() + 5.0
 
     def return_ans(self):
         return self.res_con_LL, self.res_arc_LL, self.res_rel_LL, self.next_time

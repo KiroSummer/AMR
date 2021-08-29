@@ -222,9 +222,9 @@ def search_by_batch(model, beams, mem_dict, args):
         avg.avg()
         print("compute avg")
         time.sleep(1)
-        print("before=====", con_ll.size(), arc_ll.size(), rel_ll.size())
+        print("before=====", con_ll.size(), arc_ll.size(), rel_ll.size(), time.time())
         con_ll, arc_ll, rel_ll, next_time = avg.return_ans()
-        print("after=====", con_ll.size(), arc_ll.size(), rel_ll.size())
+        print("after=====", con_ll.size(), arc_ll.size(), rel_ll.size(), time.time())
         print("return ans")
         while time.time() < next_time:
             time.sleep(1)

@@ -2,7 +2,7 @@ import multiprocessing
 
 
 def _init():
-    global global_dict
+    global _global_dict
     _global_dict = {}
     # global stop_flag
     # stop_flag = False

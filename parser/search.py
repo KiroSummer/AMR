@@ -4,6 +4,7 @@ from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
 from parser.utils import repreat_matrix
 import time
+import parser.global_variables as global_variables
 
 """
  Beam search by batch
@@ -213,7 +214,7 @@ def search_by_batch(model, beams, mem_dict, args):
         new_sate_dict, local_vocab, con_ll, arc_ll, rel_ll = model.decode_step_only_computing(inp, state_dict, cur_mem_dict, offset, beams[0].beam_size, args)
 
         # ensembleing top score level
-        global avg
+        avg = global_variables.get_value('avg')
         avg.append(con_ll, arc_ll, rel_ll)
         time.sleep(5)
         avg.avg()

@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from parser.data import END, UNK
 from parser.AMRGraph import is_attr_or_abs_form
 from parser.utils import repreat_matrix
+import time
 
 """
  Beam search by batch
@@ -212,8 +213,14 @@ def search_by_batch(model, beams, mem_dict, args):
         new_sate_dict, local_vocab, con_ll, arc_ll, rel_ll = model.decode_step_only_computing(inp, state_dict, cur_mem_dict, offset, beams[0].beam_size, args)
 
         # ensembleing top score level
-        global ensemble_scoring
-        con_ll, arc_ll, rel_ll = ensemble_scoring(con_ll, arc_ll, rel_ll)
+        global avg
+        avg.append(con_ll, arc_ll, rel_ll)
+        time.sleep(5)
+        avg.avg()
+        time.sleep(5)
+        con_ll, arc_ll, rel_ll = avg.return_ans()
+        time.sleep(5)
+        avg.reset()
 
         state_dict, results = model.computing_after_score_ensemble(
             offset, new_sate_dict, state_dict, con_ll, arc_ll, rel_ll, beams[0].beam_size, local_vocab

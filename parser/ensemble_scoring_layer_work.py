@@ -9,7 +9,8 @@ from parser.utils import move_to_device
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.match import match
 
-import argparse, os, re
+from threading import Thread
+import argparse, os, re, threading
 
 
 def parse_config():
@@ -50,12 +51,60 @@ def show_progress(model, dev_data):
     return loss_acm
 
 
+class work_thread(Thread):
+    def __init__(self, func, args):
+        super(work_thread, self).__init__()
+        self.func = func
+        self.args = args
+
+    def run(self):
+        self.res = self.func(*self.args)
+
+    def get_result(self):
+        return self.res
+
+
+class avg_matrixes():
+    def __init__(self, model_num):
+        self.matrixes = []
+        self.num = model_num
+        self.idx = 0
+
+    def append(self, con_LL, arc_LL, rel_LL):
+        self.matrixes.append([con_LL, arc_LL, rel_LL])
+        self.idx += 1
+        assert self.idx <= self.num
+
+    def reset(self):
+        self.matrixes = []
+        self.idx = 0
+
+    def avg(self):
+        self.res_con_LL = sum([x[0] for x in self.matrixes]) / self.num
+        self.res_arc_LL = sum([x[1] for x in self.matrixes]) / self.num
+        self.res_rel_LL = sum([x[1] for x in self.matrixes]) / self.num
+
+    def return_ans(self):
+        return self.res_con_LL, self.res_arc_LL, self.res_rel_LL
+
+
 def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
     res = dict()
     concept_batch = []
     relation_batch = []
-    beams = models[0].work(batch, beam_size, max_time_step, args=args)
-    beams = models[1].work(batch, beam_size, max_time_step, args=args)
+    global avg
+    avg = avg_matrixes(len(models))
+
+    t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, args))
+    t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, args))
+
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    beams = t2.get_result()
+
     score_batch = []
     for beam in beams:
         best_hyp = beam.get_k_best(1, alpha)[0]

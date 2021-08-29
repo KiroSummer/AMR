@@ -1,11 +1,23 @@
 import multiprocessing
 
 
-def init_global_variables():
-    global stop_flag
-    stop_flag = False
-    global mylist
-    mylist = []
+def _init():
+    global global_dict
+    _global_dict = {}
+    # global stop_flag
+    # stop_flag = False
+    # global mylist
+    # mylist = []
+    # global avg
+    # avg = avg_matrixes(2)
+
+
+def set_value(key, value):
+    _global_dict[key] = value
+
+
+def get_value(key):
+    return _global_dict[key]
 
 
 multiprocessing.freeze_support()

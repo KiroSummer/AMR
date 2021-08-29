@@ -8,6 +8,7 @@ from parser.extract import LexicalMap
 from parser.utils import move_to_device
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.match import match
+import parser.global_variables as global_variables
 
 from threading import Thread
 import argparse, os, re, threading, time
@@ -93,8 +94,6 @@ def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
     res = dict()
     concept_batch = []
     relation_batch = []
-    global avg
-    print(type(avg))
 
     t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, 1, args))
     t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, 1, args))
@@ -244,6 +243,8 @@ if __name__ == "__main__":
 
     # loss = show_progress(model, test_data)
     pp = PostProcessor(vocabs['rel'])
-    avg = avg_matrixes(2)
+    global_variables._init()
+    global_variables.set_value('avg', avg_matrixes(2))
+
     parse_data(models, pp, another_test_data, args.test_data, args.test_data + '.' + args.output_suffix, args,
                args.beam_size, args.alpha, args.max_time_step)

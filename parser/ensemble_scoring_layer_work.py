@@ -93,6 +93,8 @@ def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
     res = dict()
     concept_batch = []
     relation_batch = []
+    global avg
+    print(type(avg))
 
     t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, 1, args))
     t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, 1, args))

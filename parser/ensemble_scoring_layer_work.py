@@ -56,6 +56,7 @@ class work_thread(Thread):
         super(work_thread, self).__init__()
         self.func = func
         self.args = args
+        self.res = None
 
     def run(self):
         self.res = self.func(*self.args)

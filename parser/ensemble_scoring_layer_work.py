@@ -96,15 +96,14 @@ def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
     global avg
     avg = avg_matrixes(len(models))
 
-    t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, args))
-    t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, args))
+    t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, 1, args))
+    t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, 1, args))
 
     t1.start()
     t2.start()
 
     t1.join()
     t2.join()
-    time.sleep(10)
     beams = t2.get_result()
 
     score_batch = []

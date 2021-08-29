@@ -10,7 +10,7 @@ from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.match import match
 
 from threading import Thread
-import argparse, os, re, threading
+import argparse, os, re, threading, time
 
 
 def parse_config():
@@ -101,9 +101,10 @@ def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
 
     t1.start()
     t2.start()
+
     t1.join()
     t2.join()
-
+    time.sleep(10)
     beams = t2.get_result()
 
     score_batch = []

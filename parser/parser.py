@@ -176,6 +176,7 @@ class Parser(nn.Module):
 
     def work(self, data, beam_size, max_time_step, min_time_step=1, args=None):  # beam size == 8
         with torch.no_grad():
+            print("set no grad")
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
                     data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'], data['word_char'],

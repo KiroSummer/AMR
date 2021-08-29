@@ -212,6 +212,96 @@ class Parser(nn.Module):
         batch_adj = torch.stack(adjs)
         return batch_adj
 
+    def decode_step_only_computing(self, inp, state_dict, mem_dict, offset, topk, args):
+        step_concept, step_concept_char = inp
+        word_repr = snt_state = mem_dict['snt_state']
+        word_mask = snt_padding_mask = mem_dict['snt_padding_mask']
+        # probe = mem_dict['probe']
+        copy_seq = mem_dict['copy_seq']
+        local_vocabs = mem_dict['local_idx2token']
+        _, bsz, _ = word_repr.size()
+
+        new_state_dict = {}
+
+        concept_repr = self.embed_scale * self.concept_encoder(step_concept_char, step_concept) + self.embed_positions(
+            step_concept, offset)
+        concept_repr = self.concept_embed_layer_norm(concept_repr)
+        adj = state_dict['adj']
+        if args.decoder_graph is False:
+            adj = None
+        concept_reprs = []
+        for idx, layer in enumerate(self.graph_encoder.layers):  # only for encoding concepts @kiro
+            name_i = 'concept_repr_%d' % idx
+            if name_i in state_dict:
+                prev_concept_repr = state_dict[name_i]
+                new_concept_repr = torch.cat([prev_concept_repr, concept_repr], 0)
+            else:  # for start position DUM
+                new_concept_repr = concept_repr
+
+            new_state_dict[name_i] = new_concept_repr
+            concept_repr, arc_weight, alignment_weight, attn_x_repr = layer(
+                concept_repr, kv=new_concept_repr,
+                external_memories=word_repr, external_padding_mask=word_mask,
+                need_weights='max'
+            )
+            concept_reprs.append(concept_repr)
+        name = 'graph_state'
+        if name in state_dict:
+            prev_graph_state = state_dict[name]
+            new_graph_state = torch.cat([prev_graph_state, concept_repr], 0)
+        else:
+            new_graph_state = concept_repr
+        new_state_dict[name] = new_graph_state
+
+        name = 'graph_repr'  # to store the graph representation for relation identification
+        if name in state_dict:
+            prev_graph_state = state_dict[name]
+            new_graph_state = torch.cat([prev_graph_state, concept_reprs[self.middle_decoder_repr_index]], 0)
+        else:
+            new_graph_state = concept_reprs[self.middle_decoder_repr_index]
+        new_state_dict[name] = new_graph_state
+        # Transformer decoder, [set_state, graph_state]
+        conc_ll, arc_ll, rel_ll = self.decoder(
+            concept_repr, alignment_weight,
+            new_graph_state, arc_weight,
+            copy_seq, work=True
+        )
+        return new_state_dict, local_vocabs, conc_ll, arc_ll, rel_ll
+
+    def computing_after_score_ensemble(self, offset, new_state_dict, state_dict, conc_ll, arc_ll, rel_ll, topk, local_vocabs):
+        for i in range(offset):  # restore these variables from old state -> new state @kiro
+            name = 'arc_ll%d' % i
+            new_state_dict[name] = state_dict[name]
+            name = 'rel_ll%d' % i
+            new_state_dict[name] = state_dict[name]
+        name = 'arc_ll%d' % offset
+        new_state_dict[name] = arc_ll
+        name = 'rel_ll%d' % offset
+        new_state_dict[name] = rel_ll
+
+        pred_arc_prob = torch.exp(arc_ll)
+        arc_confidence = torch.log(torch.max(pred_arc_prob, 1 - pred_arc_prob))  # what is this? @kiro
+        arc_confidence[:, :, 0] = 0.  # [1, bsz, steps], 0 means the arc to dummy @kiro TODO
+        # pred_arc = torch.lt(pred_arc_prob, 0.5)
+        # pred_arc[:,:,0] = 1
+        # rel_confidence = rel_ll.masked_fill(pred_arc, 0.).sum(-1, keepdim=True)
+        LL = conc_ll + arc_confidence.sum(-1, keepdim=True)  # + rel_confidence, joint concept and arc during decoding
+
+        def idx2token(idx, local_vocab):
+            if idx in local_vocab:
+                return local_vocab[idx]
+            return self.vocabs['predictable_concept'].idx2token(idx)
+
+        topk_scores, topk_token = torch.topk(LL.squeeze(0), topk, 1)  # bsz x k  # return values, indices @kiro
+
+        results = []  # results only contains the concepts, no edges. @kiro
+        for s, t, local_vocab in zip(topk_scores.tolist(), topk_token.tolist(), local_vocabs):
+            res = []
+            for score, token in zip(s, t):
+                res.append((idx2token(token, local_vocab), score))
+            results.append(res)
+        return new_state_dict, results
+
     def decode_step(self, inp, state_dict, mem_dict, offset, topk, args):
         step_concept, step_concept_char = inp
         word_repr = snt_state = mem_dict['snt_state']

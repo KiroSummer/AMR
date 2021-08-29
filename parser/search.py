@@ -216,7 +216,7 @@ def search_by_batch(model, beams, mem_dict, args):
         # ensembleing top score level
         avg = global_variables.get_value('avg')
         print("get avg")
-        time.sleep(5)
+        time.sleep(2)
         avg.append(con_ll, arc_ll, rel_ll)
         print("append value")
         time.sleep(1)

@@ -199,5 +199,5 @@ if __name__ == "__main__":
 
     # loss = show_progress(model, test_data)
     pp = PostProcessor(vocabs['rel'])
-    parse_data(model, pp, another_test_data, args.test_data, test_model + args.output_suffix, args,
+    parse_data(model, pp, another_test_data, args.test_data, args.test_data + '.' + args.output_suffix, args,
                args.beam_size, args.alpha, args.max_time_step)

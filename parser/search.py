@@ -218,15 +218,15 @@ def search_by_batch(model, beams, mem_dict, args):
         print("get avg")
         avg.append(con_ll, arc_ll, rel_ll)
         print("append value")
-        time.sleep(5)
+        time.sleep(1)
         avg.avg()
         print("compute avg")
-        time.sleep(5)
+        time.sleep(1)
         con_ll, arc_ll, rel_ll = avg.return_ans()
         print("return ans")
-        time.sleep(5)
+        time.sleep(1)
         avg.reset()
-        
+
         print("compute after scores")
         state_dict, results = model.computing_after_score_ensemble(
             offset, new_sate_dict, state_dict, con_ll, arc_ll, rel_ll, beams[0].beam_size, local_vocab

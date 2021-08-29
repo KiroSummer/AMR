@@ -82,6 +82,7 @@ class avg_matrixes():
         self.idx = 0
 
     def avg(self):
+        assert len(self.matrixes) == 2
         self.res_con_LL = sum([x[0] for x in self.matrixes]) / self.num
         self.res_arc_LL = sum([x[1] for x in self.matrixes]) / self.num
         self.res_rel_LL = sum([x[2] for x in self.matrixes]) / self.num

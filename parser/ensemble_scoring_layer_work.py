@@ -248,5 +248,5 @@ if __name__ == "__main__":
     global_variables._init()
     global_variables.set_value('avg', avg_matrixes(2))
 
-    parse_data(models, pp, another_test_data, args.test_data, args.test_data + '.' + args.output_suffix, args,
+    parse_data(models, pp, another_test_data, args.test_data, 'output' + '.' + args.output_suffix, args,
                args.beam_size, args.alpha, args.max_time_step)

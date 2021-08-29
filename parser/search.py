@@ -226,7 +226,7 @@ def search_by_batch(model, beams, mem_dict, args):
         con_ll, arc_ll, rel_ll = avg.return_ans()
         print("after=====", con_ll.size(), arc_ll.size(), rel_ll.size())
         print("return ans")
-        time.sleep(1)
+        time.sleep(5)
         avg.reset()
 
         print("compute after scores")

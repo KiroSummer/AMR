@@ -223,11 +223,13 @@ def search_by_batch(model, beams, mem_dict, args):
         print("compute avg")
         time.sleep(1)
         print("before=====", con_ll.size(), arc_ll.size(), rel_ll.size())
-        con_ll, arc_ll, rel_ll = avg.return_ans()
+        con_ll, arc_ll, rel_ll, next_time = avg.return_ans()
         print("after=====", con_ll.size(), arc_ll.size(), rel_ll.size())
         print("return ans")
-        time.sleep(5)
+        while time.time() < next_time:
+            time.sleep(1)
         avg.reset()
+
 
         print("compute after scores")
         state_dict, results = model.computing_after_score_ensemble(

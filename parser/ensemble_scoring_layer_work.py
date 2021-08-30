@@ -82,7 +82,7 @@ class avg_matrixes():
         self.idx = 0
 
     def avg(self):
-        assert len(self.matrixes) == 2
+        assert len(self.matrixes) == self.num
         self.res_con_LL = sum([x[0] for x in self.matrixes]) / self.num
         self.res_arc_LL = sum([x[1] for x in self.matrixes]) / self.num
         self.res_rel_LL = sum([x[2] for x in self.matrixes]) / self.num
@@ -99,13 +99,17 @@ def parse_batch(models, batch, beam_size, alpha, max_time_step, args=None):
 
     t1 = work_thread(models[0].work, args=(batch, beam_size, max_time_step, 1, args))
     t2 = work_thread(models[1].work, args=(batch, beam_size, max_time_step, 1, args))
+    t3 = work_thread(models[2].work, args=(batch, beam_size, max_time_step, 1, args))
 
     t1.start()
     t2.start()
+    t3.start()
 
     t1.join()
     t2.join()
-    beams = t2.get_result()
+    t3.join()
+
+    beams = t3.get_result()
 
     score_batch = []
     for beam in beams:
@@ -246,7 +250,7 @@ if __name__ == "__main__":
     # loss = show_progress(model, test_data)
     pp = PostProcessor(vocabs['rel'])
     global_variables._init()
-    global_variables.set_value('avg', avg_matrixes(2))
+    global_variables.set_value('avg', avg_matrixes(len(models)))
 
     parse_data(models, pp, another_test_data, args.test_data, 'output' + '.' + args.output_suffix, args,
                args.beam_size, args.alpha, args.max_time_step)

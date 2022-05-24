@@ -54,8 +54,10 @@ class BertEncoder(BertModel):
         token_type_ids = None
         attention_mask = input_ids.ne(0)
 
-        encoded_layers, pooled_output = super(BertEncoder, self).forward(
-            input_ids, attention_mask, token_type_ids)
+        bert_output= super(BertEncoder, self).forward(
+            input_ids, attention_mask, token_type_ids, output_hidden_states=True)
+        encoded_layers = bert_output.last_hidden_state
+        pooled_output = bert_output.pooler_output
         if token_subword_index is None:
             return encoded_layers[:, 1:-1], pooled_output
         else:
@@ -82,6 +84,7 @@ class BertEncoder(BertModel):
         divisor = (num_valid_subwords + pad_mask).unsqueeze(2).type_as(sum_token_reprs)
         # [batch_size, num_tokens, hidden_size]
         avg_token_reprs = sum_token_reprs / divisor
+        # print(f"avg_token_reprs size {avg_token_reprs.size()}")
         return avg_token_reprs
 
     def max_pooling(self, encoded_layers, token_subword_index):

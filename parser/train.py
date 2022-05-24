@@ -421,7 +421,7 @@ def main(local_rank, args, global_value=None):
                     loss = silver_data_loss_weight * loss
                     loss.backward()  # loss backward
             # global stop_flag
-            print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
+            # print("local rank", local_rank, "stop_flag", global_value['stop_flag'], flush=True)
             if global_value['stop_flag'] is True:  # need to stop the process
                 stop_data_generator()
                 os._exit(0)
@@ -432,27 +432,27 @@ def main(local_rank, args, global_value=None):
                 epoch += 1
                 print('epoch', epoch, 'done', 'batches', batches_acm)
             else:
-                try:
-                    batch = move_to_device(batch, model.device)  # data moved to device
-                    # print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
-                    concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
-                        batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
-                    # model forward, please note that graph_arc_loss is not used
-                    loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
-                    loss_value = loss.item()
-                    concept_loss_value = concept_loss.item()
-                    arc_loss_value = arc_loss.item()
-                    rel_loss_value = rel_loss.item()
-                    # concept_repr_loss_value = concept_repr_loss.item()
-                    loss_avg = loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
-                    concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
-                    arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
-                    rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
-                    # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
-                    loss.backward()  # loss backward
-                    # print("dist {}, training batch done, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
-                except:
-                    print("I find it! the OOM problem", flush=True)
+                # try:
+                batch = move_to_device(batch, model.device)  # data moved to device
+                # print("dist {}, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
+                concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
+                    batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
+                # model forward, please note that graph_arc_loss is not used
+                loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
+                loss_value = loss.item()
+                concept_loss_value = concept_loss.item()
+                arc_loss_value = arc_loss.item()
+                rel_loss_value = rel_loss.item()
+                # concept_repr_loss_value = concept_repr_loss.item()
+                loss_avg = loss_avg * args.batches_per_update * 0.8 + 0.2 * loss_value
+                concept_loss_avg = concept_loss_avg * 0.8 + 0.2 * concept_loss_value
+                arc_loss_avg = arc_loss_avg * 0.8 + 0.2 * arc_loss_value
+                rel_loss_avg = rel_loss_avg * 0.8 + 0.2 * rel_loss_value
+                # concept_repr_loss_avg = concept_repr_loss_avg * 0.8 + 0.2 * concept_repr_loss_value
+                loss.backward()  # loss backward
+                # print("dist {}, training batch done, batch token size".format(dist.get_rank()), batch['tok'].size(), flush=True)
+                # except:
+                #     print("I find it! the OOM problem", flush=True)
 
                 used_batches += 1
                 if not (used_batches % args.batches_per_update == -1 % args.batches_per_update):
@@ -469,11 +469,11 @@ def main(local_rank, args, global_value=None):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
                         epoch, batches_acm, lr, concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
-                        print('==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
-                                silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
-                              )
-                        if model.loss_weight:
-                            print('model loss weights', model.loss_weights)
+                        # print('==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
+                        #         silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
+                        #       )
+                        # if model.loss_weight:
+                        #     print('model loss weights', model.loss_weights)
                         model.train()
                     if (batches_acm > 100 or args.resume_ckpt is not None) and batches_acm % args.eval_every == -1 % args.eval_every:
                         model.eval()

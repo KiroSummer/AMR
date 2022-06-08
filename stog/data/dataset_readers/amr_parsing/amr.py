@@ -30,6 +30,7 @@ class AMR:
     def __init__(self,
                  id=None,
                  sentence=None,
+                 wordid=None,
                  graph=None,
                  tokens=None,
                  lemmas=None,
@@ -41,6 +42,7 @@ class AMR:
                  misc=None):
         self.id = id
         self.sentence = sentence
+        self.wordid = wordid
         self.graph = graph
         self.tokens = tokens
         self.lemmas = lemmas
@@ -95,6 +97,7 @@ class AMR:
         for k, v in dict(
             id=self.id,
             snt=self.sentence,
+            wid=self.wordid,
             tokens=self.tokens,
             lemmas=self.lemmas,
             pos_tags=self.pos_tags,

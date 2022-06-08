@@ -35,20 +35,22 @@ class AMRIO:
                         amr.id = line[len('# ::id '):]
                     elif line.startswith('# ::snt '):
                         amr.sentence = line[len('# ::snt '):]
-                    elif line.startswith('# ::tokens '):
-                        amr.tokens = json.loads(line[len('# ::tokens '):])
-                    elif line.startswith('# ::lemmas '):
-                        amr.lemmas = json.loads(line[len('# ::lemmas '):])
-                    elif line.startswith('# ::pos_tags '):
-                        amr.pos_tags = json.loads(line[len('# ::pos_tags '):])
-                    elif line.startswith('# ::ner_tags '):
-                        amr.ner_tags = json.loads(line[len('# ::ner_tags '):])
-                    elif line.startswith('# ::dependency_edges '):
-                        amr.dependency_edges = json.loads(line[len('# ::dependency_edges '):])
-                    elif line.startswith('# ::dependency_rels '):
-                        amr.dependency_rels = json.loads(line[len('# ::dependency_rels '):])
-                    elif line.startswith('# ::abstract_map '):
-                        amr.abstract_map = json.loads(line[len('# ::abstract_map '):])
+                    elif line.startswith('# ::wid'):
+                        amr.wid = line[len('# ::wid '):]
+                    # elif line.startswith('# ::tokens '):
+                    #     amr.tokens = json.loads(line[len('# ::tokens '):])
+                    # elif line.startswith('# ::lemmas '):
+                    #     amr.lemmas = json.loads(line[len('# ::lemmas '):])
+                    # elif line.startswith('# ::pos_tags '):
+                    #     amr.pos_tags = json.loads(line[len('# ::pos_tags '):])
+                    # elif line.startswith('# ::ner_tags '):
+                    #     amr.ner_tags = json.loads(line[len('# ::ner_tags '):])
+                    # elif line.startswith('# ::dependency_edges '):
+                    #     amr.dependency_edges = json.loads(line[len('# ::dependency_edges '):])
+                    # elif line.startswith('# ::dependency_rels '):
+                    #     amr.dependency_rels = json.loads(line[len('# ::dependency_rels '):])
+                    # elif line.startswith('# ::abstract_map '):
+                    #     amr.abstract_map = json.loads(line[len('# ::abstract_map '):])
                     else:
                         misc_lines.append(line)
                 else:

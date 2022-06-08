@@ -1,0 +1,32 @@
+(aa / mean
+      :arg1 (ab / 叫-04
+            :arg1 (ac / 我)
+            :arg2 (ad / and
+                  :op1 (ae / and
+                        :op1 (af / 拿-01
+                              :destination (ag / 回去)
+                              :arg1 (ai / 发票
+                                    :mod (ak / 修车))
+                              :arg0 ac)
+                        :op2 (al / 交给-01
+                              :purpose (am / 理赔-01
+                                    :arg0 (an / 公司
+                                          :mod (ao / 保险)
+                                          :poss (aq / 对方)
+                                          :arg0 ac))
+                              :arg1 ai
+                              :arg2 an
+                              :arg0 ac))
+                  :op2 (as / and
+                        :op1 (at / 拿-01
+                              :destination (au / 回来)
+                              :arg1 (aw / 发票
+                                    :mod (ax / 修车)
+                                    :poss (az / 对方))
+                              :arg0 ac)
+                        :op2 (ba / 给-01
+                              :purpose (bc / 赔-01
+                                    :arg0 an)
+                              :arg1 aw
+                              :poss ac
+                              :arg2 an)))))

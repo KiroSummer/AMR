@@ -16,7 +16,9 @@ class AMRIO:
 
     @staticmethod
     def read(file_path):
+        count = 1
         with open(file_path, encoding='utf-8') as f:
+            print(f"read data from {file_path}")
             for line in f:
                 line = line.rstrip()
                 if line.startswith('# ::id '):
@@ -29,10 +31,12 @@ class AMRIO:
                 #     dependency_edges = json.loads(line[len('# ::dependency_edges '):])
                 # elif line.startswith('# ::dependency_rels '):
                 #     dependency_rels = json.loads(line[len('# ::dependency_rels '):])
-                else:
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
+                    print(f"{graph_line}")
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
+                    count += 1
+                    print(f"processed {count} samples")
                     yield amr_id, sentence, wid, myamr
 
 
@@ -124,7 +128,7 @@ def read_file(filename):
         sents.append(_sent.strip().split(' '))
         wids.append(_wid)
         amrs.append(_myamr)
-    print('read from %s, %d amrs' % (filename, len(_amr_id)))
+    print('read from %s, %d amrs' % (filename, len(amr_ids)))
     return amr_ids, sents, wids, amrs
 
 

@@ -130,17 +130,17 @@ def ArraysToTensorWithPadding(xs, padding=0):
 
 def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
-    _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
-    _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
-    _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
-    _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
-    _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
+    # _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
+    # _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
+    # _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
+    # _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
+    # _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
     _word_char = ListsofStringToTensor([[CLS] + x['tok'] for x in data], vocabs['word_char'])
 
     local_token2idx = [x['token2idx'] for x in data]
     local_idx2token = [x['idx2token'] for x in data]
     _cp_seq = ListsToTensor([x['cp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
-    _mp_seq = ListsToTensor([x['mp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
+    # _mp_seq = ListsToTensor([x['mp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
 
     concept, edge = [], []
     for x in data:
@@ -168,8 +168,8 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
             r = vocabs['rel'].token2idx(r)
             _rel[v + 1, bidx, u + 1] = r
 
-    ret = {'lem': _lem, 'tok': _tok, 'pos': _pos, 'ner': _ner, 'edge': _edges, 'dep_rel': _dep_rel, 'word_char': _word_char, \
-           'copy_seq': np.stack([_cp_seq, _mp_seq], -1), \
+    ret = {'tok': _tok, 'word_char': _word_char, \
+           'copy_seq': np.array(_cp_seq), \
            'local_token2idx': local_token2idx, 'local_idx2token': local_idx2token, \
            'concept_in': _concept_in, 'concept_char_in': _concept_char_in, \
            'concept_out': _concept_out, 'rel': _rel}
@@ -185,14 +185,14 @@ class DataLoader(object):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train):
         self.data = []
         bert_tokenizer = vocabs.get('bert_tokenizer', None)
-        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*read_file(filename)):
+        for amr_id, token, wid, amr in zip(*read_file(filename)):
             if for_train:
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:
                     continue
-            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + lemma, ['<CLS>'] + token, vocabs['predictable_concept'])
-            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, 'dep_rel': dep_rel,\
-                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
+            cp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + token, vocabs['predictable_concept'])
+            datum = {'amr': amr, 'tok': token,
+                     'cp_seq': cp_seq, \
                      'token2idx': token2idx, 'idx2token': idx2token}
             if bert_tokenizer is not None:
                 bert_token, token_subword_index = bert_tokenizer.tokenize(token)
@@ -252,13 +252,13 @@ class DataLoader(object):
                 num_tokens, data = 0, []
         if data:
             sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
-            print("no split:", sz, len(data))
+            # print("no split:", sz, len(data))
             if sz > GPU_SIZE:
                 # because we only have limited GPU memory
-                print("no split:", sz, len(data))
+                # print("no split:", sz, len(data))
                 recursive_split_data(data, batches)
             else:
-                print("no split:", sz, len(data))
+                # print("no split:", sz, len(data))
                 batches.append(data)
 
         if self.train:  # but the samples in each batch are always the same? @kiro TODO
@@ -266,7 +266,7 @@ class DataLoader(object):
             print("training batches {}. the max GPU_SIZE is {}".format(len(batches), GPU_SIZE))
 
         for batch in batches:
-            print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
+            # print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
             yield batchify(batch, self.vocabs, self.unk_rate)
 
 

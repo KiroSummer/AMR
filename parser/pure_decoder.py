@@ -41,7 +41,7 @@ class ConceptGenerator(nn.Module):
         super(ConceptGenerator, self).__init__()
         self.transfer = nn.Linear(embed_dim, conc_size)
         self.generator = nn.Linear(conc_size, vocabs['predictable_concept'].size)
-        self.diverter = nn.Linear(conc_size, 3)
+        self.diverter = nn.Linear(conc_size, 2)
         self.vocabs = vocabs
         self.dropout = dropout
         self.reset_parameters()
@@ -60,14 +60,14 @@ class ConceptGenerator(nn.Module):
         outs_concept = torch.tanh(self.transfer(outs))
         outs_concept = F.dropout(outs_concept, p=self.dropout, training=self.training)  # concept representation @kiro
 
-        gen_gate, map_gate, copy_gate = F.softmax(self.diverter(outs_concept), -1).chunk(3, dim=-1)  # prob
-        copy_gate = torch.cat([copy_gate, map_gate], -1)
+        gen_gate, copy_gate = F.softmax(self.diverter(outs_concept), -1).chunk(2, dim=-1)  # prob
+        # copy_gate = torch.cat([copy_gate, map_gate], -1)
 
         if non_probabilistic:  # if non probabilistic, then no softmax, for globally training @kiro
             probs = gen_gate * self.generator(outs_concept)
         else:
             probs = gen_gate * F.softmax(self.generator(outs_concept), -1)  # generate prob
-
+        # print(f"copy_seq size:{copy_seq.size()}, copy_gate size:{copy_gate.size()}")
         tot_ext = 1 + copy_seq.max().item()
         vocab_size = probs.size(-1)
 

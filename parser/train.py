@@ -135,14 +135,14 @@ def dynamic_data_proc(data, queue):
 def load_vocabs(args):
     vocabs = dict()
     vocabs['tok'] = Vocab(args.tok_vocab, 5, [CLS])  # remove the token frequence < 5 @kiro
-    vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
-    vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
-    vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
-    vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
+    # vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
+    # vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
+    # vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
+    # vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
-    vocabs['predictable_word'] = Vocab(args.predictable_word_vocab, 5, [DUM, END])  # for AMR-to-Text @kiro
+    # vocabs['predictable_word'] = Vocab(args.predictable_word_vocab, 5, [DUM, END])  # for AMR-to-Text @kiro
     vocabs['concept'] = Vocab(args.concept_vocab, 5, [DUM, END])
     vocabs['rel'] = Vocab(args.rel_vocab, 50, [NIL])
     vocabs['word_char'] = Vocab(args.word_char_vocab, 100, [CLS, END])
@@ -199,28 +199,29 @@ def main(local_rank, args, global_value=None):
     print("MTL Fine tuning?", _mtl_fine_tuning)
     print("#"*30)
 
-    if args.use_srl is True:
-        model = Parser(vocabs,
-                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
-                       args.concept_char_dim, args.concept_dim,
-                       args.cnn_filters, args.char2word_dim, args.char2concept_dim,
-                       args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
-                       args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
-                       device, args.sum_loss,
-                       True, args.soft_mtl, args.loss_weights,
-                       args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
-                       args.ffnn_size, args.ffnn_depth, args.use_gold_predicates, args.use_gold_arguments)
-    else:
-        model = Parser(vocabs,
-                       args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
-                       args.concept_char_dim, args.concept_dim,
-                       args.cnn_filters, args.char2word_dim, args.char2concept_dim,
-                       args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
-                       args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
-                       args.pretrained_file, bert_encoder,
-                       device, args.sum_loss,
-                       False)
+    assert args.use_srl is False
+    # if args.use_srl is True:
+    #     model = Parser(vocabs,
+    #                    args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
+    #                    args.concept_char_dim, args.concept_dim,
+    #                    args.cnn_filters, args.char2word_dim, args.char2concept_dim,
+    #                    args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
+    #                    args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
+    #                    args.pretrained_file, bert_encoder,
+    #                    device, args.sum_loss,
+    #                    True, args.soft_mtl, args.loss_weights,
+    #                    args.pred_size, args.argu_size, args.span_size, vocabs['srl'].size,
+    #                    args.ffnn_size, args.ffnn_depth, args.use_gold_predicates, args.use_gold_arguments)
+    # else:
+    model = Parser(vocabs,
+                    args.word_char_dim, args.word_dim, args.pos_dim, args.ner_dim, args.dep_rel_dim,
+                    args.concept_char_dim, args.concept_dim,
+                    args.cnn_filters, args.char2word_dim, args.char2concept_dim,
+                    args.embed_dim, args.ff_embed_dim, args.num_heads, args.dropout,
+                    args.snt_layers, args.graph_layers, args.inference_layers, args.rel_dim,
+                    args.pretrained_file, bert_encoder,
+                    device, args.sum_loss,
+                    False)
     print(model)
 
     if args.world_size > 1:

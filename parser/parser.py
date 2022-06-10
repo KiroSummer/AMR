@@ -121,7 +121,7 @@ class Parser(nn.Module):
         word_repr = word_repr + self.bert_adaptor(bert_embed)
         word_repr = self.embed_scale * word_repr + self.embed_positions(tok)
         word_repr = self.word_embed_layer_norm(word_repr)
-        word_mask = torch.eq(lem, self.vocabs['lem'].padding_idx)
+        word_mask = torch.eq(tok, self.vocabs['tok'].padding_idx)
         return word_repr, word_mask
 
     def encode_step(self, tok, lem, pos, ner, edge, dep_rel, word_char, use_adj=False):
@@ -138,6 +138,7 @@ class Parser(nn.Module):
     def encode_step_with_bert(self, tok, lem, pos, ner, edge, dep_rel, word_char,
                               bert_token, token_subword_index, use_adj=False):
         word_repr, word_mask = self.encode_bert_input(tok, lem, pos, ner, dep_rel, word_char, bert_token, token_subword_index)
+        # print(word_repr.size(), word_mask.size())
         amr_word_repr, amr_word_mask, amr_probe = self.amr_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
         if self.soft_mtl:
             srl_word_repr, srl_word_mask, srl_probe = self.srl_sentence_encoder(word_repr, word_mask, edge, use_adj=use_adj)
@@ -178,13 +179,13 @@ class Parser(nn.Module):
         with torch.no_grad():
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
-                    data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'], data['word_char'],
+                    data['tok'], None, None, None, None, None, data['word_char'],
                     data['bert_token'], data['token_subword_index'], use_adj=args.encoder_graph
                 )
             else:
                 word_repr, word_mask, probe = self.encode_step(
-                    data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
-                    data['word_char'], use_adj=args.encoder_graph
+                    data['tok'], None, None, None, None, None, data['word_char'], 
+                    use_adj=args.encoder_graph
                 )
 
             mem_dict = {'snt_state': word_repr,
@@ -325,13 +326,13 @@ class Parser(nn.Module):
     def forward(self, data, encoder_graph=False, decoder_graph=False):
         if self.bert_encoder is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
-                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
+                data['tok'], None, None, None, None, None,
                 data['word_char'], data['bert_token'],
                 data['token_subword_index'], use_adj=encoder_graph
             )
         else:
             word_repr, word_mask, probe = self.encode_step(
-                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
+                data['tok'], None, None, None, None, None,
                 data['word_char'], use_adj=encoder_graph
             )
         concept_repr = self.embed_scale * self.concept_encoder(data['concept_char_in'],

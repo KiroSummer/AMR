@@ -15,7 +15,7 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --dev_data ${dataset}/camr_origin_dev.txt.pre  \
                 --srl_data ./data/auto-srl/train.english.conll05.jsonlines.features \
                 --with_bert \
-                --bert_path chinese-roberta-wwm-ext \
+                --bert_path hfl/chinese-roberta-wwm-ext \
                 --word_char_dim 32\
                 --word_dim 300\
                 --pos_dim 0\

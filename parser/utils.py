@@ -18,11 +18,11 @@ class eval:
         self.checkpoint_file = checkpoint(checkpoint_file)
         self.no_performance_improvement = 0
         self.last_smatch = 0.0
-        self.gold_file = gold_file[:len(gold_file) - len('.features.preproc')]
+        self.gold_file = gold_file
         self.early_stops = early_stops
         self.checkpoints_queue = Queue(maxsize=5)  # save the checkpoints
 
-    def eval(self, output_dev_file, saved_model, post_process=True):
+    def eval(self, output_dev_file, saved_model, post_process=False):
         smatch = eval_smatch(output_dev_file + ".pred",  self.gold_file, post_process=post_process)
         now_time = datetime.now()
         time_str = now_time.strftime("%d/%m/%Y %H:%M:%S")

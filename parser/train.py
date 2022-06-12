@@ -134,19 +134,19 @@ def dynamic_data_proc(data, queue):
 
 def load_vocabs(args):
     vocabs = dict()
-    vocabs['tok'] = Vocab(args.tok_vocab, 5, [CLS])  # remove the token frequence < 5 @kiro
+    vocabs['tok'] = Vocab(args.tok_vocab, 3, [CLS])  # remove the token frequence < 5 @kiro
     # vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
     # vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     # vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
     # vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
-    vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 5, [DUM, END])
+    vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 3, [DUM, END])
     # vocabs['predictable_word'] = Vocab(args.predictable_word_vocab, 5, [DUM, END])  # for AMR-to-Text @kiro
-    vocabs['concept'] = Vocab(args.concept_vocab, 5, [DUM, END])
+    vocabs['concept'] = Vocab(args.concept_vocab, 3, [DUM, END])
     vocabs['rel'] = Vocab(args.rel_vocab, 50, [NIL])
-    vocabs['word_char'] = Vocab(args.word_char_vocab, 100, [CLS, END])
-    vocabs['concept_char'] = Vocab(args.concept_char_vocab, 100, [CLS, END])
+    vocabs['word_char'] = Vocab(args.word_char_vocab, 10, [CLS, END])
+    vocabs['concept_char'] = Vocab(args.concept_char_vocab, 10, [CLS, END])
     lexical_mapping = LexicalMap()
     bert_encoder = None
     if args.with_bert:
@@ -184,6 +184,7 @@ def main(local_rank, args, global_value=None):
 
     print("#"*30)
     print("Concerned important config details")
+    print("no_post_process?", args.no_post_process)
     print("use graph encoder?", args.encoder_graph)
     print("use graph decoder?", args.decoder_graph)
     print("use srl for MTL?", args.use_srl)
@@ -198,6 +199,9 @@ def main(local_rank, args, global_value=None):
     print("Fine tuning?", _fine_tuning)
     print("MTL Fine tuning?", _mtl_fine_tuning)
     print("#"*30)
+
+    dev_data = DataLoader(vocabs, lexical_mapping, args.dev_data, args.dev_batch_size, for_train=False)  # load data @kiro
+    pp = PostProcessor(vocabs['rel'])
 
     assert args.use_srl is False
     # if args.use_srl is True:
@@ -230,8 +234,6 @@ def main(local_rank, args, global_value=None):
         random.seed(19940117 + dist.get_rank())
 
     model = model.cuda(local_rank)
-    dev_data = DataLoader(vocabs, lexical_mapping, args.dev_data, args.dev_batch_size, for_train=False)  # load data @kiro
-    pp = PostProcessor(vocabs['rel'])
 
     weight_decay_params = []
     no_weight_decay_params = []
@@ -363,7 +365,7 @@ def main(local_rank, args, global_value=None):
                                         'optimizer': optimizer.state_dict()},
                                        saved_model)
                             eval_task = MyThread(eval_tool.eval,
-                                                 (output_dev_file, saved_model, not args.no_post_process))
+                                                 (output_dev_file, saved_model, args.no_post_process))
                             eval_task.start()
                             model.train()
                     break
@@ -488,7 +490,7 @@ def main(local_rank, args, global_value=None):
                                     'batches_acm': batches_acm,
                                     'optimizer': optimizer.state_dict()},
                                    saved_model)
-                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, not args.no_post_process),
+                        eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, args.no_post_process),
                                              global_dict=global_value)
                         eval_task.start()
                         model.train()

@@ -140,7 +140,7 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     local_token2idx = [x['token2idx'] for x in data]
     local_idx2token = [x['idx2token'] for x in data]
     _cp_seq = ListsToTensor([x['cp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
-    # _mp_seq = ListsToTensor([x['mp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
+    _mp_seq = ListsToTensor([x['mp_seq'] for x in data], vocabs['predictable_concept'], local_token2idx)
 
     concept, edge = [], []
     for x in data:
@@ -169,7 +169,7 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
             _rel[v + 1, bidx, u + 1] = r
 
     ret = {'tok': _tok, 'word_char': _word_char, \
-           'copy_seq': np.array(_cp_seq), \
+           'copy_seq': np.stack([_cp_seq, _mp_seq], -1), \
            'local_token2idx': local_token2idx, 'local_idx2token': local_idx2token, \
            'concept_in': _concept_in, 'concept_char_in': _concept_char_in, \
            'concept_out': _concept_out, 'rel': _rel}
@@ -190,9 +190,9 @@ class DataLoader(object):
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:
                     continue
-            cp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + token, vocabs['predictable_concept'])
+            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + token, vocabs['predictable_concept'])
             datum = {'amr': amr, 'tok': token,
-                     'cp_seq': cp_seq, \
+                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
                      'token2idx': token2idx, 'idx2token': idx2token}
             if bert_tokenizer is not None:
                 bert_token, token_subword_index = bert_tokenizer.tokenize(token)

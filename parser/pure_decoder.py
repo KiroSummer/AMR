@@ -41,7 +41,7 @@ class ConceptGenerator(nn.Module):
         super(ConceptGenerator, self).__init__()
         self.transfer = nn.Linear(embed_dim, conc_size)
         self.generator = nn.Linear(conc_size, vocabs['predictable_concept'].size)
-        self.diverter = nn.Linear(conc_size, 2)
+        self.diverter = nn.Linear(conc_size, 3)
         self.vocabs = vocabs
         self.dropout = dropout
         self.reset_parameters()
@@ -60,8 +60,8 @@ class ConceptGenerator(nn.Module):
         outs_concept = torch.tanh(self.transfer(outs))
         outs_concept = F.dropout(outs_concept, p=self.dropout, training=self.training)  # concept representation @kiro
 
-        gen_gate, copy_gate = F.softmax(self.diverter(outs_concept), -1).chunk(2, dim=-1)  # prob
-        # copy_gate = torch.cat([copy_gate, map_gate], -1)
+        gen_gate, copy_gate, map_gate = F.softmax(self.diverter(outs_concept), -1).chunk(3, dim=-1)  # prob
+        copy_gate = torch.cat([copy_gate, map_gate], -1)
 
         if non_probabilistic:  # if non probabilistic, then no softmax, for globally training @kiro
             probs = gen_gate * self.generator(outs_concept)
@@ -80,7 +80,7 @@ class ConceptGenerator(nn.Module):
         # index: tgt_len x bsz x (src_len x 2)
         index = copy_seq.transpose(0, 1).contiguous().view(1, bsz, -1).expand(seq_len, -1, -1)
         copy_probs = (copy_gate.unsqueeze(2) * alignment_weight.unsqueeze(-1)).view(seq_len, bsz, -1)
-        # print("copy_probs", copy_probs)
+        # print(f"probs: {probs.size()}, index: {index.size()}, copy_probs: {copy_probs.size()}")
         probs = probs.scatter_add_(-1, index, copy_probs)
         ll = torch.log(probs + 1e-12)
 

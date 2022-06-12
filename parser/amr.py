@@ -425,6 +425,12 @@ class AMR(object):
         # add TOP as an attribute. The attribute value is the top node value
         attribute_list[0].append(["TOP", node_value_list[0]])
         result_amr = AMR(node_name_list, node_value_list, relation_list, attribute_list)
+        # print(f"amr lines\n {line}")
+        # print(f"node name list {node_name_list}")
+        # print(f"node value list {node_value_list}")
+        # print(f"relation list {relation_list}")
+        # print(f"attribute list {attribute_list}")
+        # exit()
         return result_amr
 
 

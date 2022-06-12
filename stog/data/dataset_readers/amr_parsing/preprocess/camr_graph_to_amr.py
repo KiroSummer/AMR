@@ -115,6 +115,7 @@ reference_node_pattern = re.compile(r'x\d+[x_\d]* / x\d+[x_\d]*')
 normal_relation_with_xu_pattern = re.compile(r':\S+\(\S+\)\s+')
 wid_pattern = re.compile(r'[ \(]x\d+[\d_x]*')
 pure_wid_pattern = re.compile(r'x\d+[x_\d]*')
+digit_pattern = re.compile(r'[\d.]+')
 
 def extract_normal_node_info(node_string):
     toks = node_string.split(' / ')
@@ -234,7 +235,10 @@ class CAMRGraph:
         line = self.func_fix_bad_case_2(line)
 
         def process_normal_node(relation, wid, word, depth, father_node):
-            node = Node(relation, wid, word, depth=depth, father_node=father_node)
+            node_type = NORMAL_NODE
+            if word == '-':
+                node_type = ATTRIBUTE_NODE
+            node = Node(relation, wid, word, depth=depth, father_node=father_node, type=node_type)
             # print(f"father node:{father_node.wid} add a child:{node.wid} with the relation:{relation}")
             father_node.add_child(node, relation)
 
@@ -339,14 +343,14 @@ class CAMRGraph:
         else: # its a new concept node
             assert len(nodes) >= 1
             wid, word = extract_normal_node_info(nodes[0])
-            if time_pattern.search(word) and not quotation_time_pattern.search(word):
-                res = time_pattern.findall(word)
-                assert len(res) == 1
-                word = word.replace(res[0], '"' + res[0] + '"')
-            if url_pattern.search(word):
-                res = url_pattern.findall(word)
-                assert len(res) == 1
-                word = word.replace(res[0], '"' + res[0] + '"')
+            # if time_pattern.search(word) and not quotation_time_pattern.search(word):
+            #     res = time_pattern.findall(word)
+            #     assert len(res) == 1
+            #     word = word.replace(res[0], '"' + res[0] + '"')
+            # if url_pattern.search(word):
+            #     res = url_pattern.findall(word)
+            #     assert len(res) == 1
+            #     word = word.replace(res[0], '"' + res[0] + '"')
             # print(f"Maybe it is a new concept node wid:{wid}, word:{word}")
             
             # maybe it is also a visited node, because in the CAMR data, it is (position / concept) ...
@@ -397,7 +401,10 @@ class CAMRGraph:
                     else:
                         node = Node(relation, wid, word, depth=depth, father_node=father_node)
                 else:
-                    node = Node(relation, wid, word, depth=depth, father_node=father_node)
+                    node_type = NORMAL_NODE
+                    if word == '-':
+                        node_type = ATTRIBUTE_NODE
+                    node = Node(relation, wid, word, depth=depth, father_node=father_node, type=node_type)
                 # print(f"father node:{father_node.wid} add a child:{node.wid} with the relation:{relation}")
                 father_node.add_child(node, relation)
 
@@ -419,10 +426,16 @@ class CAMRGraph:
 
     def generate_english_amr_format_string(self, 
                         remove_xu_rel=False, remove_relation_brackets=False, remove_wid=False):  # depth-first traversal
+        special_mode_concept_name = ['expressive', 'interrogative', 'imperative']
         root_node = self.node_in_each_depths[0][0]
         tmp_node_in_each_depths = []  # temporarily store nodes in each depth
         ng = NodeIdGenerator()
         wid_to_random_node_id = dict()
+
+        def is_attribute(concept_name):
+            if time_pattern.match(concept_name) or url_pattern.match(concept_name) or digit_pattern.match(concept_name):
+                return True
+            return False
 
         def re_format_line(line, r_xu_rel, r_relation_brackets):
             if r_xu_rel and '-xu' in line:
@@ -448,6 +461,12 @@ class CAMRGraph:
             # print(f"In bracktrace {node}")
             if node is None:
                 return bracket_num
+            if node.word == '-':
+                bracket_num -= 1
+            if is_attribute(node.word):
+                bracket_num -= 1
+            if node.in_relations[node.visited_times] == ':mode' and node.word in special_mode_concept_name:
+                bracket_num -= 1
             # print(f"Visited all children {father_node_visitezd_all_children(node)}")
             if not father_node_visitezd_all_children(node):
                 return bracket_num
@@ -542,8 +561,17 @@ class CAMRGraph:
                     else:
                         tmp_node_in_each_depths[depth].append(node)          
                     
-                    if node.has_no_child and (':op' in rel[node.visited_times] and node.type == ATTRIBUTE_NODE) or has_reference:
+                    if word == '-':
                         line += self.graph_split * depth + rel[node.visited_times] + ' ' + word
+                    elif rel[node.visited_times] == ':mode' and word in special_mode_concept_name:
+                        line += self.graph_split * depth + rel[node.visited_times] + ' ' + word
+                    elif is_attribute(word):
+                        if '"' not in word:
+                            line += self.graph_split * depth + rel[node.visited_times] + ' "' + word + '"'
+                        else:
+                            line += self.graph_split * depth + rel[node.visited_times] + ' ' + word
+                    elif (node.has_no_child and ':op' in rel[node.visited_times] and node.type == ATTRIBUTE_NODE) or has_reference:
+                        line += self.graph_split * depth + rel[node.visited_times] + ' "' + word + '"'
                     else:
                         if has_reference:
                             line += self.graph_split * depth + rel[node.visited_times] + ' (' + word
@@ -551,7 +579,13 @@ class CAMRGraph:
                             line += self.graph_split * depth + rel[node.visited_times] + ' (' + wid + ' / ' + word
                     # print(f"line {line}")
                     if node.has_no_child:
-                        if (':op' in rel[node.visited_times] and node.type == ATTRIBUTE_NODE) or has_reference:
+                        if word == '-':
+                            pass
+                        elif rel[node.visited_times] == ':mode' and word in special_mode_concept_name:
+                            pass
+                        elif is_attribute(word):
+                            pass
+                        elif ':op' in rel[node.visited_times] and node.type == ATTRIBUTE_NODE or has_reference:
                             pass
                         else:
                             line += ')'
@@ -781,48 +815,59 @@ if __name__ == '__main__':
                 english_amr_format = camr.generate_english_amr_format_string(remove_xu_rel=True, 
                             remove_relation_brackets=True, remove_wid=True)
                 f.write(english_amr_format + '\n')
-#     lines = '''# ::id export_amr.13322 ::cid export_amr.2996 ::2018-08-16 11:06:08
-# # ::snt 波黑 “ 塞尔维亚 共和国 ” 总统 卡拉季奇 和 联合国 秘书长 特使 明石康 经过 ９ 个 小时 的 谈判 之后 ， 于 ２３日 凌晨 就 戈拉日代 实现 停火 达成 协议 ， 停火 于 ２３日 中午 当地 时间 １２时 生效 。 
-# # ::wid x1_波黑 x2_“ x3_塞尔维亚 x4_共和国 x5_” x6_总统 x7_卡拉季奇 x8_和 x9_联合国 x10_秘书长 x11_特使 x12_明石康 x13_经过 x14_９ x15_个 x16_小时 x17_的 x18_谈判 x19_之后 x20_， x21_于 x22_２３日 x23_凌晨 x24_就 x25_戈拉日代 x26_实现 x27_停火 x28_达成 x29_协议 x30_， x31_停火 x32_于 x33_２３日 x34_中午 x35_当地 x36_时间 x37_１２时 x38_生效 x39_。 x40_ 
-# (x41 / and
-#       :op1()  (x28 / 达成-01
-#             :arg0()  (x44 / and
-#                   :op1()  (x45 / person
-#                         :name()  (x7 / name :op1 x7/卡拉季奇 )
-#                         :arg0-of()  (x47 / have-org-role-91
-#                               :arg1()  (x48 / country
-#                                     :name()  (x1_x3_x4 / name :op1 x1/波黑  :op2 x3/塞尔维亚  :op3 x4/共和国 ))
-#                               :arg2()  (x6 / 总统)))
-#                   :op2(x8/和)  (x50 / person
-#                         :name()  (x12 / name :op1 x12/明石康 )
-#                         :arg0-of()  (x52 / have-org-role-91
-#                               :arg1()  (x53 / government-organization
-#                                     :name()  (x9 / name :op1 x9/联合国 ))
-#                               :arg2()  (x11 / 特使
-#                                     :mod()  (x10 / 秘书长)))))
-#             :condition()  (x13 / 经过-01
-#                   :arg1()  (x18 / 谈判
-#                         :duration(x17/的)  (x59 / temporal-quantity
-#                               :quant()  (x14 / 9)
-#                               :unit()  (x16 / 小时))))
-#             :arg1()  (x29 / 协议-01
-#                   :arg1(x24/就)  (x26 / 实现-01
-#                         :arg0()  (x64 / city
-#                               :name()  (x25 / name :op1 x25/戈拉日代 ))
-#                         :arg1()  (x27 / 停火-01
-#                               :arg0()  (x67 / and
-#                                     :op1()  (x64 / city))
-#                               :op2()  (x48 / country))))
-#             :time(x21/于)  (x68 / date-entity
-#                   :day()  (x22 / 23)
-#                   :dayperiod()  (x23 / 凌晨)))
-#       :op2()  (x38 / 生效-01
-#             :arg0()  (x31 / 停火)
-#             :time(x32/于)  (x74 / date-entity
-#                   :day()  (x33 / 23)
-#                   :dayperiod()  (x34 / 中午)
-#                   :timezone(x36/时间)  (x35 / 当地)
-#                   :time()  (x37 / 12:00))))'''
+#     lines = '''# ::id export_amr.3327 ::cid export_amr.3327 ::2017-02-15 11:07:38
+# # ::snt 其实 这 也 不 会 成为 俄罗斯 的 战略 企图 ， 未来 的 俄罗斯 完全 可能 在 与 西方 的 地缘 争夺战 中 变得 坚决 而 不 妥协 ， 但 不管 双方 的 关系 多么 冷淡 ， 也 不管 普京 多么 厌恶 西方 ， 俄罗斯 在 主观 上 也 不 可能 愿意 首当其冲 、 独缨其锋 。
+# # ::wid x1_其实 x2_这 x3_也 x4_不 x5_会 x6_成为 x7_俄罗斯 x8_的 x9_战略 x10_企图 x11_， x12_未来 x13_的 x14_俄罗斯 x15_完全 x16_可能 x17_在 x18_与 x19_西方 x20_的 x21_地缘 x22_争夺战 x23_中 x24_变得 x25_坚决 x26_而 x27_不 x28_妥协 x29_， x30_但 x31_不管 x32_双方 x33_的 x34_关系 x35_多么 x36_冷淡 x37_， x38_也 x39_不管 x40_普京 x41_多么 x42_厌恶 x43_西方 x44_， x45_俄罗斯 x46_在 x47_主观 x48_上 x49_也 x50_不 x51_可能 x52_愿意 x53_首当其冲 x54_、 x55_独缨其锋 x56_。
+# (x58 / contrast
+#       :arg1() (x60 / and
+#             :op1() (x5 / 会-02
+#                   :polarity() (x4 / -)
+#                   :arg0() (x6 / 成为-01
+#                         :arg1() (x10 / 企图-01
+#                               :mod() (x9 / 战略)
+#                               :arg0(x8/的) (x66 / country
+#                                     :name() (x7 / name :op1 x7/俄罗斯 )))
+#                         :arg0() (x2 / 这)
+#                         :mod() (x3 / 也))
+#                   :mod() (x1 / 其实))
+#             :op2() (x16 / 可能-01
+#                   :degree() (x15 / 完全)
+#                   :arg0() (x24 / 变得-01
+#                         :arg1() (x74 / and
+#                               :op1() (x25 / 坚决-01
+#                                     :arg0() (x14 /
+#                                           :time(x13/的) (x12 / 未来)))
+#                               :op2() (x28 / 妥协-01
+#                                     :polarity() (x27 / -)
+#                                     :arg0() x14 ))
+#                         :arg0() x14 
+#                         :cause(x17_x23/在中) (x22 / 争夺战
+#                               :mod() (x21 / 地缘)
+#                               :accompanier(x18/与) (x19 / 西方)))))
+#       :arg2(x30/但) (x83 / concession
+#             :arg1() (x84 / and
+#                   :op1(x31/不管) (x36 / 冷淡-01
+#                         :arg0() (x34 / 关系
+#                               :poss(x33/的) (x32 / 双方
+#                                     :arg0-of() (x90 / mean
+#                                           :arg1() (x91 / and
+#                                                 :op1() x19 
+#                                                 :op2() x66 ))))
+#                         :degree() (x35 / 多么))
+#                   :op2(x39/不管) (x42 / 厌恶-01
+#                         :arg0() (x92 / person
+#                               :name() (x40 / name :op1 x40/普京 ))
+#                         :degree() (x41 / 多么)
+#                         :arg1() (x43 / x19)))
+#             :arg2(x49/也) (x51 / 可能-01
+#                   :polarity() (x50 / -)
+#                   :arg0() (x99 / and
+#                         :op1() (x53 / 首当其冲-01
+#                               :arg0() (x45 / x66)
+#                               :mod(x46_x48/在上) (x47 / 主观))
+#                         :op2() (x55 / 独缨其锋
+#                               :arg0() x66 
+#                               :mod() x47 )))))'''
 #     # print(lines)
 #     lines = lines.split('\n')
 #     camr = CAMRGraph(lines[0], lines[1], lines[2], lines[3:])

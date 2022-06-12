@@ -49,7 +49,7 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --print_every 100 \
                 --eval_every 1000 \
                 --batches_per_update 4 \
-                --ckpt graph-ckpt\
+                --ckpt ckpt-2\
                 --world_size 2\
                 --gpus 2\
                 --MASTER_ADDR localhost\

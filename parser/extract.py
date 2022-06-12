@@ -2,6 +2,7 @@
 # coding: utf-8
 from collections import Counter
 import json, re
+from operator import not_
 
 from parser.amr import AMR
 from parser.AMRGraph import AMRGraph, number_regexp
@@ -32,11 +33,11 @@ class AMRIO:
                 # elif line.startswith('# ::dependency_rels '):
                 #     dependency_rels = json.loads(line[len('# ::dependency_rels '):])
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
-                    print(f"{graph_line}")
+                    # print(f"{graph_line}")
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
                     count += 1
-                    print(f"processed {count} samples")
+                    # print(f"processed {count} samples")
                     yield amr_id, sentence, wid, myamr
 
 
@@ -47,24 +48,27 @@ class LexicalMap(object):
 
     # cp_seq, mp_seq, token2idx, idx2token = lex_map.get(lemma, token, vocabs['predictable_concept'])
     def get_concepts(self, tok, vocab=None):
-        cp_seq = []
+        cp_seq, mp_seq = [], []
         new_tokens = set()
         for to in tok:
-            cp_seq.append(to)  # + '_'
+            cp_seq.append(to + '_')  # for attributes
+            mp_seq.append(to)
 
         if vocab is None:
-            return cp_seq
+            return cp_seq, mp_seq
 
-        for cp in cp_seq:
+        for cp, mp in zip(cp_seq, mp_seq):
             if vocab.token2idx(cp) == vocab.unk_idx:
                 new_tokens.add(cp)
+            if vocab.token2idx(mp) == vocab.unk_idx:
+                new_tokens.add(mp)
         nxt = vocab.size
         token2idx, idx2token = dict(), dict()
         for x in new_tokens:
             token2idx[x] = nxt
             idx2token[nxt] = x
             nxt += 1
-        return cp_seq, token2idx, idx2token
+        return cp_seq, mp_seq, token2idx, idx2token
 
 
 def dynamically_read_file(f, max_sentence_length=50000):
@@ -174,10 +178,15 @@ if __name__ == "__main__":
         # run 10 times random sort to get the priorities of different types of edges
         for amr, tok in zip(amrs, sents):
             concept, edge, not_ok = amr.root_centered_sort()
+            # print(f"concept {concept}")
+            # print(f"edge {edge}")
+            # print(f"not ok {not_ok}")
+            # exit()
             lexical_concepts = set()
-            cp_seq = lexical_map.get_concepts(tok)
-            for lc in cp_seq:
+            cp_seq, mp_seq = lexical_map.get_concepts(tok)
+            for lc, lm in zip(cp_seq, mp_seq):
                 lexical_concepts.add(lc)
+                lexical_concepts.add(lm)
 
             if i == 0:
                 predictable_conc.append([c for c in concept if c not in lexical_concepts])

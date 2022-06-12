@@ -146,6 +146,9 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     for x in data:
         amr = x['amr']
         concept_i, edge_i, _ = amr.root_centered_sort(vocabs['rel'].priority)
+        print(f"concept_i {concept_i}")
+        print(f"edge_i {edge_i}")
+        exit()
         concept.append(concept_i)
         edge.append(edge_i)
 

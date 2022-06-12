@@ -15,7 +15,7 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --dev_data ${dataset}/camr_origin_dev.txt.pre  \
                 --srl_data ./data/auto-srl/train.english.conll05.jsonlines.features \
                 --with_bert \
-                --bert_path bert-base-chinese \
+                --bert_path chinese-roberta-wwm-ext \
                 --word_char_dim 32\
                 --word_dim 300\
                 --pos_dim 0\
@@ -40,18 +40,18 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --inference_layers 4\
                 --dropout 0.2\
                 --unk_rate 0.33\
-                --epochs 2020\
+                --epochs 1000\
                 --train_batch_size 4444\
                 --dev_batch_size 4444 \
                 --lr_scale 1. \
-                --weight_decay 1e-4 \
+                --weight_decay 1e-7 \
                 --warmup_steps 2000\
                 --print_every 100 \
                 --eval_every 1000 \
                 --batches_per_update 4 \
-                --ckpt ckpt-2\
+                --ckpt ckpt\
                 --world_size 2\
                 --gpus 2\
                 --MASTER_ADDR localhost\
-                --MASTER_PORT 29505\
+                --MASTER_PORT 29545\
                 --start_rank 0

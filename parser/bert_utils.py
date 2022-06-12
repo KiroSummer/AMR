@@ -29,7 +29,6 @@ class BertEncoderTokenizer(BertTokenizer):
             for i, indexes in enumerate(_gather_indexes):
                 for j, index in enumerate(indexes):
                     gather_indexes[i, j] = index
-        print(f"split_tokens {split_tokens}")
         token_ids = np.array(self.convert_tokens_to_ids(split_tokens))
         return token_ids, gather_indexes
 

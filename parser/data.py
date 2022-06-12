@@ -196,9 +196,6 @@ class DataLoader(object):
                      'token2idx': token2idx, 'idx2token': idx2token}
             if bert_tokenizer is not None:
                 bert_token, token_subword_index = bert_tokenizer.tokenize(token)
-                print(f"bert_token {bert_token}")
-                print(f"token_subword_index {token_subword_index}")
-                exit()
                 datum['bert_token'] = bert_token
                 datum['token_subword_index'] = token_subword_index
 

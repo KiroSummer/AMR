@@ -158,6 +158,8 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     _concept_in = ListsToTensor(augmented_concept, vocabs['concept'], unk_rate=unk_rate)[:-1]
     _concept_char_in = ListsofStringToTensor(augmented_concept, vocabs['concept_char'])[:-1]
     _concept_out = ListsToTensor(augmented_concept, vocabs['predictable_concept'], local_token2idx)[1:]  # out no $start
+    print(f"_concept_out {augmented_concept}")
+    print(f"_concept_out id {_concept_out}")
 
     out_conc_len, bsz = _concept_out.shape  # out_conc_len, concept_0, concept_1, ..., concept_n-1, <end>
     _rel = np.full((1 + out_conc_len, bsz, out_conc_len), vocabs['rel'].token2idx(PAD))

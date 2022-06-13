@@ -121,14 +121,9 @@ def update_lr(optimizer, lr_scale, embed_size, steps, warmup_steps, fine_tuning_
 
 def data_proc(data, queue, train=True):
     while True:
-        if train:
-            for x in data.loader:
-                queue.put(x)
-            queue.put('EPOCHDONE')
-        else:
-            for x in data:
-                queue.put(x)
-            queue.put('EPOCHDONE')
+        for x in data.loader:
+            queue.put(x)
+        queue.put('EPOCHDONE')
 
 
 def dynamic_data_proc(data, queue):

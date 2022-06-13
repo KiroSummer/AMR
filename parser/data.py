@@ -220,8 +220,10 @@ class DataLoader(torch.utils.data.Dataset):
         self.loader = torch_dataloader(dataset=self,
                                         batch_sampler=self.sampler,
                                         collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
-        self.iter_loader = iter(self.loader)
         print(f"bucket num: {len(self.buckets)}")
+    
+    def __getitem__(self, index):
+        return self.data[index]
     
     def set_unk_rate(self, x):
         self.unk_rate = x

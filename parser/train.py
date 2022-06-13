@@ -480,7 +480,7 @@ def main(local_rank, args, global_value=None):
                 optimizer.step()  # update the model parameters according to the losses @kiro
                 # scheduler.step()
                 optimizer.zero_grad()
-                if batches_acm == 50:
+                if batches_acm == 200:
                     saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                     torch.save({'args': args,
                                     'model': model.state_dict(),

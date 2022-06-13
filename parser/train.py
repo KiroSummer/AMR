@@ -252,10 +252,10 @@ def main(local_rank, args, global_value=None):
     # optimizer = AdamWeightDecayOptimizer(grouped_params, 0.0001, betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.9, 0.9), eps=1e-12,
                                 weight_decay=0.)
-    scheduler = get_polynomial_decay_schedule_with_warmup(optimizer,
-                                                    num_warmup_steps=300,
-                                                    num_training_steps=1000 * 200,
-                                                    lr_end=1e-6)
+    # scheduler = get_polynomial_decay_schedule_with_warmup(optimizer,
+    #                                                 num_warmup_steps=300,
+    #                                                 num_training_steps=1000 * 200,
+    #                                                 lr_end=1e-6)
 
     used_batches = 0
     batches_acm = 0

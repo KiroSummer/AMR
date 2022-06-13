@@ -40,12 +40,12 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --inference_layers 4\
                 --dropout 0.2\
                 --unk_rate 0.33\
-                --epochs 500\
+                --epochs 2000\
                 --train_batch_size 4444\
                 --dev_batch_size 4444 \
                 --lr_scale 1. \
                 --weight_decay 1e-7 \
-                --warmup_steps 200\
+                --warmup_steps 1000\
                 --print_every 100 \
                 --eval_every 1000 \
                 --batches_per_update 4 \

@@ -2,7 +2,7 @@ import random
 import torch
 from torch import nn
 import torch.distributed as dist
-import torch.utils.data.DataLoader as torch_dataloader
+from torch.utils.data import DataLoader as torch_dataloader
 import numpy as np
 from parser.AMRGraph import AMRGraph
 from parser.extract import read_file, dynamically_read_file

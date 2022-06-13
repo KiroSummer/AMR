@@ -121,9 +121,12 @@ def update_lr(optimizer, lr_scale, embed_size, steps, warmup_steps, fine_tuning_
 
 def data_proc(data, queue, train=True):
     while True:
+        count = 0
         for x in data.loader:
             queue.put(x)
+            count += 1
         queue.put('EPOCHDONE')
+        print(f"In current epoch total {count} batch processed!")
         data.renew_loader()
 
 

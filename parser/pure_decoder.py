@@ -97,6 +97,9 @@ class ConceptGenerator(nn.Module):
             print('conc acc', acc / tot)
             print(f"pred {pred.masked_select(total_concepts)}")
             print(f"gold {target.masked_select(total_concepts)}")
+            x_pred = pred.masked_select(total_concepts)
+            x_target = target.masked_select(total_concepts)
+            print(f"difference between pred and gold {x_pred[x_pred != x_target], x_target[x_pred != x_target]}")
 
         concept_loss = -ll.gather(dim=-1, index=target.unsqueeze(-1)).squeeze(-1)
         concept_mask = torch.eq(target, self.vocabs['predictable_concept'].padding_idx)

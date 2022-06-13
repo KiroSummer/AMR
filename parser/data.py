@@ -10,7 +10,7 @@ from parser.srl import read_srl_file
 
 
 PAD, UNK, DUM, NIL, END, CLS = '<PAD>', '<UNK>', '<DUMMY>', '<NULL>', '<END>', '<CLS>'
-GPU_SIZE = 8000
+GPU_SIZE = 4096
 
 
 class Vocab(object):
@@ -215,12 +215,22 @@ class DataLoader(torch.utils.data.Dataset):
         self.batch_size = batch_size
         self.train = for_train
         self.unk_rate = 0.
+        lens = [get_sample_size(d) for d in self.data]
+        print(f"the average lens of tokens and amrs is {1.0 * sum(lens) / len(lens)}")
         self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
         self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
         self.loader = torch_dataloader(dataset=self,
                                         batch_sampler=self.sampler,
                                         collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
         print(f"bucket num: {len(self.buckets)}")
+
+    def renew_loader(self, bucket_num=32):
+        self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
+        self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
+        self.loader = torch_dataloader(dataset=self,
+                                        batch_sampler=self.sampler,
+                                        collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
+
     
     def __getitem__(self, index):
         return self.data[index]

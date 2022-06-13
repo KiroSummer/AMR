@@ -124,6 +124,7 @@ def data_proc(data, queue, train=True):
         for x in data.loader:
             queue.put(x)
         queue.put('EPOCHDONE')
+        data.renew_loader()
 
 
 def dynamic_data_proc(data, queue):

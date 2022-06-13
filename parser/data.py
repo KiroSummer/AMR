@@ -224,14 +224,6 @@ class DataLoader(torch.utils.data.Dataset):
                                         collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
         print(f"bucket num: {len(self.buckets)}")
 
-    def renew_loader(self, bucket_num=32):
-        self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
-        self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
-        self.loader = torch_dataloader(dataset=self,
-                                        batch_sampler=self.sampler,
-                                        collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
-
-    
     def __getitem__(self, index):
         return self.data[index]
     

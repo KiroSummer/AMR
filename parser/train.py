@@ -127,7 +127,7 @@ def data_proc(data, queue, train=True):
             count += 1
         queue.put('EPOCHDONE')
         print(f"In current epoch total {count} batch processed!")
-        data.renew_loader()
+        # data.renew_loader()
 
 
 def dynamic_data_proc(data, queue):

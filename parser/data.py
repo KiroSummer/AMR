@@ -227,7 +227,7 @@ class DataLoader(torch.utils.data.Dataset):
                                             batch_sampler=self.sampler,
                                             collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
             print(f"bucket num: {len(self.buckets)}")
-            return self
+            return self.loader
         else:
             idx = list(range(len(self.data)))    
             def get_size(data):

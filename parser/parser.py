@@ -324,6 +324,7 @@ class Parser(nn.Module):
         return srl_loss
 
     def forward(self, data, encoder_graph=False, decoder_graph=False):
+        print(f"batch size: {data['tok'].size()}")
         if self.bert_encoder is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
                 data['tok'], None, None, None, None, None,

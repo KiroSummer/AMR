@@ -452,7 +452,8 @@ def main(local_rank, args, global_value=None):
                 concept_loss, arc_loss, rel_loss, graph_arc_loss = model.forward(
                     batch, encoder_graph=args.encoder_graph, decoder_graph=args.decoder_graph)
                 # model forward, please note that graph_arc_loss is not used
-                loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
+                # loss = (concept_loss + arc_loss + rel_loss) / args.batches_per_update  # compute
+                loss = (concept_loss) / args.batches_per_update  # compute
                 loss_value = loss.item()
                 concept_loss_value = concept_loss.item()
                 arc_loss_value = arc_loss.item()

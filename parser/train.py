@@ -119,11 +119,16 @@ def update_lr(optimizer, lr_scale, embed_size, steps, warmup_steps, fine_tuning_
     return lr
 
 
-def data_proc(data, queue):
+def data_proc(data, queue, train=True):
     while True:
-        for x in data:
-            queue.put(x)
-        queue.put('EPOCHDONE')
+        if train:
+            for x in data.loader:
+                queue.put(x)
+            queue.put('EPOCHDONE')
+        else:
+            for x in data:
+                queue.put(x)
+            queue.put('EPOCHDONE')
 
 
 def dynamic_data_proc(data, queue):
@@ -262,7 +267,7 @@ def main(local_rank, args, global_value=None):
     train_data = DataLoader(vocabs, lexical_mapping, args.train_data, args.train_batch_size, for_train=True)
     train_data.set_unk_rate(args.unk_rate)
     queue = mp.Queue(10)
-    train_data_generator = mp.Process(target=data_proc, args=(train_data, queue))
+    train_data_generator = mp.Process(target=data_proc, args=(train_data, queue, True))
 
     if _mtl_fine_tuning or _pre_training:
         silver_train_data = DynamicDataLoader(vocabs, lexical_mapping, args.silver_train_data, args.train_batch_size, for_train=True)

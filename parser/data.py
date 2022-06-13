@@ -217,17 +217,17 @@ class DataLoader(torch.utils.data.Dataset):
         self.unk_rate = 0.
         self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
         self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
+        self.loader = torch_dataloader(dataset=self,
+                                        batch_sampler=self.sampler,
+                                        collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
+        print(f"bucket num: {len(self.buckets)}")
     
     def set_unk_rate(self, x):
         self.unk_rate = x
 
     def __iter__(self):
         if self.train:
-            self.loader = torch_dataloader(dataset=self,
-                                            batch_sampler=self.sampler,
-                                            collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
-            print(f"bucket num: {len(self.buckets)}")
-            return self.loader
+            return self.loader.iter()
         else:
             idx = list(range(len(self.data)))    
             def get_size(data):

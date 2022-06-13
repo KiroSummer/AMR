@@ -48,7 +48,7 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --warmup_steps 1000\
                 --print_every 1 \
                 --eval_every 1 \
-                --batches_per_update 4 \
+                --batches_per_update 1 \
                 --ckpt ckpt\
                 --world_size 2\
                 --gpus 2\

@@ -115,18 +115,18 @@ if __name__ == "__main__":
 
     vocabs = dict()
 
-    vocabs['tok'] = Vocab(model_args.tok_vocab, 5, [CLS])
+    vocabs['tok'] = Vocab(model_args.tok_vocab, 3, [CLS])
     # vocabs['lem'] = Vocab(model_args.lem_vocab, 5, [CLS])
     # vocabs['pos'] = Vocab(model_args.pos_vocab, 5, [CLS])
     # vocabs['ner'] = Vocab(model_args.ner_vocab, 5, [CLS])
     # vocabs['dep_rel'] = Vocab(model_args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(model_args.srl_vocab, 50, [NIL])
-    vocabs['predictable_concept'] = Vocab(model_args.predictable_concept_vocab, 5, [DUM, END])
-    vocabs['concept'] = Vocab(model_args.concept_vocab, 5, [DUM, END])
+    vocabs['predictable_concept'] = Vocab(model_args.predictable_concept_vocab, 3, [DUM, END])
+    vocabs['concept'] = Vocab(model_args.concept_vocab, 3, [DUM, END])
     vocabs['rel'] = Vocab(model_args.rel_vocab, 50, [NIL])
-    vocabs['word_char'] = Vocab(model_args.word_char_vocab, 100, [CLS, END])
-    vocabs['concept_char'] = Vocab(model_args.concept_char_vocab, 100, [CLS, END])
+    vocabs['word_char'] = Vocab(model_args.word_char_vocab, 10, [CLS, END])
+    vocabs['concept_char'] = Vocab(model_args.concept_char_vocab, 10, [CLS, END])
     lexical_mapping = LexicalMap()
 
     bert_encoder = None

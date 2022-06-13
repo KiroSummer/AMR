@@ -478,7 +478,7 @@ def main(local_rank, args, global_value=None):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps, args.fine_tuning_lr)
                 optimizer.step()  # update the model parameters according to the losses @kiro
-                scheduler.step()
+                # scheduler.step()
                 optimizer.zero_grad()
                 if batches_acm == 50:
                     saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)

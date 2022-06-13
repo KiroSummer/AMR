@@ -480,6 +480,13 @@ def main(local_rank, args, global_value=None):
                 optimizer.step()  # update the model parameters according to the losses @kiro
                 scheduler.step()
                 optimizer.zero_grad()
+                if batches_acm == 50:
+                    torch.save({'args': args,
+                                    'model': model.state_dict(),
+                                    'batches_acm': batches_acm,
+                                    'optimizer': optimizer.state_dict()},
+                                   saved_model)
+                    exit(0)
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (

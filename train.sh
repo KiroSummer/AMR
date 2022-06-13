@@ -46,8 +46,8 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --lr_scale 1. \
                 --weight_decay 1e-7 \
                 --warmup_steps 1000\
-                --print_every 100 \
-                --eval_every 1000 \
+                --print_every 1 \
+                --eval_every 1 \
                 --batches_per_update 4 \
                 --ckpt ckpt\
                 --world_size 2\

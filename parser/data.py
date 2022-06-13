@@ -227,7 +227,7 @@ class DataLoader(torch.utils.data.Dataset):
 
     def __iter__(self):
         if self.train:
-            return self.loader.iter()
+            return next(self.loader)
         else:
             idx = list(range(len(self.data)))    
             def get_size(data):

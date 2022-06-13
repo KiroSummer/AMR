@@ -491,7 +491,7 @@ def main(local_rank, args, global_value=None):
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:
                         print('Train Epoch %d, Batch %d, LR %.6f, conc_loss %.3f, arc_loss %.3f, rel_loss %.3f, concept_repr_loss %.3f, srl_loss %.3f' % (
-                        epoch, batches_acm, scheduler.get_last_lr()[0], concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
+                        epoch, batches_acm, optimizer.param_groups[0]['lr'], concept_loss_avg, arc_loss_avg, rel_loss_avg, concept_repr_loss_avg, srl_loss_avg))
                         # print('==============>, silver_conc_loss %.3f, silver_arc_loss %.3f, silver_rel_loss %.3f' % (
                         #         silver_concept_loss_avg, silver_arc_loss_avg, silver_rel_loss_avg)
                         #       )

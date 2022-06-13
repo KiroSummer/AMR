@@ -249,7 +249,7 @@ def main(local_rank, args, global_value=None):
             weight_decay_params.append(param)
     grouped_params = [{'params': weight_decay_params, 'weight_decay': args.weight_decay},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
-    optimizer = AdamWeightDecayOptimizer(grouped_params, 0.001, betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
+    optimizer = AdamWeightDecayOptimizer(grouped_params, 0.0001, betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
     scheduler = get_polynomial_decay_schedule_with_warmup(optimizer,
                                                     num_warmup_steps=300,
                                                     num_training_steps=1000 * 200,

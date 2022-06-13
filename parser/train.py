@@ -481,6 +481,7 @@ def main(local_rank, args, global_value=None):
                 scheduler.step()
                 optimizer.zero_grad()
                 if batches_acm == 50:
+                    saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                     torch.save({'args': args,
                                     'model': model.state_dict(),
                                     'batches_acm': batches_acm,

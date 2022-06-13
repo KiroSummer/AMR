@@ -2,6 +2,7 @@ import random
 import torch
 from torch import nn
 import torch.distributed as dist
+import torch.utils.data.DataLoader as torch_dataloader
 import numpy as np
 from parser.AMRGraph import AMRGraph
 from parser.extract import read_file, dynamically_read_file
@@ -184,7 +185,48 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     return ret
 
 
-class DataLoader(object):
+        
+def get_sample_size(x):
+    return len(x['tok']) + len(x['amr'])
+
+
+class DataLoader(torch.utils.data.Dataset):
+    def __init__(self, vocabs, lex_map, filename, batch_size, for_train, bucket_num=32) -> None:
+        super().__init__()
+        self.data = []
+        bert_tokenizer = vocabs.get('bert_tokenizer', None)
+        for amr_id, token, wid, amr in zip(*read_file(filename)):
+            if for_train:
+                _, _, not_ok = amr.root_centered_sort()
+                if not_ok or len(token) == 0:
+                    continue
+            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + token, vocabs['predictable_concept'])
+            datum = {'amr': amr, 'tok': token,
+                     'cp_seq': cp_seq, 'mp_seq': mp_seq, \
+                     'token2idx': token2idx, 'idx2token': idx2token}
+            if bert_tokenizer is not None:
+                bert_token, token_subword_index = bert_tokenizer.tokenize(token)
+                datum['bert_token'] = bert_token
+                datum['token_subword_index'] = token_subword_index
+
+            self.data.append(datum)
+        print("Get %d AMRs from %s" % (len(self.data), filename))
+        self.vocabs = vocabs
+        self.batch_size = batch_size
+        self.train = for_train
+        self.unk_rate = 0.
+        self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
+        self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
+
+    def __iter__(self):
+        self.loader = torch_dataloader(dataset=self,
+                                        batch_sampler=self.sampler,
+                                        collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
+        print(f"bucket num: {len(self.buckets)}")
+        return self
+
+
+class DataLoader2(object):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train):
         self.data = []
         bert_tokenizer = vocabs.get('bert_tokenizer', None)
@@ -212,8 +254,8 @@ class DataLoader(object):
     def set_unk_rate(self, x):
         self.unk_rate = x
 
-    def __iter__(self):
-        idx = list(range(len(self.data)))
+    def __iter__(self, bucket_num=32):
+        idx = list(range(len(self.data)))        
 
         if self.train:
             random.shuffle(idx)
@@ -271,6 +313,88 @@ class DataLoader(object):
         for batch in batches:
             # print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
             yield batchify(batch, self.vocabs, self.unk_rate)
+
+
+def kmeans(x, k, max_it=32):
+    """
+    KMeans algorithm for clustering the sentences by length.
+    adopted from zhangyu
+    """
+    # the number of clusters must not be greater than the number of datapoints
+    x, k = torch.tensor(x, dtype=torch.float), min(len(x), k)
+    # collect unique datapoints
+    d = x.unique()
+    # initialize k centroids randomly
+    c = d[torch.randperm(len(d))[:k]]
+    # assign each datapoint to the cluster with the closest centroid
+    dists, y = torch.abs_(x.unsqueeze(-1) - c).min(-1)
+
+    for _ in range(max_it):
+        # if an empty cluster is encountered,
+        # choose the farthest datapoint from the biggest cluster and move that the empty one
+        mask = torch.arange(k).unsqueeze(-1).eq(y)
+        none = torch.where(~mask.any(-1))[0].tolist()
+        while len(none) > 0:
+            for i in none:
+                # the biggest cluster
+                b = torch.where(mask[mask.sum(-1).argmax()])[0]
+                # the datapoint farthest from the centroid of cluster b
+                f = dists[b].argmax()
+                # update the assigned cluster of f
+                y[b[f]] = i
+                # re-calculate the mask
+                mask = torch.arange(k).unsqueeze(-1).eq(y)
+            none = torch.where(~mask.any(-1))[0].tolist()
+        # update the centroids
+        c, old = (x * mask).sum(-1) / mask.sum(-1), c
+        # re-assign all datapoints to clusters
+        dists, y = torch.abs_(x.unsqueeze(-1) - c).min(-1)
+        # stop iteration early if the centroids converge
+        if c.equal(old):
+            break
+    # assign all datapoints to the new-generated clusters
+    # the empty ones are discarded
+    assigned = y.unique().tolist()
+    # get the centroids of the assigned clusters
+    centroids = c[assigned].tolist()
+    # map all values of datapoints to buckets
+    clusters = [torch.where(y.eq(i))[0].tolist() for i in assigned]
+
+    return centroids, clusters
+
+
+class Sampler(torch.utils.data.Sampler):
+    def __init__(self, data_source, buckets, batch_size, shuffle=True) -> None:
+        super(Sampler, self).__init__(data_source)
+        self.data_source = data_source
+        self.batch_size = batch_size 
+        self.shuffle = shuffle
+        self.sizes, self.buckets = zip(*[(size, bucket) for size, bucket in buckets.items()])
+        self.chunks = [min(len(bucket), max(round(size * len(bucket) / batch_size), 1))
+                        for size, bucket in zip(self.sizes, self.buckets)]
+        self.samples = sum(self.chunks)
+        self.epoch = 1
+
+    def __iter__(self):
+        g = torch.Generator()
+        g.manual_seed(self.epoch)
+        total, count = 0, 0
+        range_fn =  torch.arange if not self.shuffle else lambda x: torch.randperm(x, generator=g)
+        total_samples = 0
+        for i in range_fn(len(self.buckets)).tolist():
+            split_sizes = [(len(self.buckets[i]) - j - 1) // self.chunks[i] + 1 for j in range(self.chunks[i])]
+            total_samples += sum(split_sizes)
+            for batch in range_fn(len(self.buckets[i])).split(split_sizes):
+                if count == self.samples:
+                    break
+                count += 1
+                yield [self.buckets[i][j] for j in batch.tolist()]
+                total += 1
+        self.epoch += 1
+        print(f"total split sizes {total_samples}, number of batches: {len(self)}")
+
+    def __len__(self):
+        return self.samples
 
 
 class DynamicDataLoader(object):

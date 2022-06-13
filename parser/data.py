@@ -190,7 +190,7 @@ def get_sample_size(x):
     return len(x['tok']) + len(x['amr'])
 
 
-class DataLoader(torch.utils.data.Dataset):
+class DataLoader2(torch.utils.data.Dataset):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train, bucket_num=32) -> None:
         super().__init__()
         self.data = []
@@ -285,7 +285,7 @@ class DataLoader(torch.utils.data.Dataset):
                 yield batchify(batch, self.vocabs, self.unk_rate)
 
 
-class DataLoader2(object):
+class DataLoader(object):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train):
         self.data = []
         bert_tokenizer = vocabs.get('bert_tokenizer', None)

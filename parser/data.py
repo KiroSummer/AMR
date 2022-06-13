@@ -217,13 +217,67 @@ class DataLoader(torch.utils.data.Dataset):
         self.unk_rate = 0.
         self.buckets = dict(zip(*kmeans([get_sample_size(d) for d in self.data], bucket_num)))
         self.sampler = Sampler(self.data, self.buckets, GPU_SIZE, shuffle=True)
+    
+    def set_unk_rate(self, x):
+        self.unk_rate = x
 
     def __iter__(self):
-        self.loader = torch_dataloader(dataset=self,
-                                        batch_sampler=self.sampler,
-                                        collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
-        print(f"bucket num: {len(self.buckets)}")
-        return self
+        if self.train:
+            self.loader = torch_dataloader(dataset=self,
+                                            batch_sampler=self.sampler,
+                                            collate_fn=lambda x: batchify(x, self.vocabs, self.unk_rate))
+            print(f"bucket num: {len(self.buckets)}")
+            return self
+        else:
+            idx = list(range(len(self.data)))    
+            def get_size(data):
+                return len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+
+            def recursive_split_data(data, batches):
+                half_data_1 = data[:len(data) // 2]
+                half_data_2 = data[len(data) // 2:]
+                half_data_1_sz = get_size(half_data_1)
+                half_data_2_sz = get_size(half_data_2)
+                if half_data_1_sz > GPU_SIZE:
+                    recursive_split_data(half_data_1, batches)
+                else:
+                    print("split:", half_data_1_sz, len(half_data_1))
+                    batches.append(half_data_1)
+                if half_data_2_sz > GPU_SIZE:
+                    recursive_split_data(half_data_2, batches)
+                else:
+                    print("split:", half_data_2_sz, len(half_data_2))
+                    batches.append(half_data_2)
+
+            batches = []
+            num_tokens, data = 0, []
+            for i in idx:
+                num_tokens += len(self.data[i]['tok']) + len(self.data[i]['amr'])  # tokens_num = len(toks) + len(concepts)
+                data.append(self.data[i])
+                if num_tokens >= self.batch_size:
+                    sz = get_size(data)
+                    if sz > GPU_SIZE:
+                        # because we only have limited GPU memory
+                        print("no split:", sz, len(data))
+                        recursive_split_data(data, batches)
+                    else:
+                        print("no split:", sz, len(data))
+                        batches.append(data)
+                    num_tokens, data = 0, []
+            if data:
+                sz = len(data) * (2 + max(len(x['tok']) for x in data) + max(len(x['amr']) for x in data))
+                # print("no split:", sz, len(data))
+                if sz > GPU_SIZE:
+                    # because we only have limited GPU memory
+                    # print("no split:", sz, len(data))
+                    recursive_split_data(data, batches)
+                else:
+                    # print("no split:", sz, len(data))
+                    batches.append(data)
+
+            for batch in batches:
+                # print("training batch, len data {}, sz {}".format(len(batch), get_size(batch)), flush=True)
+                yield batchify(batch, self.vocabs, self.unk_rate)
 
 
 class DataLoader2(object):

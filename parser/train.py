@@ -14,6 +14,7 @@ from parser.utils import move_to_device, MyThread, eval
 from parser.bert_utils import BertEncoderTokenizer, BertEncoder
 from parser.postprocess import PostProcessor
 from parser.work import parse_data
+from transformers import get_polynomial_decay_schedule_with_warmup
 
 
 def parse_config():
@@ -249,6 +250,10 @@ def main(local_rank, args, global_value=None):
     grouped_params = [{'params': weight_decay_params, 'weight_decay': args.weight_decay},
                       {'params': no_weight_decay_params, 'weight_decay': 0.}]
     optimizer = AdamWeightDecayOptimizer(grouped_params, 0.001, betas=(0.9, 0.999), eps=1e-6)  # "correct" L2 @kiro
+    scheduler = get_polynomial_decay_schedule_with_warmup(optimizer,
+                                                    num_warmup_steps=300,
+                                                    num_training_steps=1000 * 200,
+                                                    lr_end=1e-6)
 
     used_batches = 0
     batches_acm = 0
@@ -469,8 +474,9 @@ def main(local_rank, args, global_value=None):
                 if args.world_size > 1:
                     average_gradients(model)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps, args.fine_tuning_lr)
+                # lr = update_lr(optimizer, args.lr_scale, args.embed_dim, batches_acm, args.warmup_steps, args.fine_tuning_lr)
                 optimizer.step()  # update the model parameters according to the losses @kiro
+                scheduler.step()
                 optimizer.zero_grad()
                 if args.world_size == 1 or (dist.get_rank() == 0):
                     if batches_acm % args.print_every == -1 % args.print_every:

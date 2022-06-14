@@ -146,7 +146,7 @@ def read_file(filename):
         edges.append(_edges)
         dep_rels.append(_dep_rels)
         amrs.append(_myamr)
-    print('read from %s, %d amrs' % (filename, len(amr_ids)))
+    print('read from %s, %d amrs' % (filename, len(token)))
     # return amr_ids, sents, wids, amrs
     return amrs, token, lemma, pos, ner, edges, dep_rels
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
                 predictable_conc.append([c for c in concept if c not in lexical_concepts])
                 conc.append(concept)
             rel.append([e[-1] for e in edge])
-            
+
     # make vocabularies
     token_vocab, token_char_vocab = make_vocab(token, char_level=True)
     lemma_vocab, lemma_char_vocab = make_vocab(lemma, char_level=True)

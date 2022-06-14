@@ -45,7 +45,7 @@ class AMRIO:
                     myamr = AMRGraph(amr)
                     count += 1
                     # print(f"processed {count} samples")
-                    yield tokens, lemmas, pos_tags, ner_tags, dependency_edges, myamr
+                    yield myamr, tokens, lemmas, pos_tags, ner_tags, dependency_edges
 
 
 class LexicalMap(object):

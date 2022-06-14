@@ -130,11 +130,11 @@ def ArraysToTensorWithPadding(xs, padding=0):
 
 def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
-    # _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
-    # _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
-    # _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
-    # _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
-    # _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
+    _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
+    _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
+    _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
+    _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
+    _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
     _word_char = ListsofStringToTensor([[CLS] + x['tok'] for x in data], vocabs['word_char'])
 
     local_token2idx = [x['token2idx'] for x in data]
@@ -168,7 +168,7 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
             r = vocabs['rel'].token2idx(r)
             _rel[v + 1, bidx, u + 1] = r
 
-    ret = {'tok': _tok, 'word_char': _word_char, \
+    ret = {'lem': _lem, 'tok': _tok, 'pos': _pos, 'ner': _ner, 'edge': _edges, 'dep_rel': _dep_rel, 'word_char': _word_char, \
            'copy_seq': np.stack([_cp_seq, _mp_seq], -1), \
            'local_token2idx': local_token2idx, 'local_idx2token': local_idx2token, \
            'concept_in': _concept_in, 'concept_char_in': _concept_char_in, \
@@ -185,13 +185,13 @@ class DataLoader(object):
     def __init__(self, vocabs, lex_map, filename, batch_size, for_train):
         self.data = []
         bert_tokenizer = vocabs.get('bert_tokenizer', None)
-        for amr_id, token, wid, amr in zip(*read_file(filename)):
+        for amr, token, lemma, pos, ner, edge, dep_rel in zip(*read_file(filename)):
             if for_train:
                 _, _, not_ok = amr.root_centered_sort()
                 if not_ok or len(token) == 0:
                     continue
-            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + token, vocabs['predictable_concept'])
-            datum = {'amr': amr, 'tok': token,
+            cp_seq, mp_seq, token2idx, idx2token = lex_map.get_concepts(['<CLS>'] + lemma, ['<CLS>'] + token, vocabs['predictable_concept'])
+            datum = {'amr': amr, 'tok': token, 'lem': lemma, 'pos': pos, 'ner': ner, 'edge': edge, 'dep_rel': dep_rel,\
                      'cp_seq': cp_seq, 'mp_seq': mp_seq, \
                      'token2idx': token2idx, 'idx2token': idx2token}
             if bert_tokenizer is not None:

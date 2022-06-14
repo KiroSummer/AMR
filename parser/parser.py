@@ -179,12 +179,12 @@ class Parser(nn.Module):
         with torch.no_grad():
             if self.bert_encoder is not None:
                 word_repr, word_mask, probe = self.encode_step_with_bert(
-                    data['tok'], None, None, None, None, None, data['word_char'],
+                    data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'], data['word_char'],
                     data['bert_token'], data['token_subword_index'], use_adj=args.encoder_graph
                 )
             else:
                 word_repr, word_mask, probe = self.encode_step(
-                    data['tok'], None, None, None, None, None, data['word_char'], 
+                    data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
                     use_adj=args.encoder_graph
                 )
 
@@ -326,13 +326,13 @@ class Parser(nn.Module):
     def forward(self, data, encoder_graph=False, decoder_graph=False):
         if self.bert_encoder is not None:
             word_repr, word_mask, probe = self.encode_step_with_bert(
-                data['tok'], None, None, None, None, None,
+                data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
                 data['word_char'], data['bert_token'],
                 data['token_subword_index'], use_adj=encoder_graph
             )
         else:
             word_repr, word_mask, probe = self.encode_step(
-                data['tok'], None, None, None, None, None,
+                 data['tok'], data['lem'], data['pos'], data['ner'], data['edge'], data['dep_rel'],
                 data['word_char'], use_adj=encoder_graph
             )
         concept_repr = self.embed_scale * self.concept_encoder(data['concept_char_in'],

@@ -26,19 +26,26 @@ class AMRIO:
                     amr_id = line[len('# ::id '):]
                 elif line.startswith('# ::snt '):
                     sentence = line[len('# ::snt '):]
-                elif line.startswith('# ::wid '):
-                    wid = line[len('# ::wid ')]
-                # elif line.startswith('# ::dependency_edges '):
-                #     dependency_edges = json.loads(line[len('# ::dependency_edges '):])
-                # elif line.startswith('# ::dependency_rels '):
-                #     dependency_rels = json.loads(line[len('# ::dependency_rels '):])
+                elif line.startswith('# ::tokens '):
+                    tokens = line[len('# ::tokens ')]
+                elif line.startswith('# ::lemmas '):
+                    lemmas = json.loads(line[len('# ::lemmas '):])
+                    lemmas = [le if _is_abs_form(le) else le.lower() for le in lemmas]
+                elif line.startswith('# ::pos_tags '):
+                    pos_tags = json.loads(line[len('# ::pos_tags '):])
+                elif line.startswith('# ::ner_tags '):
+                    ner_tags = json.loads(line[len('# ::ner_tags '):])
+                elif line.startswith('# ::dependency_edges '):
+                    dependency_edges = json.loads(line[len('# ::dependency_edges '):])
+                elif line.startswith('# ::dependency_rels '):
+                    dependency_rels = json.loads(line[len('# ::dependency_rels '):])
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
                     # print(f"{graph_line}")
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
                     count += 1
                     # print(f"processed {count} samples")
-                    yield amr_id, sentence, wid, myamr
+                    yield tokens, lemmas, pos_tags, ner_tags, dependency_edges, dependency_rels, myamr
 
 
 class LexicalMap(object):
@@ -47,12 +54,12 @@ class LexicalMap(object):
         pass
 
     # cp_seq, mp_seq, token2idx, idx2token = lex_map.get(lemma, token, vocabs['predictable_concept'])
-    def get_concepts(self, tok, vocab=None):
+    def get_concepts(self, lem, tok, vocab=None):
         cp_seq, mp_seq = [], []
         new_tokens = set()
-        for to in tok:
-            cp_seq.append(to + '_')  # for attributes
-            mp_seq.append(to)
+        for le, to in zip(lem, tok):
+            cp_seq.append(le + '_')  # for attributes
+            mp_seq.append(le)
 
         if vocab is None:
             return cp_seq, mp_seq
@@ -125,15 +132,23 @@ def dynamically_read_file(f, max_sentence_length=50000):
 
 def read_file(filename):
     # read preprocessed amr file
-    # token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
-    amr_ids, sents, wids, amrs = [], [], [], []
-    for _amr_id, _sent, _wid, _myamr in AMRIO.read(filename):
-        amr_ids.append(_amr_id)
-        sents.append(_sent.strip().split(' '))
-        wids.append(_wid)
+    token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
+    # amr_ids, sents, wids, amrs = [], [], [], []
+    for _tok, _lem, _pos, _ner, _edges, _dep_rels, _myamr in AMRIO.read(filename):
+        # amr_ids.append(_amr_id)
+        # sents.append(_sent.strip().split(' '))
+        # wids.append(_wid)
+        # amrs.append(_myamr)
+        token.append(_tok)
+        lemma.append(_lem)
+        pos.append(_pos)
+        ner.append(_ner)
+        edges.append(_edges)
+        dep_rels.append(_dep_rels)
         amrs.append(_myamr)
     print('read from %s, %d amrs' % (filename, len(amr_ids)))
-    return amr_ids, sents, wids, amrs
+    # return amr_ids, sents, wids, amrs
+    return amrs, token, lemma, pos, ner, edges, dep_rels
 
 
 def make_vocab(batch_seq, char_level=False):

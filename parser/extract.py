@@ -27,7 +27,7 @@ class AMRIO:
                 elif line.startswith('# ::snt '):
                     sentence = line[len('# ::snt '):]
                 elif line.startswith('# ::tokens '):
-                    tokens = line[len('# ::tokens ')]
+                    tokens = json.loads(line[len('# ::tokens '):])
                 elif line.startswith('# ::lemmas '):
                     lemmas = json.loads(line[len('# ::lemmas '):])
                     lemmas = [le if _is_abs_form(le) else le.lower() for le in lemmas]

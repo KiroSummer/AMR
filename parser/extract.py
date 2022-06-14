@@ -181,8 +181,52 @@ def parse_config():
 
 
 if __name__ == "__main__":
+    # args = parse_config()
+    # amr_ids, sents, wids, amrs = read_file(args.train_data)
+    # lexical_map = LexicalMap()
+
+    # # collect concepts and relations
+    # conc = []
+    # rel = []
+    # predictable_conc = []
+    # for i in range(10):
+    #     # run 10 times random sort to get the priorities of different types of edges
+    #     for amr, tok in zip(amrs, sents):
+    #         concept, edge, not_ok = amr.root_centered_sort()
+    #         # print(f"concept {concept}")
+    #         # print(f"edge {edge}")
+    #         # print(f"not ok {not_ok}")
+    #         # exit()
+    #         lexical_concepts = set()
+    #         cp_seq, mp_seq = lexical_map.get_concepts(tok)
+    #         for lc, lm in zip(cp_seq, mp_seq):
+    #             lexical_concepts.add(lc)
+    #             lexical_concepts.add(lm)
+
+    #         if i == 0:
+    #             predictable_conc.append([c for c in concept if c not in lexical_concepts])
+    #             conc.append(concept)
+    #         rel.append([e[-1] for e in edge])
+
+    # # make vocabularies
+    # token_vocab, token_char_vocab = make_vocab(sents, char_level=True)
+    # conc_vocab, conc_char_vocab = make_vocab(conc, char_level=True)
+
+    # predictable_conc_vocab = make_vocab(predictable_conc)
+    # num_predictable_conc = sum(len(x) for x in predictable_conc)
+    # num_conc = sum(len(x) for x in conc)
+    # print('predictable concept coverage', num_predictable_conc, num_conc, num_predictable_conc / num_conc)
+    # rel_vocab = make_vocab(rel)
+
+    # print('make vocabularies')
+    # write_vocab(token_vocab, 'tok_vocab')
+    # write_vocab(token_char_vocab, 'word_char_vocab')
+    # write_vocab(conc_vocab, 'concept_vocab')
+    # write_vocab(conc_char_vocab, 'concept_char_vocab')
+    # write_vocab(predictable_conc_vocab, 'predictable_concept_vocab')
+    # write_vocab(rel_vocab, 'rel_vocab')
     args = parse_config()
-    amr_ids, sents, wids, amrs = read_file(args.train_data)
+    amrs, token, lemma, pos, ner, _, dep_rels = read_file(args.train_data)
     lexical_map = LexicalMap()
 
     # collect concepts and relations
@@ -191,14 +235,10 @@ if __name__ == "__main__":
     predictable_conc = []
     for i in range(10):
         # run 10 times random sort to get the priorities of different types of edges
-        for amr, tok in zip(amrs, sents):
+        for amr, lem, tok in zip(amrs, lemma, token):
             concept, edge, not_ok = amr.root_centered_sort()
-            # print(f"concept {concept}")
-            # print(f"edge {edge}")
-            # print(f"not ok {not_ok}")
-            # exit()
             lexical_concepts = set()
-            cp_seq, mp_seq = lexical_map.get_concepts(tok)
+            cp_seq, mp_seq = lexical_map.get_concepts(lem, tok)
             for lc, lm in zip(cp_seq, mp_seq):
                 lexical_concepts.add(lc)
                 lexical_concepts.add(lm)
@@ -207,9 +247,13 @@ if __name__ == "__main__":
                 predictable_conc.append([c for c in concept if c not in lexical_concepts])
                 conc.append(concept)
             rel.append([e[-1] for e in edge])
-
+            
     # make vocabularies
-    token_vocab, token_char_vocab = make_vocab(sents, char_level=True)
+    token_vocab, token_char_vocab = make_vocab(token, char_level=True)
+    lemma_vocab, lemma_char_vocab = make_vocab(lemma, char_level=True)
+    pos_vocab = make_vocab(pos)
+    ner_vocab = make_vocab(ner)
+    dep_rel_vocab = make_vocab(dep_rels)
     conc_vocab, conc_char_vocab = make_vocab(conc, char_level=True)
 
     predictable_conc_vocab = make_vocab(predictable_conc)
@@ -221,7 +265,12 @@ if __name__ == "__main__":
     print('make vocabularies')
     write_vocab(token_vocab, 'tok_vocab')
     write_vocab(token_char_vocab, 'word_char_vocab')
+    write_vocab(lemma_vocab, 'lem_vocab')
+    write_vocab(lemma_char_vocab, 'lem_char_vocab')
+    write_vocab(pos_vocab, 'pos_vocab')
+    write_vocab(ner_vocab, 'ner_vocab')
     write_vocab(conc_vocab, 'concept_vocab')
     write_vocab(conc_char_vocab, 'concept_char_vocab')
     write_vocab(predictable_conc_vocab, 'predictable_concept_vocab')
     write_vocab(rel_vocab, 'rel_vocab')
+    write_vocab(dep_rel_vocab, 'dep_rel_vocab')

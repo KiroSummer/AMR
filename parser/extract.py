@@ -134,7 +134,7 @@ def read_file(filename):
     # read preprocessed amr file
     token, lemma, pos, ner, edges, amrs = [], [], [], [], [], []
     # amr_ids, sents, wids, amrs = [], [], [], []
-    for _tok, _lem, _pos, _ner, _edges, _myamr in AMRIO.read(filename):
+    for _myamr, _tok, _lem, _pos, _ner, _edges in AMRIO.read(filename):
         # amr_ids.append(_amr_id)
         # sents.append(_sent.strip().split(' '))
         # wids.append(_wid)

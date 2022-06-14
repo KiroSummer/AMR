@@ -20,7 +20,7 @@ python3 -u -m parser.train --info bert-english-full-features\
                 --word_dim 300\
                 --pos_dim 32\
                 --ner_dim 16\
-                --dep_rel_dim 64\
+                --dep_rel_dim 0\
                 --concept_char_dim 32\
                 --concept_dim 300 \
                 --rel_dim 100 \

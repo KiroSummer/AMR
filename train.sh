@@ -12,7 +12,7 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --word_char_vocab ${dataset}/word_char_vocab\
                 --concept_char_vocab ${dataset}/concept_char_vocab\
                 --train_data ${dataset}/camr_train_w_dep.txt.pre \
-                --dev_data ${dataset}/camr_dev_w_dep.txt  \
+                --dev_data ${dataset}/camr_dev_w_dep.txt.pre  \
                 --srl_data ./data/auto-srl/train.english.conll05.jsonlines.features \
                 --with_bert \
                 --bert_path hfl/chinese-roberta-wwm-ext \

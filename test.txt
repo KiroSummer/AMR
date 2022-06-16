@@ -1,28 +1,30 @@
-(aa / progression
-      :arg2 (ab / 作为-01
-            :arg2 (ac / 首选-01
-                  :arg1 (ae / 用车-01
-                        :arg0 (af / 政府)))
-            :arg0 (ag / 国家
-                  :mod (ai / 发达-01
-                        :polarity -
-                              :degree (ak / 相对)
-                        :arg0 (al / 行业
-                              :mod (am / 汽车)))
-                  :example (an / and
-                        :op1 (ao / country
-                              :name (ap / name
-                                    :op1 "俄罗斯"))
-                        :op2 (ar / country
-                              :name (as / name
-                                    :op1 "澳大利亚"))
-                        :op3 (au / country
-                              :name (av / name
-                                    :op1 "马来西亚"))
-                        :op4 (ax / country
-                              :name (ay / name
-                                    :op1 "印度"))
-                        :op5 "等"))
-            :mod (bb / 也)
-            :arg1 (bd / 汽车
-                  :mod (be / 本国))))
+(x2 / 说-01
+      :arg0()  (x32 / person
+            :name()  (x1 / name :op1 x1/李鹏 ))
+      :arg1()  (x34 / causation
+            :arg1()  (x18 / 做
+                  :aspect()  (x19 / 了)
+                  :arg1()  (x21 / 工作
+                        :arg0-of()  (x20 / 不少-01))
+                  :purpose(x13/为)  (x39 / and
+                        :op1()  (x14 / 贯彻-01
+                              :arg1()  (x17 / 声明
+                                    :mod()  (x16 / 联合)))
+                        :op2()  (x15 / 执行-01
+                              :arg1()  x17))
+                  :arg0()  (x80 / and
+                              :op1() (x52 / country
+                                    :name()  (x5 / name :op1 x5/中国 ))
+                              :op2() (x54 / country
+                                    :name()  (x6 / name :op1 x6/葡萄牙 ))))
+            :arg2()  (x25 / 有-06
+                  :arg0()  (x23 / 合作)
+                  :arg1()  (x26 / 成效)
+                  :mode()  (x24_x27 / judgement))
+            :duration(x10/以来)  (x48 / between
+                  :op1(x4/自)  (x9 / 生效-01
+                        :arg1()  (x8 / 声明
+                              :mod()  (x7 / 联合-01
+                                    :arg0() x52
+                                    :arg1() x54)))
+                  :op2()  (x56 / now))))

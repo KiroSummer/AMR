@@ -179,10 +179,13 @@ def extract_op_relation_info(line:str):
 
 
 class CAMRGraph:
-    def __init__(self, id, snt, wid, graph_lines) -> None:
+    def __init__(self, id, snt, wid, pos, dep_heads, dep_rels, graph_lines) -> None:
         self.id = id
         self.snt = snt
         self.wid = wid
+        self.pos_tags = pos
+        self.dependency_heads = dep_heads
+        self.dependency_rels = dep_rels
         self.graph_lines = graph_lines
         
         self.graph_split=' '*6
@@ -213,6 +216,8 @@ class CAMRGraph:
                 wid = matched.strip()[1:]
                 words = self.snt[len('# ::snt '):].strip().split(' ')
                 print(f"wid {wid}")
+                if int(wid) >= len(words):
+                    return line
                 word = words[int(wid) - 1]
                 line = line.replace(wid, wid + ' / ' + word)
                 print(f"Bad case (2) fixed: {self.id}\nwid: {wid} added word {word}\n After fix: {line}")
@@ -630,7 +635,7 @@ class CAMRGraph:
         
         line = func(None, root_node)
         # print(f"amr graph\n {line}")
-        return self.id + self.snt + self.wid + line
+        return self.id + self.snt + self.wid + self.pos_tags + self.dependency_heads + self.dependency_rels + line
 
     def func_fix_bad_case(self, line):
         pattern = re.compile(r'x\d+ \/\s*$')
@@ -659,6 +664,7 @@ class CAMRGraph:
     def generate_graph_from_lines(self):
         print(f"{self.id}")
         nearest_visited_node_depth = -1
+        last_depth = -1
         for i, line in enumerate(self.graph_lines):
             # fix some bad cases in the data, TODO, good data doesn't need it
             # print(f"line before fix: {line}")
@@ -681,6 +687,13 @@ class CAMRGraph:
                 self.wid_node_dict[wid] = root_node
             else:  # other nodes
                 # print(f"one line {line}")
+
+                # space_number = len(line[:line.index(':')])
+                # if space_number % len(self.graph_split) != 0 and (space_number // len(self.graph_split)) > last_depth:
+                #     print(f'before depth {depth}')
+                #     depth = last_depth + 1
+                #     print(f'after depth {depth}')
+
                 father_node = self.node_in_each_depths[depth - 1][-1]
                 res = normal_relation_pattern.findall(line)
                 if len(res) > 0:  # normal relation like "            :mod() (x11 / 财务)"
@@ -764,6 +777,7 @@ class CAMRGraph:
                         else:
                             # use the composed key to store the OP attribute concept
                             self.wid_node_dict[composed_key] = node
+            last_depth = depth
                             # remove the previous node
                             # bug_node = self.wid_node_dict[wid]
                             # assert len(bug_node.father_nodes) == 1  # currently set, maybe contains more that one father
@@ -781,15 +795,15 @@ class CAMRGraph:
 def read(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         print(f"read from the original format cmar file {file_path}")
-        id, snt, wid, graph_lines = None, None, None, []
+        id, snt, wid, pos_tags, dependency_heads, dependency_rels, graph_lines = None, None, None, None, None, None, []
         count = 0
         for line in f.readlines():
             if line.strip() == '':
                 assert id is not None and snt is not None and wid is not None and len(graph_lines) > 0
-                camr = CAMRGraph(id, snt, wid, graph_lines)
+                camr = CAMRGraph(id, snt, wid, pos_tags, dependency_heads, dependency_rels, graph_lines)
                 yield camr
                 count += 1
-                id, snt, wid, graph_lines = None, None, None, []
+                id, snt, wid, pos_tags, dependency_heads, dependency_rels, graph_lines = None, None, None, None, None, None, []
                 continue
             if line.startswith('# ::id'):
                 id = line
@@ -797,6 +811,12 @@ def read(file_path):
                 snt = line
             elif line.startswith('# ::wid'):
                 wid = line
+            elif line.startswith('# ::pos_tags'):
+                pos_tags = line
+            elif line.startswith('# ::dependency_edges'):
+                dependency_heads = line
+            elif line.startswith('# ::dependency_rels'):
+                dependency_rels = line
             else:
                 graph_lines.append(line)
         print(f"Total {count} sentences in file {file_path}")
@@ -815,63 +835,23 @@ if __name__ == '__main__':
                 english_amr_format = camr.generate_english_amr_format_string(remove_xu_rel=True, 
                             remove_relation_brackets=True, remove_wid=True)
                 f.write(english_amr_format + '\n')
-#     lines = '''# ::id export_amr.3327 ::cid export_amr.3327 ::2017-02-15 11:07:38
-# # ::snt 其实 这 也 不 会 成为 俄罗斯 的 战略 企图 ， 未来 的 俄罗斯 完全 可能 在 与 西方 的 地缘 争夺战 中 变得 坚决 而 不 妥协 ， 但 不管 双方 的 关系 多么 冷淡 ， 也 不管 普京 多么 厌恶 西方 ， 俄罗斯 在 主观 上 也 不 可能 愿意 首当其冲 、 独缨其锋 。
-# # ::wid x1_其实 x2_这 x3_也 x4_不 x5_会 x6_成为 x7_俄罗斯 x8_的 x9_战略 x10_企图 x11_， x12_未来 x13_的 x14_俄罗斯 x15_完全 x16_可能 x17_在 x18_与 x19_西方 x20_的 x21_地缘 x22_争夺战 x23_中 x24_变得 x25_坚决 x26_而 x27_不 x28_妥协 x29_， x30_但 x31_不管 x32_双方 x33_的 x34_关系 x35_多么 x36_冷淡 x37_， x38_也 x39_不管 x40_普京 x41_多么 x42_厌恶 x43_西方 x44_， x45_俄罗斯 x46_在 x47_主观 x48_上 x49_也 x50_不 x51_可能 x52_愿意 x53_首当其冲 x54_、 x55_独缨其锋 x56_。
-# (x58 / contrast
-#       :arg1() (x60 / and
-#             :op1() (x5 / 会-02
-#                   :polarity() (x4 / -)
-#                   :arg0() (x6 / 成为-01
-#                         :arg1() (x10 / 企图-01
-#                               :mod() (x9 / 战略)
-#                               :arg0(x8/的) (x66 / country
-#                                     :name() (x7 / name :op1 x7/俄罗斯 )))
-#                         :arg0() (x2 / 这)
-#                         :mod() (x3 / 也))
-#                   :mod() (x1 / 其实))
-#             :op2() (x16 / 可能-01
-#                   :degree() (x15 / 完全)
-#                   :arg0() (x24 / 变得-01
-#                         :arg1() (x74 / and
-#                               :op1() (x25 / 坚决-01
-#                                     :arg0() (x14 /
-#                                           :time(x13/的) (x12 / 未来)))
-#                               :op2() (x28 / 妥协-01
-#                                     :polarity() (x27 / -)
-#                                     :arg0() x14 ))
-#                         :arg0() x14 
-#                         :cause(x17_x23/在中) (x22 / 争夺战
-#                               :mod() (x21 / 地缘)
-#                               :accompanier(x18/与) (x19 / 西方)))))
-#       :arg2(x30/但) (x83 / concession
-#             :arg1() (x84 / and
-#                   :op1(x31/不管) (x36 / 冷淡-01
-#                         :arg0() (x34 / 关系
-#                               :poss(x33/的) (x32 / 双方
-#                                     :arg0-of() (x90 / mean
-#                                           :arg1() (x91 / and
-#                                                 :op1() x19 
-#                                                 :op2() x66 ))))
-#                         :degree() (x35 / 多么))
-#                   :op2(x39/不管) (x42 / 厌恶-01
-#                         :arg0() (x92 / person
-#                               :name() (x40 / name :op1 x40/普京 ))
-#                         :degree() (x41 / 多么)
-#                         :arg1() (x43 / x19)))
-#             :arg2(x49/也) (x51 / 可能-01
-#                   :polarity() (x50 / -)
-#                   :arg0() (x99 / and
-#                         :op1() (x53 / 首当其冲-01
-#                               :arg0() (x45 / x66)
-#                               :mod(x46_x48/在上) (x47 / 主观))
-#                         :op2() (x55 / 独缨其锋
-#                               :arg0() x66 
-#                               :mod() x47 )))))'''
+#     lines = '''# ::id export_amr.20325 ::cid export_amr.9999 ::2020-02-18 18:08:02
+# # ::snt 新华社 北京 十二月 二十七日 电 。
+# # ::wid x1_新华社 x2_北京 x3_十二月 x4_二十七日 x5_电 x6_。 x7_
+# # ::pos_tags NR NR NT NT NN PU
+# # ::dependency_edges 5 5 5 5 0 5
+# # ::dependency_rels dep dep dep dep root punct
+# (x5 / 电-02
+#       :arg0()  (x19 / organization
+#             :name()  (x1 / name :op1 x1/新华社 )
+#             :location()  (x21 / city
+#                   :name()  (x2 / name :op1 x2/北京 )))
+#       :time()  (x23 / date-entity
+#             :month()  (x3 / 12)
+#             :day()  (x4 / 27)))'''
 #     # print(lines)
 #     lines = lines.split('\n')
-#     camr = CAMRGraph(lines[0], lines[1], lines[2], lines[3:])
+#     camr = CAMRGraph(lines[0], lines[1], lines[2], lines[3], lines[4], lines[5], lines[6:])
 #     camr.generate_graph_from_lines()
 #     res = camr.generate_english_amr_format_string(remove_xu_rel=True, remove_relation_brackets=True, remove_wid=True)
 #     print(res)
-

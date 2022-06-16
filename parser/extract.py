@@ -28,17 +28,19 @@ class AMRIO:
                     sentence = line[len('# ::snt '):]
                 elif line.startswith('# ::wid '):
                     wid = line[len('# ::wid ')]
-                # elif line.startswith('# ::dependency_edges '):
-                #     dependency_edges = json.loads(line[len('# ::dependency_edges '):])
-                # elif line.startswith('# ::dependency_rels '):
-                #     dependency_rels = json.loads(line[len('# ::dependency_rels '):])
+                elif line.startswith('# ::pos_tags '):
+                    pos_tags = json.loads(line[len('# ::pos_tags '):])
+                elif line.startswith('# ::dependency_edges '):
+                    dependency_edges = json.loads(line[len('# ::dependency_edges '):])
+                elif line.startswith('# ::dependency_rels '):
+                    dependency_rels = json.loads(line[len('# ::dependency_rels '):])
                     graph_line = AMR.get_amr_line(f)  # read the AMR string lines @kiro
                     # print(f"{graph_line}")
                     amr = AMR.parse_AMR_line(graph_line)
                     myamr = AMRGraph(amr)
                     count += 1
                     # print(f"processed {count} samples")
-                    yield amr_id, sentence, wid, myamr
+                    yield amr_id, sentence, wid, pos_tags, dependency_edges, dependency_rels, myamr
 
 
 class LexicalMap(object):
@@ -167,7 +169,7 @@ def parse_config():
 
 if __name__ == "__main__":
     args = parse_config()
-    amr_ids, sents, wids, amrs = read_file(args.train_data)
+    amr_ids, sents, wids, pos_tags, dep_heads, dep_rels, amrs = read_file(args.train_data)
     lexical_map = LexicalMap()
 
     # collect concepts and relations
@@ -202,6 +204,8 @@ if __name__ == "__main__":
     num_conc = sum(len(x) for x in conc)
     print('predictable concept coverage', num_predictable_conc, num_conc, num_predictable_conc / num_conc)
     rel_vocab = make_vocab(rel)
+    pos_vocab = make_vocab(pos_tags)
+    dep_rel_vocab = make_vocab(dep_rels)
 
     print('make vocabularies')
     write_vocab(token_vocab, 'tok_vocab')
@@ -209,4 +213,6 @@ if __name__ == "__main__":
     write_vocab(conc_vocab, 'concept_vocab')
     write_vocab(conc_char_vocab, 'concept_char_vocab')
     write_vocab(predictable_conc_vocab, 'predictable_concept_vocab')
+    write_vocab(pos_vocab, 'pos_vocab')
+    write_vocab(dep_rel_vocab, 'dep_rel_vocab')
     write_vocab(rel_vocab, 'rel_vocab')

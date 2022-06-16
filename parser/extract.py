@@ -128,14 +128,17 @@ def dynamically_read_file(f, max_sentence_length=50000):
 def read_file(filename):
     # read preprocessed amr file
     # token, lemma, pos, ner, edges, dep_rels, amrs = [], [], [], [], [], [], []
-    amr_ids, sents, wids, amrs = [], [], [], []
-    for _amr_id, _sent, _wid, _myamr in AMRIO.read(filename):
+    amr_ids, sents, wids, pos, dep_heads, dep_rels, amrs = [], [], [], [], [], [], []
+    for _amr_id, _sent, _wid, _pos, _heads, _dep_rels, _myamr in AMRIO.read(filename):
         amr_ids.append(_amr_id)
         sents.append(_sent.strip().split(' '))
         wids.append(_wid)
+        pos.append(_pos)
+        dep_heads.append(_heads)
+        dep_rels.append(_dep_rels)
         amrs.append(_myamr)
     print('read from %s, %d amrs' % (filename, len(amr_ids)))
-    return amr_ids, sents, wids, amrs
+    return amr_ids, sents, wids, pos, dep_heads, dep_rels, amrs
 
 
 def make_vocab(batch_seq, char_level=False):

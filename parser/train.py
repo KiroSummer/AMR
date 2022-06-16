@@ -136,9 +136,9 @@ def load_vocabs(args):
     vocabs = dict()
     vocabs['tok'] = Vocab(args.tok_vocab, 3, [CLS])  # remove the token frequence < 5 @kiro
     # vocabs['lem'] = Vocab(args.lem_vocab, 5, [CLS])
-    # vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
+    vocabs['pos'] = Vocab(args.pos_vocab, 5, [CLS])
     # vocabs['ner'] = Vocab(args.ner_vocab, 5, [CLS])
-    # vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
+    vocabs['dep_rel'] = Vocab(args.dep_rel_vocab, 5, [CLS])
     if args.use_srl:
         vocabs['srl'] = Vocab(args.srl_vocab, 50, [NIL])
     vocabs['predictable_concept'] = Vocab(args.predictable_concept_vocab, 3, [DUM, END])

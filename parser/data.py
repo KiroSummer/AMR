@@ -131,10 +131,10 @@ def ArraysToTensorWithPadding(xs, padding=0):
 def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     _tok = ListsToTensor([[CLS] + x['tok'] for x in data], vocabs['tok'], unk_rate=unk_rate)
     # _lem = ListsToTensor([[CLS] + x['lem'] for x in data], vocabs['lem'], unk_rate=unk_rate)
-    # _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
+    _pos = ListsToTensor([[CLS] + x['pos'] for x in data], vocabs['pos'], unk_rate=unk_rate)
     # _ner = ListsToTensor([[CLS] + x['ner'] for x in data], vocabs['ner'], unk_rate=unk_rate)
-    # _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
-    # _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
+    _dep_rel = ListsToTensor([[CLS] + x['dep_rel'] for x in data], vocabs['dep_rel'], unk_rate=unk_rate)
+    _edges = ArraysToTensorWithPadding([np.array(x['edge']) for x in data], padding=-1)  # edges to batch Tensor. @kiro
     _word_char = ListsofStringToTensor([[CLS] + x['tok'] for x in data], vocabs['word_char'])
 
     local_token2idx = [x['token2idx'] for x in data]
@@ -168,7 +168,7 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
             r = vocabs['rel'].token2idx(r)
             _rel[v + 1, bidx, u + 1] = r
 
-    ret = {'tok': _tok, 'word_char': _word_char, \
+    ret = {'tok': _tok, 'word_char': _word_char, 'pos': _pos, 'edge': _edges, 'dep_rel': _dep_rel,\
            'copy_seq': np.stack([_cp_seq, _mp_seq], -1), \
            'local_token2idx': local_token2idx, 'local_idx2token': local_idx2token, \
            'concept_in': _concept_in, 'concept_char_in': _concept_char_in, \

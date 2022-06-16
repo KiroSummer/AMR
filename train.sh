@@ -16,12 +16,12 @@ python3 -u -m parser.train --info hard-mtl-loss-weights\
                 --srl_data ./data/auto-srl/train.english.conll05.jsonlines.features \
                 --with_bert \
                 --bert_path chinese-roberta-wwm-ext \
-                --word_char_dim 32\
+                --word_char_dim 100\
                 --word_dim 300\
-                --pos_dim 0\
+                --pos_dim 64\
                 --ner_dim 0\
-                --dep_rel_dim 0\
-                --concept_char_dim 32\
+                --dep_rel_dim 64\
+                --concept_char_dim 100\
                 --concept_dim 300 \
                 --rel_dim 100 \
                 --cnn_filter 3 256\

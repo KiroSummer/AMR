@@ -482,6 +482,23 @@ def main(local_rank, args, global_value=None):
                 # scheduler.step()
                 optimizer.zero_grad()
                 if batches_acm == 400:
+                    print(f"Eval...")
+
+                    model.eval()
+                    output_dev_file = '%s/epoch%d_batch%d_dev_out' % (args.ckpt, epoch, batches_acm)
+                    parse_data(model, pp, dev_data, args.dev_data, output_dev_file, args)
+                    torch.cuda.empty_cache()
+
+                    saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
+                    torch.save({'args': args,
+                                'model': model.state_dict(),
+                                'batches_acm': batches_acm,
+                                'optimizer': optimizer.state_dict()},
+                                saved_model)
+                    eval_task = MyThread(eval_tool.eval, (output_dev_file, saved_model, args.no_post_process),
+                                            global_dict=global_value)
+                    eval_task.start()
+
                     saved_model = '%s/epoch%d_batch%d' % (args.ckpt, epoch, batches_acm)
                     torch.save({'args': args,
                                     'model': model.state_dict(),

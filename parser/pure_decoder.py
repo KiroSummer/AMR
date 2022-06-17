@@ -29,7 +29,7 @@ class ArcGenerator(nn.Module):
         target_arc = torch.ne(target_rel, self.vocabs['rel'].token2idx(NIL))  # 0 or 1
         arc_mask = torch.eq(target_rel, self.vocabs['rel'].token2idx(PAD))
         pred = torch.ge(arc_weight, 0.5)
-        if not self.training:
+        if self.training:
             print('arc p %.3f r %.3f f %.3f' % compute_f_by_tensor(pred, target_arc, arc_mask))
         arc_loss = F.binary_cross_entropy(arc_weight, target_arc.float(), reduction='none')
         arc_loss = arc_loss.masked_fill_(arc_mask, 0.).sum((0, 2))
@@ -83,17 +83,18 @@ class ConceptGenerator(nn.Module):
         # print(f"probs: {probs.size()}, index: {index.size()}, copy_probs: {copy_probs.size()}")
         probs = probs.scatter_add_(-1, index, copy_probs)
         ll = torch.log(probs + 1e-12)
-
-        _, pred = torch.max(ll, -1)
-        total_concepts = torch.ne(target, self.vocabs['predictable_concept'].padding_idx)
-        acc = torch.eq(pred, target).masked_select(total_concepts).float().sum().item()
-        tot = total_concepts.sum().item()
-        print('conc acc', acc / tot)
-        print(f"pred {pred.masked_select(total_concepts)}")
-        print(f"gold {target.masked_select(total_concepts)}")
-        x_pred = pred.masked_select(total_concepts)
-        x_target = target.masked_select(total_concepts)
-        print(f"difference between pred and gold {x_pred[x_pred != x_target], x_target[x_pred != x_target]}")
+        
+        if self.training:
+            _, pred = torch.max(ll, -1)
+            total_concepts = torch.ne(target, self.vocabs['predictable_concept'].padding_idx)
+            acc = torch.eq(pred, target).masked_select(total_concepts).float().sum().item()
+            tot = total_concepts.sum().item()
+            print('conc acc', acc / tot)
+            print(f"pred {pred.masked_select(total_concepts)}")
+            print(f"gold {target.masked_select(total_concepts)}")
+            x_pred = pred.masked_select(total_concepts)
+            x_target = target.masked_select(total_concepts)
+            print(f"difference between pred and gold {x_pred[x_pred != x_target], x_target[x_pred != x_target]}")
 
         if work:
             if non_probabilistic:
@@ -171,7 +172,7 @@ class RelationGenerator(nn.Module):
                                                                                       self.vocabs['rel'].token2idx(PAD))
         rel_acc = (torch.eq(rel, target_rel).float().masked_fill_(rel_mask, 0.)).sum().item()
         rel_tot = rel_mask.numel() - rel_mask.float().sum().item()
-        if not self.training:
+        if self.training:
             print('rel acc %.3f' % (rel_acc / rel_tot))
         rel_loss = label_smoothed_nll_loss(log_probs.view(-1, self.vocabs['rel'].size), target_rel.view(-1), 0.).view(
             dep_num, bsz, head_num)

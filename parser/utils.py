@@ -128,9 +128,9 @@ def move_to_device(maybe_tensor, device):
 
 
 def compute_f_by_tensor(input, target, mask):
-    input = input.view(-1).tolist()
-    target = target.view(-1).tolist()
-    mask = mask.view(-1).tolist()
+    input = input.contiguous().view(-1).tolist()
+    target = target.contiguous().view(-1).tolist()
+    mask = mask.contiguous().view(-1).tolist()
     tp, fp, tn, fn = 0., 0., 0., 0.
     for i, t, m in zip(input, target, mask):
         if m == 1:

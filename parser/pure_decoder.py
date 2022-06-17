@@ -84,22 +84,21 @@ class ConceptGenerator(nn.Module):
         probs = probs.scatter_add_(-1, index, copy_probs)
         ll = torch.log(probs + 1e-12)
 
+        _, pred = torch.max(ll, -1)
+        total_concepts = torch.ne(target, self.vocabs['predictable_concept'].padding_idx)
+        acc = torch.eq(pred, target).masked_select(total_concepts).float().sum().item()
+        tot = total_concepts.sum().item()
+        print('conc acc', acc / tot)
+        print(f"pred {pred.masked_select(total_concepts)}")
+        print(f"gold {target.masked_select(total_concepts)}")
+        x_pred = pred.masked_select(total_concepts)
+        x_target = target.masked_select(total_concepts)
+        print(f"difference between pred and gold {x_pred[x_pred != x_target], x_target[x_pred != x_target]}")
+
         if work:
             if non_probabilistic:
                 return probs, outs  # actually, the probs is scores, without softmax @kiro
             return ll, outs
-
-        if self.training:
-            _, pred = torch.max(ll, -1)
-            total_concepts = torch.ne(target, self.vocabs['predictable_concept'].padding_idx)
-            acc = torch.eq(pred, target).masked_select(total_concepts).float().sum().item()
-            tot = total_concepts.sum().item()
-            print('conc acc', acc / tot)
-            print(f"pred {pred.masked_select(total_concepts)}")
-            print(f"gold {target.masked_select(total_concepts)}")
-            x_pred = pred.masked_select(total_concepts)
-            x_target = target.masked_select(total_concepts)
-            print(f"difference between pred and gold {x_pred[x_pred != x_target], x_target[x_pred != x_target]}")
 
         concept_loss = -ll.gather(dim=-1, index=target.unsqueeze(-1)).squeeze(-1)
         concept_mask = torch.eq(target, self.vocabs['predictable_concept'].padding_idx)

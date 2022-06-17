@@ -98,7 +98,7 @@ class AMRGraph(object):
             if src not in self.undirected_edges:
                 continue
 
-            random.shuffle(self.undirected_edges[src])
+            # random.shuffle(self.undirected_edges[src])
             if rel_order is not None:
                 # Do some random thing here for performance enhancement
                 if random.random() < 0.5:

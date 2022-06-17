@@ -147,9 +147,9 @@ def batchify(data, vocabs, unk_rate=0.):  # batchify the data
     for i, x in enumerate(data):
         amr = x['amr']
         concept_i, edge_i, _ = amr.root_centered_sort()  # vocabs['rel'].priority)
-        # print(f"{i}-th token {x['tok']}")
-        # print(f"{i}-th concept_i {concept_i}")
-        # print(f"{i}-th edge_i {edge_i}\n")
+        print(f"{i}-th token {x['tok']}")
+        print(f"{i}-th concept_i {concept_i}")
+        print(f"{i}-th edge_i {edge_i}\n")
         # exit()
         concept.append(concept_i)
         edge.append(edge_i)

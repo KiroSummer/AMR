@@ -392,6 +392,7 @@ class Parser(nn.Module):
             concept_loss, arc_loss, rel_loss, graph_arc_loss = \
                 normed_weights[0] * concept_loss, normed_weights[0] * arc_loss, normed_weights[0] * rel_loss, \
                 normed_weights[0] * graph_arc_loss
+        print(f"concept_loss {concept_loss}, arc_loss {arc_loss}, rel_loss {rel_loss}")
         return concept_loss, arc_loss, rel_loss, graph_arc_loss
 
 
